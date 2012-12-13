@@ -1,0 +1,600 @@
+/*
+=NODE  KeysDistr   Keys for Distribution String
+=UP StringDistr [10]
+
+=DESCRIPTION
+
+List of standard distributions @pxref{Stddist,,Standard distributions}
+
+@itemize @minus
+@item @code{[distr =] beta(@dots{})} @ @ @ @  @result{} @pxref{beta}
+@item @code{[distr =] binomial(@dots{})} @ @ @ @  @result{} @pxref{binomial}
+@item @code{[distr =] cauchy(@dots{})} @ @ @ @  @result{} @pxref{cauchy}
+@item @code{[distr =] chi(@dots{})} @ @ @ @  @result{} @pxref{chi}
+@item @code{[distr =] chisquare(@dots{})} @ @ @ @  @result{} @pxref{chisquare}
+@item @code{[distr =] exponential(@dots{})} @ @ @ @  @result{} @pxref{exponential}
+@item @code{[distr =] extremeI(@dots{})} @ @ @ @  @result{} @pxref{extremeI}
+@item @code{[distr =] extremeII(@dots{})} @ @ @ @  @result{} @pxref{extremeII}
+@item @code{[distr =] F(@dots{})} @ @ @ @  @result{} @pxref{F}
+@item @code{[distr =] gamma(@dots{})} @ @ @ @  @result{} @pxref{gamma}
+@item @code{[distr =] geometric(@dots{})} @ @ @ @  @result{} @pxref{geometric}
+@item @code{[distr =] gig(@dots{})} @ @ @ @  @result{} @pxref{gig}
+@item @code{[distr =] gig2(@dots{})} @ @ @ @  @result{} @pxref{gig2}
+@item @code{[distr =] hyperbolic(@dots{})} @ @ @ @  @result{} @pxref{hyperbolic}
+@item @code{[distr =] hypergeometric(@dots{})} @ @ @ @  @result{} @pxref{hypergeometric}
+@item @code{[distr =] ig(@dots{})} @ @ @ @  @result{} @pxref{ig}
+@item @code{[distr =] laplace(@dots{})} @ @ @ @  @result{} @pxref{laplace}
+@item @code{[distr =] logarithmic(@dots{})} @ @ @ @  @result{} @pxref{logarithmic}
+@item @code{[distr =] logistic(@dots{})} @ @ @ @  @result{} @pxref{logistic}
+@item @code{[distr =] lognormal(@dots{})} @ @ @ @  @result{} @pxref{lognormal}
+@item @code{[distr =] lomax(@dots{})} @ @ @ @  @result{} @pxref{lomax}
+@item @code{[distr =] negativebinomial(@dots{})} @ @ @ @  @result{} @pxref{negativebinomial}
+@item @code{[distr =] normal(@dots{})} @ @ @ @  @result{} @pxref{normal}
+@item @code{[distr =] pareto(@dots{})} @ @ @ @  @result{} @pxref{pareto}
+@item @code{[distr =] poisson(@dots{})} @ @ @ @  @result{} @pxref{poisson}
+@item @code{[distr =] powerexponential(@dots{})} @ @ @ @  @result{} @pxref{powerexponential}
+@item @code{[distr =] rayleigh(@dots{})} @ @ @ @  @result{} @pxref{rayleigh}
+@item @code{[distr =] slash(@dots{})} @ @ @ @  @result{} @pxref{slash}
+@item @code{[distr =] student(@dots{})} @ @ @ @  @result{} @pxref{student}
+@item @code{[distr =] triangular(@dots{})} @ @ @ @  @result{} @pxref{triangular}
+@item @code{[distr =] uniform(@dots{})} @ @ @ @  @result{} @pxref{uniform}
+@item @code{[distr =] weibull(@dots{})} @ @ @ @  @result{} @pxref{weibull}
+@end itemize
+
+@sp 1
+List of generic distributions @pxref{Distribution_objects,,Handling Distribution Objects}
+
+@itemize @minus
+@item @code{[distr =] cemp} @ @ @ @  @result{} @pxref{CEMP}
+@item @code{[distr =] cont} @ @ @ @  @result{} @pxref{CONT}
+@item @code{[distr =] discr} @ @ @ @  @result{} @pxref{DISCR}
+@end itemize
+
+@sp 1
+@emph{Notice}:
+Order statistics for continuous distributions (@pxref{CORDER}) are
+supported by using the key @code{orderstatistics} for distributions
+of type @code{CONT}.
+
+@sp 1
+
+List of keys that are available via the String API.
+For description see the corresponding UNU.RAN set calls.
+
+@itemize @bullet
+@item All distribution types
+@table @code
+@item name = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_set_name,,@command{unur_distr_set_name}}
+@end table
+
+@sp 1
+@item @code{cemp} @ @i{(Distribution Type)}@ @ @ @ (@pxref{CEMP})
+@table @code
+@item data = (@i{<list>}) [, @i{<int>}]
+ @result{} @pxref{funct:unur_distr_cemp_set_data,,@command{unur_distr_cemp_set_data}}
+@item hist_bins = (@i{<list>}) [, @i{<int>}]
+ @result{} @pxref{funct:unur_distr_cemp_set_hist_bins,,@command{unur_distr_cemp_set_hist_bins}}
+@item hist_domain = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_distr_cemp_set_hist_domain,,@command{unur_distr_cemp_set_hist_domain}}
+@item hist_prob = (@i{<list>}) [, @i{<int>}]
+ @result{} @pxref{funct:unur_distr_cemp_set_hist_prob,,@command{unur_distr_cemp_set_hist_prob}}
+@end table
+
+@sp 1
+@item @code{cont} @ @i{(Distribution Type)}@ @ @ @ (@pxref{CONT})
+@table @code
+@item cdf = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_cont_set_cdfstr,,@command{unur_distr_cont_set_cdfstr}}
+@item center = @i{<double>}
+ @result{} @pxref{funct:unur_distr_cont_set_center,,@command{unur_distr_cont_set_center}}
+@item domain = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_distr_cont_set_domain,,@command{unur_distr_cont_set_domain}}
+@item hr = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_cont_set_hrstr,,@command{unur_distr_cont_set_hrstr}}
+@item logcdf = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_cont_set_logcdfstr,,@command{unur_distr_cont_set_logcdfstr}}
+@item logpdf = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_cont_set_logpdfstr,,@command{unur_distr_cont_set_logpdfstr}}
+@item mode = @i{<double>}
+ @result{} @pxref{funct:unur_distr_cont_set_mode,,@command{unur_distr_cont_set_mode}}
+@item pdf = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_cont_set_pdfstr,,@command{unur_distr_cont_set_pdfstr}}
+@item pdfarea = @i{<double>}
+ @result{} @pxref{funct:unur_distr_cont_set_pdfarea,,@command{unur_distr_cont_set_pdfarea}}
+@item pdfparams = (@i{<list>}) [, @i{<int>}]
+ @result{} @pxref{funct:unur_distr_cont_set_pdfparams,,@command{unur_distr_cont_set_pdfparams}}
+@item orderstatistics = @i{<int>}, @i{<int>} | (@i{<list>})
+    Make order statistics for given distribution. The first parameter
+    gives the sample size, the second parameter its rank.
+    (see @pxref{funct:unur_distr_corder_new,,@command{unur_distr_corder_new}})
+@end table
+
+@sp 1
+@item @code{discr} @ @i{(Distribution Type)}@ @ @ @ (@pxref{DISCR})
+@table @code
+@item cdf = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_discr_set_cdfstr,,@command{unur_distr_discr_set_cdfstr}}
+@item domain = @i{<int>}, @i{<int>} | (@i{<list>})
+ @result{} @pxref{funct:unur_distr_discr_set_domain,,@command{unur_distr_discr_set_domain}}
+@item mode [= @i{<int>}]
+ @result{} @pxref{funct:unur_distr_discr_set_mode,,@command{unur_distr_discr_set_mode}}
+@item pmf = "@i{<string>}"
+ @result{} @pxref{funct:unur_distr_discr_set_pmfstr,,@command{unur_distr_discr_set_pmfstr}}
+@item pmfparams = (@i{<list>}) [, @i{<int>}]
+ @result{} @pxref{funct:unur_distr_discr_set_pmfparams,,@command{unur_distr_discr_set_pmfparams}}
+@item pmfsum = @i{<double>}
+ @result{} @pxref{funct:unur_distr_discr_set_pmfsum,,@command{unur_distr_discr_set_pmfsum}}
+@item pv = (@i{<list>}) [, @i{<int>}]
+ @result{} @pxref{funct:unur_distr_discr_set_pv,,@command{unur_distr_discr_set_pv}}
+@end table
+
+@sp 1
+@end itemize
+
+
+=EON
+*/
+/*
+=NODE  KeysMethod   Keys for Method String
+=UP StringMethod [10]
+
+=DESCRIPTION
+
+List of methods and keys that are available via the String API.
+For description see the corresponding UNU.RAN set calls.
+
+@itemize @bullet
+@item @code{method = arou} @ @ @ @  @result{} @command{unur_arou_new}
+(@pxref{AROU})
+@table @code
+@item cpoints = @i{<int>} [, (@i{<list>})] | (@i{<list>})
+ @result{} @pxref{funct:unur_arou_set_cpoints,,@command{unur_arou_set_cpoints}}
+@item darsfactor = @i{<double>}
+ @result{} @pxref{funct:unur_arou_set_darsfactor,,@command{unur_arou_set_darsfactor}}
+@item guidefactor = @i{<double>}
+ @result{} @pxref{funct:unur_arou_set_guidefactor,,@command{unur_arou_set_guidefactor}}
+@item max_segments [= @i{<int>}]
+ @result{} @pxref{funct:unur_arou_set_max_segments,,@command{unur_arou_set_max_segments}}
+@item max_sqhratio = @i{<double>}
+ @result{} @pxref{funct:unur_arou_set_max_sqhratio,,@command{unur_arou_set_max_sqhratio}}
+@item pedantic [= @i{<int>}]
+ @result{} @pxref{funct:unur_arou_set_pedantic,,@command{unur_arou_set_pedantic}}
+@item usecenter [= @i{<int>}]
+ @result{} @pxref{funct:unur_arou_set_usecenter,,@command{unur_arou_set_usecenter}}
+@item usedars [= @i{<int>}]
+ @result{} @pxref{funct:unur_arou_set_usedars,,@command{unur_arou_set_usedars}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_arou_set_verify,,@command{unur_arou_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = ars} @ @ @ @  @result{} @command{unur_ars_new}
+(@pxref{ARS})
+@table @code
+@item cpoints = @i{<int>} [, (@i{<list>})] | (@i{<list>})
+ @result{} @pxref{funct:unur_ars_set_cpoints,,@command{unur_ars_set_cpoints}}
+@item max_intervals [= @i{<int>}]
+ @result{} @pxref{funct:unur_ars_set_max_intervals,,@command{unur_ars_set_max_intervals}}
+@item max_iter [= @i{<int>}]
+ @result{} @pxref{funct:unur_ars_set_max_iter,,@command{unur_ars_set_max_iter}}
+@item pedantic [= @i{<int>}]
+ @result{} @pxref{funct:unur_ars_set_pedantic,,@command{unur_ars_set_pedantic}}
+@item reinit_ncpoints [= @i{<int>}]
+ @result{} @pxref{funct:unur_ars_set_reinit_ncpoints,,@command{unur_ars_set_reinit_ncpoints}}
+@item reinit_percentiles = @i{<int>} [, (@i{<list>})] | (@i{<list>})
+ @result{} @pxref{funct:unur_ars_set_reinit_percentiles,,@command{unur_ars_set_reinit_percentiles}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_ars_set_verify,,@command{unur_ars_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = auto} @ @ @ @  @result{} @command{unur_auto_new}
+(@pxref{AUTO})
+@table @code
+@item logss [= @i{<int>}]
+ @result{} @pxref{funct:unur_auto_set_logss,,@command{unur_auto_set_logss}}
+@end table
+
+@sp 1
+@item @code{method = cstd} @ @ @ @  @result{} @command{unur_cstd_new}
+(@pxref{CSTD})
+@table @code
+@item variant = @i{<unsigned>}
+ @result{} @pxref{funct:unur_cstd_set_variant,,@command{unur_cstd_set_variant}}
+@end table
+
+@sp 1
+@item @code{method = dari} @ @ @ @  @result{} @command{unur_dari_new}
+(@pxref{DARI})
+@table @code
+@item cpfactor = @i{<double>}
+ @result{} @pxref{funct:unur_dari_set_cpfactor,,@command{unur_dari_set_cpfactor}}
+@item squeeze [= @i{<int>}]
+ @result{} @pxref{funct:unur_dari_set_squeeze,,@command{unur_dari_set_squeeze}}
+@item tablesize [= @i{<int>}]
+ @result{} @pxref{funct:unur_dari_set_tablesize,,@command{unur_dari_set_tablesize}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_dari_set_verify,,@command{unur_dari_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = dau} @ @ @ @  @result{} @command{unur_dau_new}
+(@pxref{DAU})
+@table @code
+@item urnfactor = @i{<double>}
+ @result{} @pxref{funct:unur_dau_set_urnfactor,,@command{unur_dau_set_urnfactor}}
+@end table
+
+@sp 1
+@item @code{method = dgt} @ @ @ @  @result{} @command{unur_dgt_new}
+(@pxref{DGT})
+@table @code
+@item guidefactor = @i{<double>}
+ @result{} @pxref{funct:unur_dgt_set_guidefactor,,@command{unur_dgt_set_guidefactor}}
+@item variant = @i{<unsigned>}
+ @result{} @pxref{funct:unur_dgt_set_variant,,@command{unur_dgt_set_variant}}
+@end table
+
+@sp 1
+@item @code{method = dsrou} @ @ @ @  @result{} @command{unur_dsrou_new}
+(@pxref{DSROU})
+@table @code
+@item cdfatmode = @i{<double>}
+ @result{} @pxref{funct:unur_dsrou_set_cdfatmode,,@command{unur_dsrou_set_cdfatmode}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_dsrou_set_verify,,@command{unur_dsrou_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = dstd} @ @ @ @  @result{} @command{unur_dstd_new}
+(@pxref{DSTD})
+@table @code
+@item variant = @i{<unsigned>}
+ @result{} @pxref{funct:unur_dstd_set_variant,,@command{unur_dstd_set_variant}}
+@end table
+
+@sp 1
+@item @code{method = empk} @ @ @ @  @result{} @command{unur_empk_new}
+(@pxref{EMPK})
+@table @code
+@item beta = @i{<double>}
+ @result{} @pxref{funct:unur_empk_set_beta,,@command{unur_empk_set_beta}}
+@item kernel = @i{<unsigned>}
+ @result{} @pxref{funct:unur_empk_set_kernel,,@command{unur_empk_set_kernel}}
+@item positive [= @i{<int>}]
+ @result{} @pxref{funct:unur_empk_set_positive,,@command{unur_empk_set_positive}}
+@item smoothing = @i{<double>}
+ @result{} @pxref{funct:unur_empk_set_smoothing,,@command{unur_empk_set_smoothing}}
+@item varcor [= @i{<int>}]
+ @result{} @pxref{funct:unur_empk_set_varcor,,@command{unur_empk_set_varcor}}
+@end table
+
+@sp 1
+@item @code{method = gibbs} @ @ @ @  @result{} @command{unur_gibbs_new}
+(@pxref{GIBBS})
+@table @code
+@item burnin [= @i{<int>}]
+ @result{} @pxref{funct:unur_gibbs_set_burnin,,@command{unur_gibbs_set_burnin}}
+@item c = @i{<double>}
+ @result{} @pxref{funct:unur_gibbs_set_c,,@command{unur_gibbs_set_c}}
+@item thinning [= @i{<int>}]
+ @result{} @pxref{funct:unur_gibbs_set_thinning,,@command{unur_gibbs_set_thinning}}
+@item variant_coordinate  
+ @result{} @pxref{funct:unur_gibbs_set_variant_coordinate,,@command{unur_gibbs_set_variant_coordinate}}
+@item variant_random_direction  
+ @result{} @pxref{funct:unur_gibbs_set_variant_random_direction,,@command{unur_gibbs_set_variant_random_direction}}
+@end table
+
+@sp 1
+@item @code{method = hinv} @ @ @ @  @result{} @command{unur_hinv_new}
+(@pxref{HINV})
+@table @code
+@item boundary = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_hinv_set_boundary,,@command{unur_hinv_set_boundary}}
+@item cpoints = (@i{<list>}), @i{<int>}
+ @result{} @pxref{funct:unur_hinv_set_cpoints,,@command{unur_hinv_set_cpoints}}
+@item guidefactor = @i{<double>}
+ @result{} @pxref{funct:unur_hinv_set_guidefactor,,@command{unur_hinv_set_guidefactor}}
+@item max_intervals [= @i{<int>}]
+ @result{} @pxref{funct:unur_hinv_set_max_intervals,,@command{unur_hinv_set_max_intervals}}
+@item order [= @i{<int>}]
+ @result{} @pxref{funct:unur_hinv_set_order,,@command{unur_hinv_set_order}}
+@item u_resolution = @i{<double>}
+ @result{} @pxref{funct:unur_hinv_set_u_resolution,,@command{unur_hinv_set_u_resolution}}
+@end table
+
+@sp 1
+@item @code{method = hitro} @ @ @ @  @result{} @command{unur_hitro_new}
+(@pxref{HITRO})
+@table @code
+@item adaptive_multiplier = @i{<double>}
+ @result{} @pxref{funct:unur_hitro_set_adaptive_multiplier,,@command{unur_hitro_set_adaptive_multiplier}}
+@item burnin [= @i{<int>}]
+ @result{} @pxref{funct:unur_hitro_set_burnin,,@command{unur_hitro_set_burnin}}
+@item r = @i{<double>}
+ @result{} @pxref{funct:unur_hitro_set_r,,@command{unur_hitro_set_r}}
+@item thinning [= @i{<int>}]
+ @result{} @pxref{funct:unur_hitro_set_thinning,,@command{unur_hitro_set_thinning}}
+@item use_adaptiveline [= @i{<int>}]
+ @result{} @pxref{funct:unur_hitro_set_use_adaptiveline,,@command{unur_hitro_set_use_adaptiveline}}
+@item use_adaptiverectangle [= @i{<int>}]
+ @result{} @pxref{funct:unur_hitro_set_use_adaptiverectangle,,@command{unur_hitro_set_use_adaptiverectangle}}
+@item use_boundingrectangle [= @i{<int>}]
+ @result{} @pxref{funct:unur_hitro_set_use_boundingrectangle,,@command{unur_hitro_set_use_boundingrectangle}}
+@item v = @i{<double>}
+ @result{} @pxref{funct:unur_hitro_set_v,,@command{unur_hitro_set_v}}
+@item variant_coordinate  
+ @result{} @pxref{funct:unur_hitro_set_variant_coordinate,,@command{unur_hitro_set_variant_coordinate}}
+@item variant_random_direction  
+ @result{} @pxref{funct:unur_hitro_set_variant_random_direction,,@command{unur_hitro_set_variant_random_direction}}
+@end table
+
+@sp 1
+@item @code{method = hrb} @ @ @ @  @result{} @command{unur_hrb_new}
+(@pxref{HRB})
+@table @code
+@item upperbound = @i{<double>}
+ @result{} @pxref{funct:unur_hrb_set_upperbound,,@command{unur_hrb_set_upperbound}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_hrb_set_verify,,@command{unur_hrb_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = hrd} @ @ @ @  @result{} @command{unur_hrd_new}
+(@pxref{HRD})
+@table @code
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_hrd_set_verify,,@command{unur_hrd_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = hri} @ @ @ @  @result{} @command{unur_hri_new}
+(@pxref{HRI})
+@table @code
+@item p0 = @i{<double>}
+ @result{} @pxref{funct:unur_hri_set_p0,,@command{unur_hri_set_p0}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_hri_set_verify,,@command{unur_hri_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = itdr} @ @ @ @  @result{} @command{unur_itdr_new}
+(@pxref{ITDR})
+@table @code
+@item cp = @i{<double>}
+ @result{} @pxref{funct:unur_itdr_set_cp,,@command{unur_itdr_set_cp}}
+@item ct = @i{<double>}
+ @result{} @pxref{funct:unur_itdr_set_ct,,@command{unur_itdr_set_ct}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_itdr_set_verify,,@command{unur_itdr_set_verify}}
+@item xi = @i{<double>}
+ @result{} @pxref{funct:unur_itdr_set_xi,,@command{unur_itdr_set_xi}}
+@end table
+
+@sp 1
+@item @code{method = mvtdr} @ @ @ @  @result{} @command{unur_mvtdr_new}
+(@pxref{MVTDR})
+@table @code
+@item boundsplitting = @i{<double>}
+ @result{} @pxref{funct:unur_mvtdr_set_boundsplitting,,@command{unur_mvtdr_set_boundsplitting}}
+@item maxcones [= @i{<int>}]
+ @result{} @pxref{funct:unur_mvtdr_set_maxcones,,@command{unur_mvtdr_set_maxcones}}
+@item stepsmin [= @i{<int>}]
+ @result{} @pxref{funct:unur_mvtdr_set_stepsmin,,@command{unur_mvtdr_set_stepsmin}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_mvtdr_set_verify,,@command{unur_mvtdr_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = ninv} @ @ @ @  @result{} @command{unur_ninv_new}
+(@pxref{NINV})
+@table @code
+@item max_iter [= @i{<int>}]
+ @result{} @pxref{funct:unur_ninv_set_max_iter,,@command{unur_ninv_set_max_iter}}
+@item start = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_ninv_set_start,,@command{unur_ninv_set_start}}
+@item table [= @i{<int>}]
+ @result{} @pxref{funct:unur_ninv_set_table,,@command{unur_ninv_set_table}}
+@item u_resolution = @i{<double>}
+ @result{} @pxref{funct:unur_ninv_set_u_resolution,,@command{unur_ninv_set_u_resolution}}
+@item usebisect  
+ @result{} @pxref{funct:unur_ninv_set_usebisect,,@command{unur_ninv_set_usebisect}}
+@item usenewton  
+ @result{} @pxref{funct:unur_ninv_set_usenewton,,@command{unur_ninv_set_usenewton}}
+@item useregula  
+ @result{} @pxref{funct:unur_ninv_set_useregula,,@command{unur_ninv_set_useregula}}
+@item x_resolution = @i{<double>}
+ @result{} @pxref{funct:unur_ninv_set_x_resolution,,@command{unur_ninv_set_x_resolution}}
+@end table
+
+@sp 1
+@item @code{method = nrou} @ @ @ @  @result{} @command{unur_nrou_new}
+(@pxref{NROU})
+@table @code
+@item center = @i{<double>}
+ @result{} @pxref{funct:unur_nrou_set_center,,@command{unur_nrou_set_center}}
+@item r = @i{<double>}
+ @result{} @pxref{funct:unur_nrou_set_r,,@command{unur_nrou_set_r}}
+@item u = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_nrou_set_u,,@command{unur_nrou_set_u}}
+@item v = @i{<double>}
+ @result{} @pxref{funct:unur_nrou_set_v,,@command{unur_nrou_set_v}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_nrou_set_verify,,@command{unur_nrou_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = pinv} @ @ @ @  @result{} @command{unur_pinv_new}
+(@pxref{PINV})
+@table @code
+@item boundary = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_pinv_set_boundary,,@command{unur_pinv_set_boundary}}
+@item keepcdf [= @i{<int>}]
+ @result{} @pxref{funct:unur_pinv_set_keepcdf,,@command{unur_pinv_set_keepcdf}}
+@item max_intervals [= @i{<int>}]
+ @result{} @pxref{funct:unur_pinv_set_max_intervals,,@command{unur_pinv_set_max_intervals}}
+@item order [= @i{<int>}]
+ @result{} @pxref{funct:unur_pinv_set_order,,@command{unur_pinv_set_order}}
+@item searchboundary = @i{<int>}, @i{<int>} | (@i{<list>})
+ @result{} @pxref{funct:unur_pinv_set_searchboundary,,@command{unur_pinv_set_searchboundary}}
+@item smoothness [= @i{<int>}]
+ @result{} @pxref{funct:unur_pinv_set_smoothness,,@command{unur_pinv_set_smoothness}}
+@item u_resolution = @i{<double>}
+ @result{} @pxref{funct:unur_pinv_set_u_resolution,,@command{unur_pinv_set_u_resolution}}
+@item use_upoints [= @i{<int>}]
+ @result{} @pxref{funct:unur_pinv_set_use_upoints,,@command{unur_pinv_set_use_upoints}}
+@item usecdf  
+ @result{} @pxref{funct:unur_pinv_set_usecdf,,@command{unur_pinv_set_usecdf}}
+@item usepdf  
+ @result{} @pxref{funct:unur_pinv_set_usepdf,,@command{unur_pinv_set_usepdf}}
+@end table
+
+@sp 1
+@item @code{method = srou} @ @ @ @  @result{} @command{unur_srou_new}
+(@pxref{SROU})
+@table @code
+@item cdfatmode = @i{<double>}
+ @result{} @pxref{funct:unur_srou_set_cdfatmode,,@command{unur_srou_set_cdfatmode}}
+@item pdfatmode = @i{<double>}
+ @result{} @pxref{funct:unur_srou_set_pdfatmode,,@command{unur_srou_set_pdfatmode}}
+@item r = @i{<double>}
+ @result{} @pxref{funct:unur_srou_set_r,,@command{unur_srou_set_r}}
+@item usemirror [= @i{<int>}]
+ @result{} @pxref{funct:unur_srou_set_usemirror,,@command{unur_srou_set_usemirror}}
+@item usesqueeze [= @i{<int>}]
+ @result{} @pxref{funct:unur_srou_set_usesqueeze,,@command{unur_srou_set_usesqueeze}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_srou_set_verify,,@command{unur_srou_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = ssr} @ @ @ @  @result{} @command{unur_ssr_new}
+(@pxref{SSR})
+@table @code
+@item cdfatmode = @i{<double>}
+ @result{} @pxref{funct:unur_ssr_set_cdfatmode,,@command{unur_ssr_set_cdfatmode}}
+@item pdfatmode = @i{<double>}
+ @result{} @pxref{funct:unur_ssr_set_pdfatmode,,@command{unur_ssr_set_pdfatmode}}
+@item usesqueeze [= @i{<int>}]
+ @result{} @pxref{funct:unur_ssr_set_usesqueeze,,@command{unur_ssr_set_usesqueeze}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_ssr_set_verify,,@command{unur_ssr_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = tabl} @ @ @ @  @result{} @command{unur_tabl_new}
+(@pxref{TABL})
+@table @code
+@item areafraction = @i{<double>}
+ @result{} @pxref{funct:unur_tabl_set_areafraction,,@command{unur_tabl_set_areafraction}}
+@item boundary = @i{<double>}, @i{<double>} | (@i{<list>})
+ @result{} @pxref{funct:unur_tabl_set_boundary,,@command{unur_tabl_set_boundary}}
+@item cpoints = @i{<int>} [, (@i{<list>})] | (@i{<list>})
+ @result{} @pxref{funct:unur_tabl_set_cpoints,,@command{unur_tabl_set_cpoints}}
+@item darsfactor = @i{<double>}
+ @result{} @pxref{funct:unur_tabl_set_darsfactor,,@command{unur_tabl_set_darsfactor}}
+@item guidefactor = @i{<double>}
+ @result{} @pxref{funct:unur_tabl_set_guidefactor,,@command{unur_tabl_set_guidefactor}}
+@item max_intervals [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_max_intervals,,@command{unur_tabl_set_max_intervals}}
+@item max_sqhratio = @i{<double>}
+ @result{} @pxref{funct:unur_tabl_set_max_sqhratio,,@command{unur_tabl_set_max_sqhratio}}
+@item nstp [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_nstp,,@command{unur_tabl_set_nstp}}
+@item pedantic [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_pedantic,,@command{unur_tabl_set_pedantic}}
+@item slopes = (@i{<list>}), @i{<int>}
+ @result{} @pxref{funct:unur_tabl_set_slopes,,@command{unur_tabl_set_slopes}}
+@item usedars [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_usedars,,@command{unur_tabl_set_usedars}}
+@item useear [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_useear,,@command{unur_tabl_set_useear}}
+@item variant_ia [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_variant_ia,,@command{unur_tabl_set_variant_ia}}
+@item variant_splitmode = @i{<unsigned>}
+ @result{} @pxref{funct:unur_tabl_set_variant_splitmode,,@command{unur_tabl_set_variant_splitmode}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_tabl_set_verify,,@command{unur_tabl_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = tdr} @ @ @ @  @result{} @command{unur_tdr_new}
+(@pxref{TDR})
+@table @code
+@item c = @i{<double>}
+ @result{} @pxref{funct:unur_tdr_set_c,,@command{unur_tdr_set_c}}
+@item cpoints = @i{<int>} [, (@i{<list>})] | (@i{<list>})
+ @result{} @pxref{funct:unur_tdr_set_cpoints,,@command{unur_tdr_set_cpoints}}
+@item darsfactor = @i{<double>}
+ @result{} @pxref{funct:unur_tdr_set_darsfactor,,@command{unur_tdr_set_darsfactor}}
+@item guidefactor = @i{<double>}
+ @result{} @pxref{funct:unur_tdr_set_guidefactor,,@command{unur_tdr_set_guidefactor}}
+@item max_intervals [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_max_intervals,,@command{unur_tdr_set_max_intervals}}
+@item max_sqhratio = @i{<double>}
+ @result{} @pxref{funct:unur_tdr_set_max_sqhratio,,@command{unur_tdr_set_max_sqhratio}}
+@item pedantic [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_pedantic,,@command{unur_tdr_set_pedantic}}
+@item reinit_ncpoints [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_reinit_ncpoints,,@command{unur_tdr_set_reinit_ncpoints}}
+@item reinit_percentiles = @i{<int>} [, (@i{<list>})] | (@i{<list>})
+ @result{} @pxref{funct:unur_tdr_set_reinit_percentiles,,@command{unur_tdr_set_reinit_percentiles}}
+@item usecenter [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_usecenter,,@command{unur_tdr_set_usecenter}}
+@item usedars [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_usedars,,@command{unur_tdr_set_usedars}}
+@item usemode [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_usemode,,@command{unur_tdr_set_usemode}}
+@item variant_gw  
+ @result{} @pxref{funct:unur_tdr_set_variant_gw,,@command{unur_tdr_set_variant_gw}}
+@item variant_ia  
+ @result{} @pxref{funct:unur_tdr_set_variant_ia,,@command{unur_tdr_set_variant_ia}}
+@item variant_ps  
+ @result{} @pxref{funct:unur_tdr_set_variant_ps,,@command{unur_tdr_set_variant_ps}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_tdr_set_verify,,@command{unur_tdr_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = utdr} @ @ @ @  @result{} @command{unur_utdr_new}
+(@pxref{UTDR})
+@table @code
+@item cpfactor = @i{<double>}
+ @result{} @pxref{funct:unur_utdr_set_cpfactor,,@command{unur_utdr_set_cpfactor}}
+@item deltafactor = @i{<double>}
+ @result{} @pxref{funct:unur_utdr_set_deltafactor,,@command{unur_utdr_set_deltafactor}}
+@item pdfatmode = @i{<double>}
+ @result{} @pxref{funct:unur_utdr_set_pdfatmode,,@command{unur_utdr_set_pdfatmode}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_utdr_set_verify,,@command{unur_utdr_set_verify}}
+@end table
+
+@sp 1
+@item @code{method = vempk} @ @ @ @  @result{} @command{unur_vempk_new}
+(@pxref{VEMPK})
+@table @code
+@item smoothing = @i{<double>}
+ @result{} @pxref{funct:unur_vempk_set_smoothing,,@command{unur_vempk_set_smoothing}}
+@item varcor [= @i{<int>}]
+ @result{} @pxref{funct:unur_vempk_set_varcor,,@command{unur_vempk_set_varcor}}
+@end table
+
+@sp 1
+@item @code{method = vnrou} @ @ @ @  @result{} @command{unur_vnrou_new}
+(@pxref{VNROU})
+@table @code
+@item r = @i{<double>}
+ @result{} @pxref{funct:unur_vnrou_set_r,,@command{unur_vnrou_set_r}}
+@item v = @i{<double>}
+ @result{} @pxref{funct:unur_vnrou_set_v,,@command{unur_vnrou_set_v}}
+@item verify [= @i{<int>}]
+ @result{} @pxref{funct:unur_vnrou_set_verify,,@command{unur_vnrou_set_verify}}
+@end table
+
+@sp 1
+@end itemize
+
+
+=EON
+*/

@@ -1,0 +1,9 @@
+Version 1.0.1: January 2009
+
+	- Added copyright notice in file 'RngStream.c' 
+	  to avoid ambiguity about license (GPL)
+
+Version 1.0: December 2005
+
+	- Package released
+

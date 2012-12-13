@@ -1,0 +1,53 @@
+\name{callPersonSimulation}
+\alias{callPersonSimulation}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+ Example of calling a microsimulation.
+}
+\description{
+  A very simple example of calling a microsimulation.
+}
+\usage{
+callPersonSimulation(n=500L)
+}
+\arguments{
+  \item{n}{ number of simulations.}
+}
+  %- maybe also 'usage' for other objects documented here.
+\details{
+  The actual model is based on Chilcott's model of prostate cancer
+  natural history. However, only the life-time due to other causes is
+  reported (assuming a Weibull distribution).
+}
+\value{
+  the mean and standard deviation of the person-time.
+}
+\references{
+  %% ~put references to the literature/web site here ~
+}
+\author{
+ Mark~Clements
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+##---- Should be DIRECTLY executable !! ----
+##-- ==>  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (n=500L) 
+.C("callPersonSimulation", as.double(1), as.integer(n), out = as.double(1:2), 
+    as.integer(2))$out
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ ~kwd1 }
+\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

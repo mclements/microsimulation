@@ -1,0 +1,191 @@
+
+/*---------------------------------------------------------------------------*/
+/*
+
+=NODEX  StringFunct    Function String
+=UP StringAPI [25]
+
+=DESCRIPTION
+
+In unuran it is also possible to define functions (e.g. CDF or PDF) as
+strings. As you can see in Example 2 (@ref{Example_2_str}) it is very
+easy to define the PDF of a distribution object by means of a string. 
+The possibilities using this string interface are more restricted than
+using a pointer to a routine coded in C (@ref{Example_2}). 
+But the differences in evaluation time is small.
+When a distribution object is defined using this string interface then
+of course the same conditions on the given density or CDF must be
+satisfied for a chosen method as for the standard API.
+This string interface can be used for both within the UNU.RAN string
+API using the unur_str2gen() call, and for calls that define the
+density or CDF for a particular distribution object as done with
+(e.g.) the call unur_distr_cont_set_pdfstr().
+Here is an example for the latter case:
+
+@smallexample
+  unur_distr_cont_set_pdfstr(distr,"1-x*x");
+@end smallexample
+
+
+@subheading Syntax
+
+The syntax for the function string is case insensitive, white spaces
+are ingnored. The expressions are similar to most programming languages
+and mathematical programs (see also the examples below). It is especially
+influenced by C. The usual preceedence rules are used (from highest
+to lowest preceedence: functions, power, multiplication,
+addition, relation operators). Use parentheses in case of doubt or 
+when these preceedences should be changed.
+
+Relation operators can be used as indicator functions, i.e. the term
+@code{(x>1)} is evaluted as @code{1} if this relation is satisfied,
+and as @code{0} otherwise.
+
+The first unknown symbol (letter or word) is interpreted as the
+variable of the function. It is recommended to use @code{x}.
+Only one variable can be used.
+
+@sp 1
+@noindent
+@emph{Important}: The symbol @code{e} is used twice, for Euler's
+constant (= 2.7182@dots{}) and as exponent.
+The multiplication operator @code{*} must not be omitted, i.e.
+@code{2 x} is interpreted as the string @code{2x} (which will result
+in a syntax error). 
+
+
+@subheading List of symbols
+
+@cartouche
+@noindent
+@b{Numbers}
+@sp 1
+@noindent
+Numbers are composed using digits and, optionally, a sign, 
+a decimal point, and an exponent indicated by @code{e}.
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item Symbol        @tab Explanation              @tab Examples 
+@item @code{0@dots{}9} @tab @i{digits}            @tab @code{2343}
+@item @code{.}      @tab @i{decimal point}        @tab @code{165.567} 
+@item @code{-}      @tab @i{negative sign}        @tab @code{-465.223}
+@item @code{e}      @tab @i{exponet}              @tab @code{13.2e-4} (=0.00132)
+@end multitable
+@end cartouche
+
+@sp 1
+@cartouche
+@noindent
+@b{Constants}
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item @code{pi}     @tab @i{pi = 3.1415@dots{}}   @tab @code{3*pi+2}
+@item @code{e}      @tab @i{Euler's constant}     @tab @code{3*e+2} (= 10.15@dots{};
+                                                       do not cofuse with @code{3e2} = 300)
+@item @code{inf}    @tab @i{infinity}             @tab (used for domains)             
+@end multitable
+@end cartouche
+
+@sp 1
+@cartouche
+@noindent
+@b{Special symbols}
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item @code{(}      @tab @i{opening parenthesis}  @tab @code{2*(3+x)}      
+@item @code{)}      @tab @i{closing parenthesis}  @tab @code{2*(3+x)}
+@item @code{,}      @tab @i{(argument) list separator} @tab @code{mod(13,2)}
+@end multitable
+@end cartouche
+
+@sp 1
+@cartouche
+@noindent
+@b{Relation operators (Indicator functions)}
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item @code{<}      @tab @i{less than}            @tab @code{(x<1)}
+@item @code{=}      @tab @i{equal}                @tab @code{(2=x)}
+@item @code{==}     @tab @i{same as} @code{=}     @tab @code{(x==3)}
+@item @code{>}      @tab @i{greater than}         @tab @code{(x>0)}
+@item @code{<=}     @tab @i{less than or equal}   @tab @code{(x<=1)}      
+@item @code{!=}     @tab @i{not equal}            @tab @code{(x!0)}
+@item @code{<>}     @tab @i{same as} @code{!=}    @tab @code{(x<>pi)}
+@item @code{>=}     @tab @i{greater or equal}     @tab @code{(x>=1)}
+@end multitable
+@end cartouche
+
+@sp 1
+@cartouche
+@noindent
+@b{Arithmetic operators}
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item @code{+}      @tab @i{addition}             @tab @code{2+x}
+@item @code{-}      @tab @i{subtraction}          @tab @code{2-x}
+@item @code{*}      @tab @i{multiplication}       @tab @code{2*x}
+@item @code{/}      @tab @i{division}             @tab @code{x/2}
+@item @code{^}      @tab @i{power}                @tab @code{x^2}
+@end multitable
+@end cartouche
+
+@sp 1
+@cartouche
+@noindent
+@b{Functions}
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item @code{mod}    @tab @code{mod(m,n)} @i{remainder of devision m over n} @tab mod(x,2)   
+@item @code{exp}    @tab @i{exponential function 
+                         (same as @code{e^x})}    @tab @code{exp(-x^2)} (same as @code{e^(-x^2)})
+@item @code{log}    @tab @i{natural logarithm}    @tab @code{log(x)}
+@item @code{sin}    @tab @i{sine}                 @tab @code{sin(x)}            
+@item @code{cos}    @tab @i{cosine}               @tab @code{cos(x)}
+@item @code{tan}    @tab @i{tangent}              @tab @code{tan(x)}
+@item @code{sec}    @tab @i{secant}               @tab @code{sec(x*2)}
+@item @code{sqrt}   @tab @i{square root}          @tab @code{sqrt(2*x)}
+@item @code{abs}    @tab @i{absolute value}       @tab @code{abs(x)}
+@item @code{sgn}    @tab @i{sign function}        @tab @code{sign(x)*3} 
+@end multitable
+@end cartouche
+
+@sp 1
+@cartouche
+@noindent
+@b{Variable}
+@sp 1
+@multitable {xxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxx} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} 
+@item @code{x}      @tab @i{variable}             @tab @code{3*x^2}
+@end multitable
+@end cartouche
+
+
+@subheading Examples
+
+@example
+
+1.231+7.9876*x-1.234e-3*x^2+3.335e-5*x^3
+
+sin(2*pi*x)+x^2
+
+exp(-((x-3)/2.1)^2)
+
+@end example
+
+@noindent
+It is also possible to define functions using different terms 
+on separate domains. However, instead of constructs using
+@code{if @dots{} then @dots{} else @dots{}}
+indicator functions are available.
+
+@noindent
+For example to define the density of triangular distribution
+with domain (-1,1) and mode 0 use
+
+@example
+(x>-1)*(x<0)*(1+x) + (x>=0)*(x<1)*(1-x)
+@end example
+
+=EON
+*/
+/*---------------------------------------------------------------------------*/

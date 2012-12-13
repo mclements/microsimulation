@@ -1,0 +1,356 @@
+stringparser.lo: stringparser.c \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6.1/include/stdarg.h \
+ /usr/include/ctype.h /usr/include/features.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h \
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+ /usr/include/x86_64-linux-gnu/bits/types.h \
+ /usr/include/x86_64-linux-gnu/bits/typesizes.h /usr/include/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/byteswap.h /usr/include/xlocale.h \
+ ../../src/unur_source.h ../../config.h ../../src/unuran_config.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6.1/include/float.h /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/huge_val.h \
+ /usr/include/x86_64-linux-gnu/bits/huge_valf.h \
+ /usr/include/x86_64-linux-gnu/bits/huge_vall.h \
+ /usr/include/x86_64-linux-gnu/bits/inf.h \
+ /usr/include/x86_64-linux-gnu/bits/nan.h \
+ /usr/include/x86_64-linux-gnu/bits/mathdef.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+ /usr/include/x86_64-linux-gnu/bits/mathinline.h /usr/include/stdio.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6.1/include/stddef.h \
+ /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
+ /usr/include/x86_64-linux-gnu/sys/types.h /usr/include/time.h \
+ /usr/include/x86_64-linux-gnu/sys/select.h \
+ /usr/include/x86_64-linux-gnu/bits/select.h \
+ /usr/include/x86_64-linux-gnu/bits/sigset.h \
+ /usr/include/x86_64-linux-gnu/bits/time.h \
+ /usr/include/x86_64-linux-gnu/sys/sysmacros.h \
+ /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h /usr/include/alloca.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib.h /usr/include/string.h \
+ /usr/include/x86_64-linux-gnu/bits/string.h \
+ /usr/include/x86_64-linux-gnu/bits/string2.h \
+ /usr/include/x86_64-linux-gnu/bits/string3.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6.1/include-fixed/limits.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6.1/include-fixed/syslimits.h \
+ /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/local_lim.h \
+ /usr/include/linux/limits.h \
+ /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
+ ../../src/unur_typedefs.h ../../src/unur_struct.h \
+ ../../src/utils/slist_struct.h ../../src/utils/string_struct.h \
+ ../../src/parser/functparser_struct.h ../../src/urng/urng_struct.h \
+ ../../src/distr/distr_struct.h ../../src/methods/x_gen_struct.h \
+ ../../src/urng/urng_source.h ../../src/unur_cookies.h \
+ ../../src/utils/debug.h ../../src/utils/debug_source.h \
+ ../../src/utils/error.h ../../src/utils/error_source.h \
+ ../../src/utils/stream.h ../../src/utils/stream_source.h \
+ ../../src/utils/unur_errno.h ../../src/utils/unur_fp_source.h \
+ ../../src/utils/unur_fp_const_source.h ../../src/utils/umath.h \
+ ../../src/utils/umath_source.h ../../src/utils/unur_math_source.h \
+ ../../src/utils/vector_source.h ../../src/utils/string_source.h \
+ ../../src/utils/umalloc_source.h ../../src/utils/slist.h \
+ ../../src/methods/unur_methods_source.h ../../src/methods/x_gen.h \
+ parser_source.h parser.h ../../src/urng/urng.h \
+ ../../src/distr/distr_source.h ../../src/distr/distr.h \
+ ../../src/distr/cemp.h ../../src/distr/cont.h ../../src/distr/corder.h \
+ ../../src/distr/cvemp.h ../../src/distr/discr.h \
+ ../../src/distributions/unur_distributions.h \
+ ../../src/distributions/unur_stddistr.h ../../src/methods/arou.h \
+ ../../src/methods/ars.h ../../src/methods/auto.h \
+ ../../src/methods/cstd.h ../../src/methods/dari.h \
+ ../../src/methods/dau.h ../../src/methods/dgt.h \
+ ../../src/methods/dsrou.h ../../src/methods/dss.h \
+ ../../src/methods/dstd.h ../../src/methods/empk.h \
+ ../../src/methods/empl.h ../../src/methods/gibbs.h \
+ ../../src/methods/hinv.h ../../src/methods/hist.h \
+ ../../src/methods/hitro.h ../../src/methods/hrb.h \
+ ../../src/methods/hrd.h ../../src/methods/hri.h ../../src/methods/itdr.h \
+ ../../src/methods/mcorr.h ../../src/methods/mvstd.h \
+ ../../src/methods/mvtdr.h ../../src/methods/ninv.h \
+ ../../src/methods/norta.h ../../src/methods/nrou.h \
+ ../../src/methods/pinv.h ../../src/methods/srou.h \
+ ../../src/methods/ssr.h ../../src/methods/tabl.h ../../src/methods/tdr.h \
+ ../../src/methods/unif.h ../../src/methods/utdr.h \
+ ../../src/methods/vempk.h ../../src/methods/vnrou.h \
+ stringparser_lists.ch
+
+/usr/lib/gcc/x86_64-linux-gnu/4.6.1/include/stdarg.h:
+
+/usr/include/ctype.h:
+
+/usr/include/features.h:
+
+/usr/include/x86_64-linux-gnu/bits/predefs.h:
+
+/usr/include/x86_64-linux-gnu/sys/cdefs.h:
+
+/usr/include/x86_64-linux-gnu/bits/wordsize.h:
+
+/usr/include/x86_64-linux-gnu/gnu/stubs.h:
+
+/usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
+
+/usr/include/x86_64-linux-gnu/bits/types.h:
+
+/usr/include/x86_64-linux-gnu/bits/typesizes.h:
+
+/usr/include/endian.h:
+
+/usr/include/x86_64-linux-gnu/bits/endian.h:
+
+/usr/include/x86_64-linux-gnu/bits/byteswap.h:
+
+/usr/include/xlocale.h:
+
+../../src/unur_source.h:
+
+../../config.h:
+
+../../src/unuran_config.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.6.1/include/float.h:
+
+/usr/include/math.h:
+
+/usr/include/x86_64-linux-gnu/bits/huge_val.h:
+
+/usr/include/x86_64-linux-gnu/bits/huge_valf.h:
+
+/usr/include/x86_64-linux-gnu/bits/huge_vall.h:
+
+/usr/include/x86_64-linux-gnu/bits/inf.h:
+
+/usr/include/x86_64-linux-gnu/bits/nan.h:
+
+/usr/include/x86_64-linux-gnu/bits/mathdef.h:
+
+/usr/include/x86_64-linux-gnu/bits/mathcalls.h:
+
+/usr/include/x86_64-linux-gnu/bits/mathinline.h:
+
+/usr/include/stdio.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.6.1/include/stddef.h:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
+
+/usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:
+
+/usr/include/stdlib.h:
+
+/usr/include/x86_64-linux-gnu/bits/waitflags.h:
+
+/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+
+/usr/include/x86_64-linux-gnu/sys/types.h:
+
+/usr/include/time.h:
+
+/usr/include/x86_64-linux-gnu/sys/select.h:
+
+/usr/include/x86_64-linux-gnu/bits/select.h:
+
+/usr/include/x86_64-linux-gnu/bits/sigset.h:
+
+/usr/include/x86_64-linux-gnu/bits/time.h:
+
+/usr/include/x86_64-linux-gnu/sys/sysmacros.h:
+
+/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
+
+/usr/include/alloca.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdlib.h:
+
+/usr/include/string.h:
+
+/usr/include/x86_64-linux-gnu/bits/string.h:
+
+/usr/include/x86_64-linux-gnu/bits/string2.h:
+
+/usr/include/x86_64-linux-gnu/bits/string3.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.6.1/include-fixed/limits.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.6.1/include-fixed/syslimits.h:
+
+/usr/include/limits.h:
+
+/usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
+
+/usr/include/x86_64-linux-gnu/bits/local_lim.h:
+
+/usr/include/linux/limits.h:
+
+/usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
+
+../../src/unur_typedefs.h:
+
+../../src/unur_struct.h:
+
+../../src/utils/slist_struct.h:
+
+../../src/utils/string_struct.h:
+
+../../src/parser/functparser_struct.h:
+
+../../src/urng/urng_struct.h:
+
+../../src/distr/distr_struct.h:
+
+../../src/methods/x_gen_struct.h:
+
+../../src/urng/urng_source.h:
+
+../../src/unur_cookies.h:
+
+../../src/utils/debug.h:
+
+../../src/utils/debug_source.h:
+
+../../src/utils/error.h:
+
+../../src/utils/error_source.h:
+
+../../src/utils/stream.h:
+
+../../src/utils/stream_source.h:
+
+../../src/utils/unur_errno.h:
+
+../../src/utils/unur_fp_source.h:
+
+../../src/utils/unur_fp_const_source.h:
+
+../../src/utils/umath.h:
+
+../../src/utils/umath_source.h:
+
+../../src/utils/unur_math_source.h:
+
+../../src/utils/vector_source.h:
+
+../../src/utils/string_source.h:
+
+../../src/utils/umalloc_source.h:
+
+../../src/utils/slist.h:
+
+../../src/methods/unur_methods_source.h:
+
+../../src/methods/x_gen.h:
+
+parser_source.h:
+
+parser.h:
+
+../../src/urng/urng.h:
+
+../../src/distr/distr_source.h:
+
+../../src/distr/distr.h:
+
+../../src/distr/cemp.h:
+
+../../src/distr/cont.h:
+
+../../src/distr/corder.h:
+
+../../src/distr/cvemp.h:
+
+../../src/distr/discr.h:
+
+../../src/distributions/unur_distributions.h:
+
+../../src/distributions/unur_stddistr.h:
+
+../../src/methods/arou.h:
+
+../../src/methods/ars.h:
+
+../../src/methods/auto.h:
+
+../../src/methods/cstd.h:
+
+../../src/methods/dari.h:
+
+../../src/methods/dau.h:
+
+../../src/methods/dgt.h:
+
+../../src/methods/dsrou.h:
+
+../../src/methods/dss.h:
+
+../../src/methods/dstd.h:
+
+../../src/methods/empk.h:
+
+../../src/methods/empl.h:
+
+../../src/methods/gibbs.h:
+
+../../src/methods/hinv.h:
+
+../../src/methods/hist.h:
+
+../../src/methods/hitro.h:
+
+../../src/methods/hrb.h:
+
+../../src/methods/hrd.h:
+
+../../src/methods/hri.h:
+
+../../src/methods/itdr.h:
+
+../../src/methods/mcorr.h:
+
+../../src/methods/mvstd.h:
+
+../../src/methods/mvtdr.h:
+
+../../src/methods/ninv.h:
+
+../../src/methods/norta.h:
+
+../../src/methods/nrou.h:
+
+../../src/methods/pinv.h:
+
+../../src/methods/srou.h:
+
+../../src/methods/ssr.h:
+
+../../src/methods/tabl.h:
+
+../../src/methods/tdr.h:
+
+../../src/methods/unif.h:
+
+../../src/methods/utdr.h:
+
+../../src/methods/vempk.h:
+
+../../src/methods/vnrou.h:
+
+stringparser_lists.ch:

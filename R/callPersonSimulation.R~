@@ -1,0 +1,2 @@
+callPersonSimulation <-
+function() .C("callPersonSimulation",as.double(1),as.integer(1),out=as.double(1:2),as.integer(2),PACKAGE="microsimulation")$out

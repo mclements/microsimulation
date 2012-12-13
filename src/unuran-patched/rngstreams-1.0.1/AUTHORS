@@ -1,0 +1,13 @@
+The RngStreams library is written by
+
+	Pierre L'Ecuyer
+	Richard Simard
+
+see http://www.iro.umontreal.ca/~simardr/indexe.html
+for a C++ and a Java version and for more software.
+
+GNU-style Package compiled and maintained by 
+
+	Josef Leydold (leydold@statistik.wu-wien.ac.at)
+
+

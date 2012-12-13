@@ -1,0 +1,7 @@
+PKG_CXXFLAGS = -I. -I.. -std=c++0x
+PKG_CFLAGS=-Iunuran-patched -I. -DHAVE_CONFIG_H
+
+##SOURCES = $(wildcard */*.c */*/*.c */*/*.c)
+SOURCES = $(wildcard */*.c */*/*.c */rngstreams-1.0.1/src/*.c)
+     
+OBJECTS = event-r.o person-r.o ssim.o unuran-r.o $(SOURCES:.c=.o)

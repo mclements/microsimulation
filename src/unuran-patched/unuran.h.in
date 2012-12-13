@@ -1,0 +1,203 @@
+/*****************************************************************************
+ *                                                                           *
+ *          UNU.RAN -- Universal Non-Uniform Random number generator         *
+ *                                                                           *
+ *****************************************************************************
+ *                                                                           *
+ *   FILE: unuran.h                                                          *
+ *                                                                           *
+ *   PURPOSE:                                                                *
+ *         defines macros and declares structures and function prototypes    *
+ *         for all UNU.RAN methods                                           *
+ *                                                                           *
+ *****************************************************************************
+ *                                                                           *
+ *   Copyright (c) 2000-2006 Wolfgang Hoermann and Josef Leydold             *
+ *   Department of Statistics and Mathematics, WU Wien, Austria              *
+ *                                                                           *
+ *   This program is free software; you can redistribute it and/or modify    *
+ *   it under the terms of the GNU General Public License as published by    *
+ *   the Free Software Foundation; either version 2 of the License, or       *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   This program is distributed in the hope that it will be useful,         *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ *   GNU General Public License for more details.                            *
+ *                                                                           *
+ *   You should have received a copy of the GNU General Public License       *
+ *   along with this program; if not, write to the                           *
+ *   Free Software Foundation, Inc.,                                         *
+ *   59 Temple Place, Suite 330, Boston, MA 02111-1307, USA                  *
+ *                                                                           *
+ *****************************************************************************/
+
+/*---------------------------------------------------------------------------*/
+#ifndef UNURAN_H_IN_SEEN
+#define UNURAN_H_IN_SEEN
+/*---------------------------------------------------------------------------*/
+
+/*****************************************************************************/
+/**  Basic header files                                                     **/
+/*****************************************************************************/
+
+/*---------------------------------------------------------------------------*/
+/* basic header files */
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+/*****************************************************************************/
+/**  Typedefs                                                               **/
+/*****************************************************************************/
+
+#include <unur_typedefs.h>
+
+/*****************************************************************************/
+/**  Declarations for uniform random number generators                      **/
+/*****************************************************************************/
+
+#include <urng/urng.h>
+#include <uniform/urng_builtin.h>
+#include <uniform/urng_fvoid.h>
+#include <uniform/urng_randomshift.h>
+
+/* The following are now separate header files! */
+/* #include <uniform/urng_gsl.h>                */
+/* #include <uniform/urng_gslqrng.h>            */
+/* #include <uniform/urng_prng.h>               */
+/* #include <uniform/urng_rngstreams.h>         */
+
+/*****************************************************************************/
+/**  Function prototypes for manipulating distribution objects              **/
+/*****************************************************************************/
+
+#include <distr/distr.h>
+#include <distr/cemp.h>
+#include <distr/cont.h>
+#include <distr/cxtrans.h>
+#include <distr/corder.h>
+#include <distr/cvec.h>
+#include <distr/condi.h>
+#include <distr/cvemp.h>
+#include <distr/discr.h>
+#include <distr/matr.h>
+
+/*****************************************************************************/
+/**  Function prototypes for manipulating generator objects                 **/
+/*****************************************************************************/
+
+/* automatically selected method */
+#include <methods/auto.h>
+
+/* methods for discrete distributions */
+#include <methods/dari.h>
+#include <methods/dau.h>
+#include <methods/dgt.h>
+#include <methods/dsrou.h>
+#include <methods/dss.h>
+
+/* methods for continuous distributions */
+#include <methods/arou.h>
+#include <methods/ars.h>
+#include <methods/hinv.h>
+#include <methods/hrb.h>
+#include <methods/hrd.h>
+#include <methods/hri.h>
+#include <methods/itdr.h>
+#include <methods/mcorr.h>
+#include <methods/ninv.h>
+#include <methods/nrou.h>
+#include <methods/pinv.h>
+#include <methods/srou.h>
+#include <methods/ssr.h>
+#include <methods/tabl.h>
+#include <methods/tdr.h>
+#include <methods/utdr.h>
+#include <methods/empk.h>
+#include <methods/empl.h>
+#include <methods/hist.h>
+
+/* methods for continuous multivariate distributions */
+#include <methods/mvtdr.h>
+#include <methods/norta.h>
+#include <methods/vempk.h>
+#include <methods/vnrou.h>
+
+/* methods for Markov chain sampler */
+#include <methods/gibbs.h>
+#include <methods/hitro.h>
+
+/* wrapper for special generators for standard distributions */
+#include <methods/cstd.h>     /* continuous */
+#include <methods/dstd.h>     /* discrete   */
+#include <methods/mvstd.h>    /* multivariate continuous */
+
+/* meta methods */
+#include <methods/mixt.h>
+
+/* wrapper for external random variate generators */
+#include <methods/cext.h>     /* continuous */
+#include <methods/dext.h>     /* discrete */
+
+/* wrapper for uniform random number generator */
+#include <methods/unif.h>
+
+/*****************************************************************************/
+/**  Deprecated routines                                                    **/
+/*****************************************************************************/
+
+#include <distr/deprecated_distr.h>
+#include <methods/deprecated_methods.h>
+#include <methods/deprecated_tdrgw.h>
+#include <methods/deprecated_vmt.h>
+
+/*****************************************************************************/
+/**  String parser                                                          **/
+/*****************************************************************************/
+
+#include <parser/parser.h>
+
+/*****************************************************************************/
+/**  Invoke generators                                                      **/  
+/*****************************************************************************/
+
+#include <methods/x_gen.h>
+
+/*****************************************************************************/
+/**  Distributions                                                          **/
+/*****************************************************************************/
+
+#include <distributions/unur_distributions.h>
+
+/*****************************************************************************/
+/**  Debugging and Error messages                                           **/
+/*****************************************************************************/
+
+#include <utils/stream.h>
+#include <utils/debug.h>
+#include <utils/error.h>
+#include <utils/unur_errno.h>
+
+/*****************************************************************************/
+/**  Additional header files for further function prototypes                **/
+/*****************************************************************************/
+
+#include <utils/umath.h>
+#include <utils/slist.h>
+
+
+#ifndef TRUE
+#define TRUE   (1)
+#endif
+
+#ifndef FALSE
+#define FALSE  (0)
+#endif
+
+/*---------------------------------------------------------------------------*/
+#endif  /* UNURAN_H_IN_SEEN */
+/*---------------------------------------------------------------------------*/
+
+
+

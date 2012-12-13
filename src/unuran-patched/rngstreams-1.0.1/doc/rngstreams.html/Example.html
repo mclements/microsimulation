@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>Example - RngStreams User Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="RngStreams User Manual">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Interface.html#Interface" title="Interface">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This manual is for RngStreams, a package for generating
+multiple independent streams of pseudo-random numbers.
+
+Copyright (C) 2003 Pierre L'Ecuyer, DIRO, University of Montreal.
+
+     Permission is granted to make and distribute verbatim copies of
+     this manual provided the copyright notice and this permission
+     notice are preserved on all copies.
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Example"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Interface.html#Interface">Interface</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">3 Example</h2>
+
+<pre class="example">     #include &lt;stdio.h&gt;
+     #include "RngStream.h"
+     
+     int main (void)
+     {
+        double x;
+        int  i;
+        RngStream gen;
+     
+        /* get a stream */
+        gen = RngStream_CreateStream ("generator_1");
+     
+        /* sample from generator */
+        for (i=0; i&lt;10; i++) {
+           x = RngStream_RandU01 (gen);
+           printf ("%f\n", x );
+        }
+     
+        return 0;
+     }
+     
+</pre>
+<!--  -->
+</body></html>
+

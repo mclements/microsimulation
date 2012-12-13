@@ -1,0 +1,221 @@
+<html lang="en">
+<head>
+<title>Interface - RngStreams User Manual</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="RngStreams User Manual">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Install.html#Install" title="Install">
+<link rel="next" href="Example.html#Example" title="Example">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This manual is for RngStreams, a package for generating
+multiple independent streams of pseudo-random numbers.
+
+Copyright (C) 2003 Pierre L'Ecuyer, DIRO, University of Montreal.
+
+     Permission is granted to make and distribute verbatim copies of
+     this manual provided the copyright notice and this permission
+     notice are preserved on all copies.
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Interface"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Example.html#Example">Example</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Install.html#Install">Install</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">2 Interface to the package RngStreams</h2>
+
+<div class="defun">
+&mdash; Data type: <b>RngStream</b><var><a name="index-RngStream-1"></a></var><br>
+<blockquote><p>Contains the state of a stream from the present module. 
+It is defined as
+
+     <pre class="verbatim">     
+     typedef struct RngStream_InfoState * RngStream;
+     
+     struct RngStream_InfoState {
+        double Cg[6], Bg[6], Ig[6];
+        int Anti;
+        int IncPrec;
+        char *name;
+     };
+</pre>
+
+     <p>The arrays <code>Ig</code>, <code>Bg</code>, and <code>Cg</code> contain the initial state,
+the starting point of the current substream,
+and the current state, respectively. 
+This stream generates antithetic variates if
+<code>Anti</code>
+ != 0. 
+The precision of the output numbers is increased if
+<code>IncPrec</code>
+ != 0. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_SetPackageSeed</b> (<var>unsigned long seed</var>[<var>6</var>])<var><a name="index-RngStream_005fSetPackageSeed-2"></a></var><br>
+<blockquote><p>Sets the initial seed of the package <tt>RngStreams</tt> to the
+six integers in the vector <var>seed</var>. 
+This will be the seed (initial state) of the first stream. 
+If this procedure is not called, the default initial seed
+is <code>{12345, 12345, 12345, 12345, 12345, 12345}</code>. 
+If it is called, the first 3 values of the seed must all be
+less than <code>m_1 = 4294967087</code>, and not all <code>0</code>;
+and the last 3 values
+must all be less than <code>m_2 = 4294944443</code>, and not all <code>0</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: RngStream <b>RngStream_CreateStream</b> (<var>const char name</var>[])<var><a name="index-RngStream_005fCreateStream-3"></a></var><br>
+<blockquote><p>Creates and returns a new stream with identifier <var>name</var>,
+whose state variable is of type <code>RngStream_InfoState</code>. 
+This procedure reserves space to keep the information relative to
+the <code>RngStream</code>, initializes its seed <code>Ig</code>,
+sets <code>Bg</code> and <code>Cg</code> equal to <code>Ig</code>, sets its antithetic and
+precision  switches to <code>0</code>. 
+The seed <code>Ig</code> is equal to the initial seed of the package given by
+<code>RngStream_SetPackageSeed</code> if this is the first stream created,
+otherwise it is <code>Z</code> steps ahead of that of the most recently
+created stream. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_DeleteStream</b> (<var>RngStream *pg</var>)<var><a name="index-RngStream_005fDeleteStream-4"></a></var><br>
+<blockquote><p>Deletes the stream <var>*pg</var> created previously
+by <code>RngStream_CreateStream</code>, and recovers its memory. 
+Otherwise, does nothing. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_ResetStartStream</b> (<var>RngStream g</var>)<var><a name="index-RngStream_005fResetStartStream-5"></a></var><br>
+<blockquote><p>Reinitializes the stream <var>g</var> to its initial state:
+<code>Cg</code> and <code>Bg</code> are set to <code>Ig</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_ResetStartSubstream</b> (<var>RngStream g</var>)<var><a name="index-RngStream_005fResetStartSubstream-6"></a></var><br>
+<blockquote><p>Reinitializes the stream <var>g</var> to the beginning of its current
+substream: <code>Cg</code> is set to <var>Bg</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_ResetNextSubstream</b> (<var>RngStream g</var>)<var><a name="index-RngStream_005fResetNextSubstream-7"></a></var><br>
+<blockquote><p>Reinitializes the stream <var>g</var> to the beginning of its next
+substream: <code>Ng</code> is computed, and
+<code>Cg</code> and <code>Bg</code> are set to <code>Ng</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_SetAntithetic</b> (<var>RngStream g, int a</var>)<var><a name="index-RngStream_005fSetAntithetic-8"></a></var><br>
+<blockquote><p>If <var>a</var>
+ != 0,
+ the stream  <var>g</var> will start generating
+antithetic variates, i.e., <i>1-U</i> instead of <i>U</i>, until this method is
+called again with <var>a</var> = 0. 
+By default, the streams are created with <var>a</var> = 0. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_IncreasedPrecis</b> (<var>RngStream g, int incp</var>)<var><a name="index-RngStream_005fIncreasedPrecis-9"></a></var><br>
+<blockquote><p>After calling this procedure with <var>incp</var>
+ != 0,
+ each call
+ (direct or indirect) to <code>RngStream_RandU01</code> for stream  <var>g</var>
+will advance the state of the stream by 2 steps instead of 1, and will
+return a number with (roughly) 53 bits of precision instead of 32 bits. 
+More specifically, in the non-antithetic case,
+when the precision is increased, the instruction
+<code>x = RngStream_RandU01(g)</code>
+is equivalent to
+<code>x = (RngStream_RandU01(g) + RngStream_RandU01(g) * fact) % 1.0</code>
+where the constant <code>fact</code> is equal to
+2^(-24). 
+This also applies when calling <code>RngStream_RandU01</code> indirectly
+(e.g., by calling <code>RngStream_RandInt</code>, etc.). 
+By default, or if this procedure is called again with <var>incp</var> = 0,
+each call to <code>RngStream_RandU01</code> for stream <var>g</var>
+advances the state by 1 step and returns a
+number with 32 bits of precision. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_SetSeed</b> (<var>RngStream g, unsigned long seed</var>[<var>6</var>])<var><a name="index-RngStream_005fSetSeed-10"></a></var><br>
+<blockquote><p>Sets the initial seed <code>Ig</code> of stream  <var>g</var>
+to the vector <var>seed</var>.  This vector must satisfy the same
+conditions as in <code>RngStream_SetPackageSeed</code>. 
+The stream is then reset to this initial seed. 
+The states and seeds of the other streams are not modified. 
+As a result, after calling this procedure, the initial seeds
+of the streams are no longer spaced <code>Z</code> values apart. 
+We discourage the use of this procedure. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_AdvanceState</b> (<var>RngStream g, long e, long c</var>)<var><a name="index-RngStream_005fAdvanceState-11"></a></var><br>
+<blockquote><p>Advances the state of stream  <var>g</var> by <i>k</i> values,
+without modifying the states of other streams (as in <code>RngStream_SetSeed</code>),
+nor the values of <code>Bg</code> and <code>Ig</code> associated with this stream. 
+If <var>e</var> &gt; 0, then <i>k</i> = 2^e + <var>c</var>;
+if <var>e</var> &lt; 0, then <i>k</i> =-2^-e + <var>c</var>;
+and if <var>e</var> = 0,  then <i>k</i> = <var>c</var>. 
+Note: <var>c</var> is allowed to take negative values. 
+We discourage the use of this procedure. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_GetState</b> (<var>RngStream g, unsigned long seed</var>[<var>6</var>])<var><a name="index-RngStream_005fGetState-12"></a></var><br>
+<blockquote><p>Returns in <var>seed</var>[] the current state <code>Cg</code> of stream  <var>g</var>. 
+This is convenient if we want to save the state for subsequent use. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_WriteState</b> (<var>RngStream g</var>)<var><a name="index-RngStream_005fWriteState-13"></a></var><br>
+<blockquote><p>Prints (to standard output) the current state of stream <var>g</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: void <b>RngStream_WriteStateFull</b> (<var>RngStream g</var>)<var><a name="index-RngStream_005fWriteStateFull-14"></a></var><br>
+<blockquote><p>Prints (to standard output) the name of stream <var>g</var> and the values
+of all its internal variables. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: double <b>RngStream_RandU01</b> (<var>RngStream g</var>)<var><a name="index-RngStream_005fRandU01-15"></a></var><br>
+<blockquote><p>Returns a (pseudo)random number from the uniform distribution
+over the interval (0,1), using stream <var>g</var>,
+after advancing the state by one step. 
+The returned number has 32 bits of precision in the sense that it is
+always a multiple of
+1/(2^32-208),
+unless <code>RngStream_IncreasedPrecis</code> has been called for this stream. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Library Function: long <b>RngStream_RandInt</b> (<var>RngStream g, long i, long j</var>)<var><a name="index-RngStream_005fRandInt-16"></a></var><br>
+<blockquote><p>Returns a (pseudo)random number from the discrete uniform
+distribution over the integers { <var>i</var>, <var>i</var>+1, <small class="dots">...</small>, <var>j</var> },
+using stream <var>g</var>. 
+Makes one call to <code>RngStream_RandU01</code>. 
+</p></blockquote></div>
+
+<!--  -->
+</body></html>
+

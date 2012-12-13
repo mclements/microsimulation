@@ -1,0 +1,253 @@
+This is rngstreams.info, produced by makeinfo version 4.11 from
+rngstreams.texi.
+
+This manual is for RngStreams, a package for generating multiple
+independent streams of pseudo-random numbers.
+
+Copyright (C) 2003 Pierre L'Ecuyer, DIRO, University of Montreal.
+
+     Permission is granted to make and distribute verbatim copies of
+     this manual provided the copyright notice and this permission
+     notice are preserved on all copies.
+
+INFO-DIR-SECTION Scientific software
+START-INFO-DIR-ENTRY
+* rngstreams: (RngStreams). Multiple independent streams of pseudo-random numbers
+END-INFO-DIR-ENTRY
+
+
+File: rngstreams.info,  Node: Top,  Next: Install,  Up: (dir)
+
+RngStreams - Multiple independent streams of pseudo-random numbers
+******************************************************************
+
+This manual is for RngStreams, a package for generating multiple
+independent streams of pseudo-random numbers.
+
+Copyright (C) 2003 Pierre L'Ecuyer, DIRO, University of Montreal.
+
+     Permission is granted to make and distribute verbatim copies of
+     this manual provided the copyright notice and this permission
+     notice are preserved on all copies.
+
+.......
+
+* Menu:
+
+* Install::   Install RngStreams
+* Interface:: Interface to the package RngStreams
+* Example::   Example
+
+
+File: rngstreams.info,  Node: Install,  Next: Interface,  Prev: Top,  Up: Top
+
+1 Installing RngStreams
+***********************
+
+To install the RngStreams package type
+
+     ./configure --prefix=<prefix_path>
+     make
+
+This should compile the library (`librngstreams.a') and an example
+program.
+
+To install the library type:
+
+     make install
+
+which installs
+
+     `<prefix_path>/lib/librngstreams.a',
+
+     `<prefix_path>/lib/librngstreams.so',
+
+     `<prefix_path>/include/Rngstream.h', and
+
+     `<prefix_path>/info/rngstreams.info'.
+
+If `--prefix' is omitted, then `/usr/local' is used as default.
+
+It is possible to remove these files by
+
+     make uninstall
+
+Documentation
+=============
+
+A manual can be found in directory `doc' in various formats, including
+PS, PDF, HTML, Info and plain text.
+
+Profiling and Verification
+==========================
+
+To compile and run two test programs type
+
+     make check
+
+
+File: rngstreams.info,  Node: Interface,  Next: Example,  Prev: Install,  Up: Top
+
+2 Interface to the package RngStreams
+*************************************
+
+ -- Data type: RngStream
+     Contains the state of a stream from the present module.  It is
+     defined as
+
+
+     typedef struct RngStream_InfoState * RngStream;
+
+     struct RngStream_InfoState {
+        double Cg[6], Bg[6], Ig[6];
+        int Anti;
+        int IncPrec;
+        char *name;
+     };
+
+     The arrays `Ig', `Bg', and `Cg' contain the initial state, the
+     starting point of the current substream, and the current state,
+     respectively.  This stream generates antithetic variates if `Anti'
+     != 0.  The precision of the output numbers is increased if
+     `IncPrec'  != 0.
+
+ -- Library Function: void RngStream_SetPackageSeed (unsigned long
+          SEED[6])
+     Sets the initial seed of the package RngStreams to the six
+     integers in the vector SEED.  This will be the seed (initial
+     state) of the first stream.  If this procedure is not called, the
+     default initial seed is `{12345, 12345, 12345, 12345, 12345,
+     12345}'.  If it is called, the first 3 values of the seed must all
+     be less than `m_1 = 4294967087', and not all `0'; and the last 3
+     values must all be less than `m_2 = 4294944443', and not all `0'.
+
+ -- Library Function: RngStream RngStream_CreateStream (const char
+          NAME[])
+     Creates and returns a new stream with identifier NAME, whose state
+     variable is of type `RngStream_InfoState'.  This procedure
+     reserves space to keep the information relative to the
+     `RngStream', initializes its seed `Ig', sets `Bg' and `Cg' equal
+     to `Ig', sets its antithetic and precision  switches to `0'.  The
+     seed `Ig' is equal to the initial seed of the package given by
+     `RngStream_SetPackageSeed' if this is the first stream created,
+     otherwise it is `Z' steps ahead of that of the most recently
+     created stream.
+
+ -- Library Function: void RngStream_DeleteStream (RngStream *PG)
+     Deletes the stream *PG created previously by
+     `RngStream_CreateStream', and recovers its memory.  Otherwise,
+     does nothing.
+
+ -- Library Function: void RngStream_ResetStartStream (RngStream G)
+     Reinitializes the stream G to its initial state: `Cg' and `Bg' are
+     set to `Ig'.
+
+ -- Library Function: void RngStream_ResetStartSubstream (RngStream G)
+     Reinitializes the stream G to the beginning of its current
+     substream: `Cg' is set to BG.
+
+ -- Library Function: void RngStream_ResetNextSubstream (RngStream G)
+     Reinitializes the stream G to the beginning of its next substream:
+     `Ng' is computed, and `Cg' and `Bg' are set to `Ng'.
+
+ -- Library Function: void RngStream_SetAntithetic (RngStream G, int A)
+     If A  != 0,  the stream  G will start generating antithetic
+     variates, i.e., 1-U instead of U, until this method is called
+     again with A = 0.  By default, the streams are created with A = 0.
+
+ -- Library Function: void RngStream_IncreasedPrecis (RngStream G, int
+          INCP)
+     After calling this procedure with INCP  != 0,  each call  (direct
+     or indirect) to `RngStream_RandU01' for stream  G will advance the
+     state of the stream by 2 steps instead of 1, and will return a
+     number with (roughly) 53 bits of precision instead of 32 bits.
+     More specifically, in the non-antithetic case, when the precision
+     is increased, the instruction `x = RngStream_RandU01(g)' is
+     equivalent to `x = (RngStream_RandU01(g) + RngStream_RandU01(g) *
+     fact) % 1.0' where the constant `fact' is equal to 2^(-24).  This
+     also applies when calling `RngStream_RandU01' indirectly (e.g., by
+     calling `RngStream_RandInt', etc.).  By default, or if this
+     procedure is called again with INCP = 0, each call to
+     `RngStream_RandU01' for stream G advances the state by 1 step and
+     returns a number with 32 bits of precision.
+
+ -- Library Function: void RngStream_SetSeed (RngStream G, unsigned
+          long SEED[6])
+     Sets the initial seed `Ig' of stream  G to the vector SEED.  This
+     vector must satisfy the same conditions as in
+     `RngStream_SetPackageSeed'.  The stream is then reset to this
+     initial seed.  The states and seeds of the other streams are not
+     modified.  As a result, after calling this procedure, the initial
+     seeds of the streams are no longer spaced `Z' values apart.  We
+     discourage the use of this procedure.
+
+ -- Library Function: void RngStream_AdvanceState (RngStream G, long E,
+          long C)
+     Advances the state of stream  G by k values, without modifying the
+     states of other streams (as in `RngStream_SetSeed'), nor the
+     values of `Bg' and `Ig' associated with this stream.  If E > 0,
+     then k = 2^e + C; if E < 0, then k =-2^-e + C; and if E = 0,  then
+     k = C.  Note: C is allowed to take negative values.  We discourage
+     the use of this procedure.
+
+ -- Library Function: void RngStream_GetState (RngStream G, unsigned
+          long SEED[6])
+     Returns in SEED[] the current state `Cg' of stream  G.  This is
+     convenient if we want to save the state for subsequent use.
+
+ -- Library Function: void RngStream_WriteState (RngStream G)
+     Prints (to standard output) the current state of stream G.
+
+ -- Library Function: void RngStream_WriteStateFull (RngStream G)
+     Prints (to standard output) the name of stream G and the values of
+     all its internal variables.
+
+ -- Library Function: double RngStream_RandU01 (RngStream G)
+     Returns a (pseudo)random number from the uniform distribution over
+     the interval (0,1), using stream G, after advancing the state by
+     one step.  The returned number has 32 bits of precision in the
+     sense that it is always a multiple of 1/(2^32-208), unless
+     `RngStream_IncreasedPrecis' has been called for this stream.
+
+ -- Library Function: long RngStream_RandInt (RngStream G, long I, long
+          J)
+     Returns a (pseudo)random number from the discrete uniform
+     distribution over the integers { I, I+1, ..., J }, using stream G.
+     Makes one call to `RngStream_RandU01'.
+
+
+File: rngstreams.info,  Node: Example,  Prev: Interface,  Up: Top
+
+3 Example
+*********
+
+     #include <stdio.h>
+     #include "RngStream.h"
+
+     int main (void)
+     {
+        double x;
+        int  i;
+        RngStream gen;
+
+        /* get a stream */
+        gen = RngStream_CreateStream ("generator_1");
+
+        /* sample from generator */
+        for (i=0; i<10; i++) {
+           x = RngStream_RandU01 (gen);
+           printf ("%f\n", x );
+        }
+
+        return 0;
+     }
+
+
+
+Tag Table:
+Node: Top599
+Node: Install1280
+Node: Interface2200
+Node: Example8351
+
+End Tag Table

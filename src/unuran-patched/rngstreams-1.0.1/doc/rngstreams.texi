@@ -1,0 +1,374 @@
+\input texinfo   @c -*-texinfo-*-
+
+@c This is the RngStreams-Documentation                 
+
+@c %**start of header
+@include version.texi
+@setfilename rngstreams.info
+@settitle  RngStreams User Manual
+@comment @afourpaper 
+@iftex
+@end iftex
+@paragraphindent 0
+@c %**end of header
+
+@copying
+This manual is for RngStreams, a package for generating 
+multiple independent streams of pseudo-random numbers.
+
+Copyright @copyright{} 2003 Pierre L'Ecuyer, DIRO, University of Montreal.
+
+@quotation
+Permission is granted to make and distribute verbatim
+copies of this manual provided the copyright notice and
+this permission notice are preserved on all copies.
+@end quotation     
+@end copying
+
+
+@dircategory Scientific software
+@direntry
+* rngstreams: (RngStreams). Multiple independent streams of pseudo-random numbers
+@end direntry
+
+
+@titlepage
+@title RngStreams
+@subtitle Multiple independent streams of pseudo-random numbers
+@subtitle Version: @value{VERSION}
+@subtitle Date: @value{UPDATED}
+
+@author Pierre L'Ecuyer
+@author Richard Simard
+@author E. Jack Chen
+@author W. David Kelton
+
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+@end titlepage
+
+@c ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+@c
+@c `Top' Node and Master Menu
+@c
+
+@node Top,       Install,         , (dir)     
+@c    node-name,    next, previous,    up
+@top RngStreams -- Multiple independent streams of pseudo-random numbers
+
+@c --------------------------------------------------------------------
+
+@ifnottex
+@insertcopying
+@end ifnottex
+
+.......
+
+@menu
+* Install::   Install RngStreams
+* Interface:: Interface to the package RngStreams
+* Example::   Example
+@end menu
+
+@c --------------------------------------------------------------------
+
+@node Install
+@chapter Installing RngStreams
+
+To install the RngStreams package type
+
+@example
+./configure --prefix=<prefix_path>
+make
+@end example
+
+This should compile the library (@file{librngstreams.a}) and an example program.
+
+To install the library type:
+
+@example
+make install
+@end example
+
+which installs 
+
+@itemize @w{}
+@item @file{<prefix_path>/lib/librngstreams.a},
+@item @file{<prefix_path>/lib/librngstreams.so},
+@item @file{<prefix_path>/include/Rngstream.h}, and
+@item @file{<prefix_path>/info/rngstreams.info}.
+@end itemize
+
+If @code{--prefix} is omitted, then @code{/usr/local} is used as
+default.
+
+It is possible to remove these files by
+
+@example
+make uninstall
+@end example
+
+@c ..............................................
+
+@unnumberedsec Documentation
+
+A manual can be found in directory @file{doc} in various formats, including
+PS, PDF, HTML, Info and plain text.
+
+@c ..............................................
+
+@unnumberedsec Profiling and Verification
+
+To compile and run two test programs type
+
+@example
+make check
+@end example
+
+@c -----------------------------------------------
+
+@node Interface
+@chapter Interface to the package RngStreams
+
+
+@deftp {Data type} RngStream
+Contains the state of a stream from the present module.
+It is defined as
+
+@verbatim
+typedef struct RngStream_InfoState * RngStream;
+
+struct RngStream_InfoState {
+   double Cg[6], Bg[6], Ig[6];
+   int Anti;
+   int IncPrec;
+   char *name;
+};
+@end verbatim
+
+The arrays @code{Ig}, @code{Bg}, and @code{Cg} contain the initial state, 
+the starting point of the current substream,
+and the current state, respectively.
+This stream generates antithetic variates if 
+@code{Anti} 
+@iftex
+@math{@neq 0}.
+@end iftex
+@ifnottex
+ != 0.
+@end ifnottex
+The precision of the output numbers is increased if 
+@code{IncPrec}
+@iftex
+@math{@neq 0}.
+@end iftex
+@ifnottex
+ != 0.
+@end ifnottex
+@end deftp
+
+
+@deftypefn{Library Function} void RngStream_SetPackageSeed (unsigned long @var{seed}[6])
+Sets the initial seed of the package @t{RngStreams} to the 
+six integers in the vector @var{seed}.
+This will be the seed (initial state) of the first stream.
+If this procedure is not called, the default initial seed
+is @code{@{12345, 12345, 12345, 12345, 12345, 12345@}}.
+If it is called, the first 3 values of the seed must all be
+less than @code{m_1 = 4294967087}, and not all @code{0};
+and the last 3 values 
+must all be less than @code{m_2 = 4294944443}, and not all @code{0}.
+@end deftypefn
+
+
+@deftypefn{Library Function} RngStream RngStream_CreateStream (const char @var{name}[])
+Creates and returns a new stream with identifier @var{name},
+whose state variable is of type @code{RngStream_InfoState}.
+This procedure reserves space to keep the information relative to
+the @code{RngStream}, initializes its seed @code{Ig},
+sets @code{Bg} and @code{Cg} equal to @code{Ig}, sets its antithetic and
+precision  switches to @code{0}.
+The seed @code{Ig} is equal to the initial seed of the package given by 
+@code{RngStream_SetPackageSeed} if this is the first stream created,
+otherwise it is @code{Z} steps ahead of that of the most recently
+created stream.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_DeleteStream (RngStream *@var{pg})
+Deletes the stream @var{*pg} created previously 
+by @code{RngStream_CreateStream}, and recovers its memory.
+Otherwise, does nothing. 
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_ResetStartStream (RngStream @var{g})
+Reinitializes the stream @var{g} to its initial state:
+@code{Cg} and @code{Bg} are set to @code{Ig}.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_ResetStartSubstream (RngStream @var{g})
+Reinitializes the stream @var{g} to the beginning of its current
+substream: @code{Cg} is set to @var{Bg}.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_ResetNextSubstream (RngStream @var{g})
+Reinitializes the stream @var{g} to the beginning of its next
+substream: @code{Ng} is computed, and
+@code{Cg} and @code{Bg} are set to @code{Ng}.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_SetAntithetic (RngStream @var{g}, int @var{a})
+If @var{a}
+@iftex
+@math{@neq 0},
+@end iftex
+@ifnottex
+ != 0,
+@end ifnottex
+ the stream  @var{g} will start generating 
+antithetic variates, i.e., @i{1-U} instead of @i{U}, until this method is
+called again with @var{a} = 0.
+By default, the streams are created with @var{a} = 0.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_IncreasedPrecis (RngStream @var{g}, int @var{incp})
+After calling this procedure with @var{incp} 
+@iftex
+@math{@neq 0},
+@end iftex
+@ifnottex
+ != 0,
+@end ifnottex
+ each call 
+ (direct or indirect) to @code{RngStream_RandU01} for stream  @var{g}
+will advance the state of the stream by 2 steps instead of 1, and will 
+return a number with (roughly) 53 bits of precision instead of 32 bits.
+More specifically, in the non-antithetic case,
+when the precision is increased, the instruction
+@code{x = RngStream_RandU01(g)}
+is equivalent to
+@code{x = (RngStream_RandU01(g) + RngStream_RandU01(g) * fact) % 1.0}
+where the constant @code{fact} is equal to 
+@iftex
+@tex
+$2^{-24}$.
+@end tex
+@end iftex
+@ifnottex
+2^(-24).
+@end ifnottex
+This also applies when calling @code{RngStream_RandU01} indirectly
+(e.g., by calling @code{RngStream_RandInt}, etc.).
+By default, or if this procedure is called again with @var{incp} = 0, 
+each call to @code{RngStream_RandU01} for stream @var{g} 
+advances the state by 1 step and returns a 
+number with 32 bits of precision.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_SetSeed (RngStream @var{g}, unsigned long @var{seed}[6])
+Sets the initial seed @code{Ig} of stream  @var{g}
+to the vector @var{seed}.  This vector must satisfy the same 
+conditions as in @code{RngStream_SetPackageSeed}.
+The stream is then reset to this initial seed.
+The states and seeds of the other streams are not modified.
+As a result, after calling this procedure, the initial seeds
+of the streams are no longer spaced @code{Z} values apart.
+We discourage the use of this procedure.  
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_AdvanceState (RngStream @var{g}, long @var{e}, long @var{c})
+Advances the state of stream  @var{g} by @i{k} values,
+without modifying the states of other streams (as in @code{RngStream_SetSeed}),
+nor the values of @code{Bg} and @code{Ig} associated with this stream.
+If @var{e} > 0, then @i{k} = @math{2^{e}} + @var{c}; 
+if @var{e} < 0, then @i{k} =@math{-2^{-e}} + @var{c};
+and if @var{e} = 0,  then @i{k} = @var{c}.
+Note: @var{c} is allowed to take negative values.
+We discourage the use of this procedure.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_GetState (RngStream @var{g}, unsigned long @var{seed}[6])
+Returns in @var{seed}[] the current state @code{Cg} of stream  @var{g}.
+This is convenient if we want to save the state for subsequent use.  
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_WriteState (RngStream @var{g})
+Prints (to standard output) the current state of stream @var{g}.
+@end deftypefn
+
+
+@deftypefn{Library Function} void RngStream_WriteStateFull (RngStream @var{g})
+Prints (to standard output) the name of stream @var{g} and the values
+of all its internal variables.
+@end deftypefn
+
+
+@deftypefn{Library Function} double RngStream_RandU01 (RngStream @var{g})
+Returns a (pseudo)random number from the uniform distribution
+over the interval (0,1), using stream @var{g}, 
+after advancing the state by one step.  
+The returned number has 32 bits of precision in the sense that it is
+always a multiple of 
+@iftex
+@tex
+$1/(2^{32}-208)$,
+@end tex
+@end iftex
+@ifnottex
+1/(2^32-208),
+@end ifnottex
+unless @code{RngStream_IncreasedPrecis} has been called for this stream.
+@end deftypefn
+
+
+@deftypefn{Library Function} long RngStream_RandInt (RngStream @var{g}, long @var{i}, long @var{j})
+Returns a (pseudo)random number from the discrete uniform 
+distribution over the integers @{ @var{i}, @var{i}+1, @dots{}, @var{j} @},
+using stream @var{g}.  
+Makes one call to @code{RngStream_RandU01}.
+@end deftypefn
+
+
+@c -----------------------------------------------
+
+@node Example
+@chapter Example
+
+@example
+#include <stdio.h>
+#include "RngStream.h"
+
+int main (void)
+@{
+   double x;
+   int  i;
+   RngStream gen;
+
+   /* get a stream */
+   gen = RngStream_CreateStream ("generator_1");
+
+   /* sample from generator */
+   for (i=0; i<10; i++) @{
+      x = RngStream_RandU01 (gen);
+      printf ("%f\n", x );
+   @}
+
+   return 0;
+@}   
+
+@end example
+
+@c -----------------------------------------------
+
+@bye
