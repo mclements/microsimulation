@@ -4,6 +4,6 @@ Title: What the package does (short line)
 Version: 1.3
 Date: 2012-11-01
 Author: Mark Clements
-Maintainer: Who to complain to <mark.clements@ki.se>
+Maintainer: <mark.clements@ki.se>
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
