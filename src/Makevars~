@@ -1,8 +1,0 @@
-PKG_LIBS = `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"`
-PKG_CXXFLAGS = -I.
-PKG_CFLAGS=-I. -DHAVE_CONFIG_H
-
-##SOURCES = $(wildcard */*.c */*/*.c */*/*.c)
-SOURCES = $(wildcard *.c */*.c */*/*.c)
-     
-OBJECTS = Rng_wrapper.o event-r.o person-r.o simple-example.o ssim.o $(SOURCES:.c=.o)
