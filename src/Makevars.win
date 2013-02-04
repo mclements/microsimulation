@@ -1,0 +1,11 @@
+
+## Use the R_HOME indirection to support installations of multiple R version
+PKG_LIBS = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()")
+
+PKG_CXXFLAGS = -I.
+PKG_CFLAGS=-I. -DHAVE_CONFIG_H
+
+##SOURCES = $(wildcard */*.c */*/*.c */*/*.c)
+SOURCES = $(wildcard *.c */*.c */*/*.c)
+     
+OBJECTS = Rng_wrapper.o microsimulation.o person-r.o ssim.o $(SOURCES:.c=.o)
