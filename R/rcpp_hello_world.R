@@ -85,20 +85,20 @@ BaseDiscreteEventSimulation <-
                 previousEventTime = "numeric"),
               methods = list(
                 scheduleAt = function(time, event) insert(time, event),
-                initialise = function() stop("VIRTUAL!"), 
+                init = function() stop("VIRTUAL!"), 
                 handleMessage = function(event) stop("VIRTUAL!"),
-                finalise = function() {},
+                final = function() {},
                 now = function() currentTime,
                 run = function() {
                   previousEventTime <<- 0.0
-                  initialise()
+                  init()
                   while(!empty()) {
                     event <- pop()
                     currentTime <<- attr(event, "time")
                     handleMessage(event)
                     previousEventTime <<- currentTime
                   }
-                  finalise()
+                  final()
                 }))
 
 RNGStream <- function(nextStream = TRUE) {
