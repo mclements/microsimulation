@@ -113,7 +113,7 @@ void Person::handleMessage(const cMessage* msg) {
   report["state"].push_back(stage);
   report["event"].push_back(msg->kind);
 
-  rng["1"]->set(); 
+  rng["NH"]->set(); 
 
   if (msg->kind == toDeath) {
     Sim::stop_simulation();
@@ -198,6 +198,7 @@ extern "C" {
     for (int i=0; i<6; i++) {
       seed[i]=(unsigned long)inseed2[i];
     }
+    //r_create_current_stream();
     RngStream_SetPackageSeed(seed);
     Person::resetPopulation();
     Person::rng["NH"] = new Rng();

@@ -3,7 +3,9 @@
 #ifndef RNGSTREAM_H
 #define RNGSTREAM_H
  
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct RngStream_InfoState * RngStream;
 
@@ -58,7 +60,10 @@ double RngStream_RandU01 (RngStream g);
 
 
 long RngStream_RandInt (RngStream g, long i, long j);
- 
+
+#ifdef __cplusplus
+}
+#endif 
 
 #endif
  

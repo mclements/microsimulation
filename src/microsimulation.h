@@ -22,9 +22,9 @@
  SSIM and the OMNET++ API. This is specialised for use as an R package
  (#includes and REprintf).
 
- It also provides two useful utility classes: Means for statistical
+ It also provides several utility classes: Means for statistical
  collection and Rpexp for piecewise constant exponential random number
- generation. Lastly, it provides a utility function rweibullHR().
+ generation. It also provides a utility function rweibullHR().
 
 */
 
@@ -33,26 +33,34 @@
 
 #include <R.h>
 #include <Rmath.h>
+#include <Rdefines.h>
+#include <R_ext/Random.h>
 #include "ssim.h"
-#include "Rng_wrapper.h"
+#include "RngStream.h"
 #include <string>
 #include <vector>
+
+#include <algorithm>
+#include <utility>
+#include <map>
+#include <Rcpp.h>
 
 //using namespace std;
 //using namespace ssim;
 using std::string;
 using std::vector;
+using std::map;
 using ssim::Time;
 using ssim::Sim;
 
 // should we use the ssim namespace?
 
-//#define WithRNG(rng,expr) (rng->set(), expr)
+#define WithRNG(rng,expr) (rng->set(), expr)
 
 /**
    @brief cMessage class for OMNET++ API compatibility.
    This provides a heavier message class than Sim::Event, with
-   short 'kind' and string 'name' attributes. 
+   short 'kind' and std::string 'name' attributes. 
    The events by default are scheduled using cProcess::scheduleAt(),
    and handled using cProcess::handleMessage() (as per OMNET++).
 */
@@ -204,7 +212,7 @@ public:
       i0 = (from >= t[n-1]) ? (n-1) : int(lower_bound(t.begin(), t.end(), from) - t.begin())-1;
       H0 = H[i0] + (from - t[i0])*h[i0];
     }
-    v = rexp(1.0) + H0;
+    v = R::rexp(1.0) + H0;
     i = (v >= H[n-1]) ? (n-1) : int(lower_bound(H.begin(), H.end(), v) - H.begin())-1;
     tstar = t[i]+(v-H[i])/h[i];
     return tstar;
@@ -217,8 +225,141 @@ public:
 
 
 /** 
-    Random Weibull distribution for a given shape, scale and hazard ratio
+    @brief Random Weibull distribution for a given shape, scale and hazard ratio
 */
 double rweibullHR(double shape, double scale, double hr);
+
+
+/** 
+    @brief C++ wrapper class for the RngStreams library. 
+    set() selects this random number stream.
+    nextSubstream() moves to the next sub-stream.
+    TODO: add other methods.
+*/
+class Rng {
+  public:
+    Rng(std::string n = "");
+    ~Rng();
+    void set();
+    void nextSubstream();
+    RngStream stream;
+};
+
+
+extern "C" { // functions that will be called from R
+
+  /** 
+      @brief A utility function to create the current_stream.
+      Used when initialising the microsimulation package in R.
+  */
+  void r_create_current_stream();
+  
+  /** 
+      @brief A utility function to remove the current_stream.
+      Used when finalising the microsimulation package in R.
+  */
+  void r_remove_current_stream();
+  
+  /** 
+      @brief Simple test of the random streams (with a stupid name)
+  */
+  void test_rstream2(double * x);
+  
+} // extern "C"
+
+
+template< class Tstate, class Tevent, class T >
+class EventReport {
+public:
+  void setPartition(const vector<T> partition) {
+    _partition = partition;
+    _max = * max_element(_partition.begin(), _partition.end());
+  }
+  void clear() {
+    _pt.clear();
+    _events.clear();
+    _prev.clear();
+    _partition.clear();
+  }
+  void add(const Tstate state, const Tevent event, const T lhs, const T rhs) {
+    typename vector< T >::iterator lo, it;
+    T itmax;
+    lo = lower_bound (_partition.begin(), _partition.end(), lhs);
+    if (lhs<*lo) lo -= 1;
+    itmax = rhs<_max ? rhs : _max; // truncates if outside of partition!
+    for (it=lo; (*it)<itmax; ++it) {
+      _pt[state][*it] += (*(it+1)<rhs ? (*(it+1)) : rhs) - ((*it)<lhs ? lhs : (*it));
+      if (lhs<=(*it) & (*it)<rhs) 
+	_prev[state][*it] += 1;
+    }
+    if (rhs<_max)
+      _events[state][event][*(it-1)] += 1;
+  }
+
+  SEXP out() {
+
+    vector<T> ptAge, ptPt;
+    vector<Tstate> ptState;
+    typename map<T,T>::iterator it;
+    typename map<Tstate, map<T,T> >::iterator it2;
+    for (it2=_pt.begin(); it2 != _pt.end(); ++it2) {
+      for (it=(*it2).second.begin(); it != (*it2).second.end(); ++it) {
+	ptState.push_back((*it2).first);
+	ptAge.push_back((*it).first);
+	ptPt.push_back((*it).second);
+      }
+    }
+    
+    vector<T> evAge;
+    vector<Tstate> evState;
+    vector<Tevent> evEvent;
+    vector<int> evCount;
+    typename map<T,int>::iterator itdi1;
+    typename map<Tevent, map<T,int> >::iterator itdi2;
+    typename map<Tstate, map<Tevent, map<T,int> > >::iterator itdi3;
+    for (itdi3=_events.begin(); itdi3 != _events.end(); ++itdi3) {
+      for (itdi2=(*itdi3).second.begin(); itdi2 != (*itdi3).second.end(); ++itdi2) {
+	for (itdi1=(*itdi2).second.begin(); itdi1 != (*itdi2).second.end(); ++itdi1) {
+	  evState.push_back((*itdi3).first);
+	  evEvent.push_back((*itdi2).first);
+	  evAge.push_back((*itdi1).first);
+	  evCount.push_back((*itdi1).second);
+	}
+      }
+    }
+    
+    typename map<Tstate, map<T,int> >::iterator itdi4;
+    vector<Tstate> prState;
+    vector<T> prAge;
+    vector<int> prCount;
+    for (itdi4=_prev.begin(); itdi4 != _prev.end(); ++itdi4) {
+      for (itdi1=(*itdi4).second.begin(); itdi1 != (*itdi4).second.end(); ++itdi1) {
+	prState.push_back((*itdi4).first);
+	prAge.push_back((*itdi1).first);
+	prCount.push_back((*itdi1).second);
+      }
+    }
+    
+    return Rcpp::List::create(Rcpp::Named("pt") = 
+			      Rcpp::DataFrame::create(Rcpp::Named("state") = ptState,
+						      Rcpp::Named("age") = ptAge,
+						      Rcpp::Named("pt") = ptPt),
+			      Rcpp::Named("events") = 
+			      Rcpp::DataFrame::create(Rcpp::Named("state") = evState,
+						      Rcpp::Named("event") = evEvent,
+						      Rcpp::Named("age") = evAge,
+						      Rcpp::Named("n") = evCount),
+			      Rcpp::Named("prev") = 
+			      Rcpp::DataFrame::create(Rcpp::Named("state") = prState,
+						      Rcpp::Named("age") = prAge,
+						      Rcpp::Named("n") = prCount));
+  }
+  
+  T _max;
+  vector<T> _partition;
+  map<Tstate, map<T, int> > _prev;
+  map<Tstate, map< T, T > > _pt;
+  map<Tstate, map<Tevent, map< T, int > > > _events;
+};
 
 #endif

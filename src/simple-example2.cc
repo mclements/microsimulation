@@ -1,5 +1,6 @@
 #include "microsimulation.h"
-#include <Rcpp.h>
+
+namespace simpleExample2 {
 
 using namespace std;
 
@@ -15,9 +16,10 @@ public:
   SimplePerson(const int i = 0) : id(i) {};
   void init();
   virtual void handleMessage(const cMessage* msg);
+  static EventReport<short,short,double> report;
 };
 
-map<string, vector<double> > report;
+  EventReport<short,short,double> SimplePerson::report;
 
 /** 
     Initialise a simulation run for an individual
@@ -28,10 +30,6 @@ void SimplePerson::init() {
   scheduleAt(R::rweibull(3.0,90.0),toCancer);
 }
 
-void Reporting(string name,double value)  {
-  report[name].push_back(value);
-}
-
 /** 
     Handle receiving self-messages
  */
@@ -39,11 +37,7 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 
   double dwellTime, pDx;
 
-  Reporting("id",id);
-  Reporting("startTime",previousEventTime);
-  Reporting("endtime", now());
-  Reporting("state", state);
-  Reporting("event", msg->kind);
+  SimplePerson::report.add(state,msg->kind,previousEventTime,now());
 
   switch(msg->kind) {
 
@@ -66,18 +60,27 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 
 } // handleMessage()
 
-
-RcppExport SEXP callSimplePerson(SEXP parms) {
+RcppExport SEXP callSimplePerson2(SEXP parms) {
   SimplePerson person;
   Rcpp::RNGScope scope;
   Rcpp::List parmsl(parms);
   int n = Rcpp::as<int>(parmsl["n"]);
+
+  SimplePerson::report.clear();
+  vector<double> ages;
+  for (double age=0.0; age<=100.0; age++) {
+    ages.push_back(age);
+  }
+  ages.push_back(1.0e+6);
+  SimplePerson::report.setPartition(ages);
+
   for (int i = 0; i < n; i++) {
     person = SimplePerson(i);
     Sim::create_process(&person);
     Sim::run_simulation();
     Sim::clear();
   }
-  return Rcpp::wrap(report);
+  return SimplePerson::report.out();
 } 
- 
+
+} // namespace simpleExample2
