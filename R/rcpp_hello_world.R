@@ -21,20 +21,37 @@ rcpp_hello_world <- function(){
 enum <- function(obj, labels)
   factor(obj, levels=0:(length(labels)-1), labels=labels)
 
-callPersonSimulation <- function(seed=rep(12345,6),
-                                 n=500) {
+RNGstate <- function() {
+  ## house-keeping for RNGStreams (see parallel::clusterSetRNGStream)
+  oldseed <- if (exists(".Random.seed", envir = .GlobalEnv, 
+                        inherits = FALSE)) 
+    get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  else NULL
+  reset <- function() {
+    if (!is.null(oldseed)) 
+      assign(".Random.seed", oldseed, envir = .GlobalEnv)
+    else rm(.Random.seed, envir = .GlobalEnv)
+  }
+  list(reset = reset)
+}
+  
+callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
+  state <- RNGstate()
+  RNGkind("user")
   stateT =c("Healthy","Localised","DxLocalised","LocallyAdvanced",
     "DxLocallyAdvanced","Metastatic","DxMetastatic","Death")
   eventT =c("toDeath", "toPCDeath", "toLocalised", "toDxLocalised",
 	      "toDxLocallyAdvanced",
 	      "toLocallyAdvanced", "toMetastatic", "toDxMetastatic")
   out <- .Call("callPersonSimulation",
-               as.integer(seed),
+               as.integer(rep(seed,length=6)), # magic
                list(n=as.integer(n)),
                PACKAGE="microsimulation")
   out <- transform(as.data.frame(out),
                    state=enum(state,stateT),
                    event=enum(event,eventT))
+  ## tidy up
+  state$reset()
   out
 }
 
@@ -48,6 +65,26 @@ callSimplePerson <- function(n=10) {
                    state=enum(state,stateT),
                    event=enum(event,eventT))
   out
+}
+
+callSimplePerson2 <- function(n=10) {
+  stateT <- c("Healthy","Cancer","Death")
+  eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
+  out <- .Call("callSimplePerson2",
+               parms=list(n=as.integer(n)),
+               PACKAGE="microsimulation")
+  out$events$state <- enum(out$events$state,stateT)
+  out$events$event <- enum(out$events$event,eventT)
+  out$pt$state <- enum(out$pt$state,stateT)
+  out$prev$state <- enum(out$prev$state,stateT)
+  out
+}
+
+
+.testPackage <- function() {
+  list(callSimplePerson(),
+       callPersonSimulation(n=10),
+       callSimplePerson2())
 }
 
 EventQueue <-
@@ -101,21 +138,33 @@ BaseDiscreteEventSimulation <-
                   final()
                 }))
 
-RNGStream <- function(nextStream = TRUE) {
-  current <- if (nextStream) nextRNGStream(.Random.seed) else .Random.seed
+RNGStream <- function(nextStream = TRUE, iseed = NULL) {
+  stopifnot(exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE) || !is.null(iseed))
+  oldseed <- if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+    get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  else NULL
+  if (RNGkind()[1] != "L'Ecuyer-CMRG") RNGkind("L'Ecuyer-CMRG")
+  if (!is.null(iseed)) set.seed(iseed)
+  current <- if (nextStream) parallel::nextRNGStream(.Random.seed) else .Random.seed
   .Random.seed <<- startOfStream <- startOfSubStream <- current
-  structure(list(open = function() .Random.seed <<- current,
+  structure(list(resetRNGkind = function() {
+    if (!is.null(oldseed)) 
+      assign(".Random.seed", oldseed, envir = .GlobalEnv)
+    else rm(.Random.seed, envir = .GlobalEnv)
+  },
+                 open = function() .Random.seed <<- current,
                  close = function() current <<- .Random.seed,
                  resetStream = function() .Random.seed <<- current <<- startOfSubStream <<- startOfStream,
                  resetSubStream = function() .Random.seed <<- current <<- startOfSubStream,
-                 nextSubStream = function() .Random.seed <<- current <<- startOfSubStream <<- nextRNGSubStream(startOfSubStream),
-                 nextStream = function() .Random.seed <<- current <<- startOfSubStream <<- startOfStream <<- nextRNGStream(startOfStream)),
+                 nextSubStream = function() .Random.seed <<- current <<- startOfSubStream <<- parallel::nextRNGSubStream(startOfSubStream),
+                 nextStream = function() .Random.seed <<- current <<- startOfSubStream <<- startOfStream <<- parallel::nextRNGStream(startOfStream)),
             class="RNGStream")
   }
 
 with.RNGStream <- function(stream,expr,...) {
   stream$open()
-  on.exit(stream$close())
-  eval(substitute(expr), enclos = parent.frame(), ...)
+  out <- eval(substitute(expr), enclos = parent.frame(), ...)
+  stream$close()
+  out
 }
 setOldClass("RNGStream")

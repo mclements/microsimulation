@@ -7,5 +7,6 @@ Author: Mark Clements
 Maintainer: <mark.clements@ki.se>
 Description: Microsimulation using discrete event simulation in R and C++
 License: GPL >= 2
-Depends: Rcpp (>= 0.10.2), methods, parallel
+Depends: Rcpp (>= 0.10.2), methods
+Imports: parallel
 LinkingTo: Rcpp
