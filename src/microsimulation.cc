@@ -52,6 +52,10 @@ void Rng::nextSubstream() {
   RngStream_ResetNextSubstream(stream);
 }
 
+void Rng::nextSubStream() {
+  nextSubstream();
+}
+
 extern "C" {
 
 void r_create_current_stream()
@@ -96,3 +100,18 @@ void test_rstream2(double * x) {
 }
 
 } // extern "C"
+
+
+double discountedInterval(double start, double end, double discountRate) {
+  if (discountRate == 0.0) return end - start;
+  //else if (start == 0.0) return (1.0 - (1.0+discountRate)^(-end)) / log(1.0+discountRate);
+  else return (pow(1.0+discountRate,-start) - pow(1.0+discountRate,-end)) / log(1.0+discountRate);
+}
+
+namespace R {
+  double rnormPos(double mean, double sd) {
+    double x;
+    while ((x=R::rnorm(mean,sd))<0.0) { }
+    return x;
+  }
+}

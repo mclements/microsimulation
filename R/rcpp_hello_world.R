@@ -21,8 +21,12 @@ rcpp_hello_world <- function(){
 enum <- function(obj, labels)
   factor(obj, levels=0:(length(labels)-1), labels=labels)
 
+"enum<-" <- function(obj, value) {
+  enum(obj,value)
+}
+
 RNGstate <- function() {
-  ## house-keeping for RNGStreams (see parallel::clusterSetRNGStream)
+  ## house-keeping for random streams (see parallel::clusterSetRNGStream)
   oldseed <- if (exists(".Random.seed", envir = .GlobalEnv, 
                         inherits = FALSE)) 
     get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -32,11 +36,11 @@ RNGstate <- function() {
       assign(".Random.seed", oldseed, envir = .GlobalEnv)
     else rm(.Random.seed, envir = .GlobalEnv)
   }
-  list(reset = reset)
+  list(oldseed = oldseed, reset = reset)
 }
   
 callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
-  state <- RNGstate()
+  state <- RNGstate(); on.exit(state$reset())
   RNGkind("user")
   stateT =c("Healthy","Localised","DxLocalised","LocallyAdvanced",
     "DxLocallyAdvanced","Metastatic","DxMetastatic","Death")
@@ -51,7 +55,6 @@ callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
                    state=enum(state,stateT),
                    event=enum(event,eventT))
   ## tidy up
-  state$reset()
   out
 }
 
@@ -73,10 +76,60 @@ callSimplePerson2 <- function(n=10) {
   out <- .Call("callSimplePerson2",
                parms=list(n=as.integer(n)),
                PACKAGE="microsimulation")
-  out$events$state <- enum(out$events$state,stateT)
-  out$events$event <- enum(out$events$event,eventT)
-  out$pt$state <- enum(out$pt$state,stateT)
-  out$prev$state <- enum(out$prev$state,stateT)
+  enum(out$events$state) <- stateT
+  enum(out$events$event) <- eventT
+  enum(out$pt$state) <- stateT
+  enum(out$prev$state) <- stateT
+  out
+}
+
+callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
+  screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
+               "screen60", "screen70")
+  stateT <- c("Healthy","Localised","Metastatic","ClinicalDiagnosis","ClinicalMetastaticDiagnosis","ScreenDiagnosis","ScreenMetastaticDiagnosis")
+  eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis","toClinicalMetastaticDiagnosis",
+              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis","toScreenMetastaticDiagnosis")
+  stopifnot(screen %in% screenT)
+  screenIndex <- which(screen == screenT) - 1
+  out <- .Call("callFhcrc",
+               parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
+                 screeningCompliance=as.double(screeningCompliance)),
+               PACKAGE="microsimulation")
+  enum(out$summary$events$state) <- stateT
+  enum(out$summary$events$event) <- eventT
+  enum(out$summary$pt$state) <- stateT
+  enum(out$summary$prev$state) <- stateT
+  enum(out$lifeHistories$state) <- stateT
+  enum(out$lifeHistories$event) <- eventT
+  out$lifeHistories <- data.frame(out$lifeHistories)
+  out$parameters <- data.frame(out$parameters)
+  out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT)
+  out$n <- n
+  out
+}
+
+callFhcrcTest <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
+  screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
+               "screen60", "screen70")
+  stateT <- c("Healthy","Localised","Metastatic","ClinicalDiagnosis","ClinicalMetastaticDiagnosis","ScreenDiagnosis","ScreenMetastaticDiagnosis")
+  eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis","toClinicalMetastaticDiagnosis",
+              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis","toScreenMetastaticDiagnosis")
+  stopifnot(screen %in% screenT)
+  screenIndex <- which(screen == screenT) - 1
+  out <- .Call("callFhcrcTest",
+               parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
+                 screeningCompliance=as.double(screeningCompliance)),
+               PACKAGE="microsimulation")
+  enum(out$summary$events$state1) <- stateT
+  enum(out$summary$events$event) <- eventT
+  enum(out$summary$pt$state1) <- stateT
+  enum(out$summary$prev$state1) <- stateT
+  enum(out$lifeHistories$state) <- stateT
+  enum(out$lifeHistories$event) <- eventT
+  out$lifeHistories <- data.frame(out$lifeHistories)
+  out$parameters <- data.frame(out$parameters)
+  out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT)
+  out$n <- n
   out
 }
 
