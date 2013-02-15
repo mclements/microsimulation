@@ -83,7 +83,7 @@ callSimplePerson2 <- function(n=10) {
   out
 }
 
-callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
+callFhcrcOld <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
                "screen60", "screen70")
   stateT <- c("Healthy","Localised","Metastatic","ClinicalDiagnosis","ClinicalMetastaticDiagnosis","ScreenDiagnosis","ScreenMetastaticDiagnosis")
@@ -108,7 +108,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   out
 }
 
-callFhcrcTest <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
+callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
+  state <- RNGstate(); on.exit(state$reset())
+  RNGkind("user")
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
                "screen60", "screen70")
   stateT <- c("Healthy","Localised","Metastatic")
@@ -116,18 +118,31 @@ callFhcrcTest <- function(n=10,screen="noScreening",nLifeHistories=10,screeningC
               "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
   stopifnot(screen %in% screenT)
+  stopifnot(is.integer(as.integer(n)))
+  stopifnot(is.integer(as.integer(nLifeHistories)))
+  stopifnot(is.double(as.double(screeningCompliance)))
   screenIndex <- which(screen == screenT) - 1
-  out <- .Call("callFhcrcTest",
+  out <- .Call("callFhcrc",
                parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
                  screeningCompliance=as.double(screeningCompliance)),
                PACKAGE="microsimulation")
-  enum(out$summary$events$state1) <- stateT
-  enum(out$summary$events$state2) <- diagnosisT
+  enum(out$summary$events$state[[1]]) <- stateT
+  enum(out$summary$events$state[[2]]) <- diagnosisT
   enum(out$summary$events$event) <- eventT
-  enum(out$summary$pt$state1) <- stateT
-  enum(out$summary$pt$state2) <- diagnosisT
-  enum(out$summary$prev$state1) <- stateT
-  enum(out$summary$prev$state2) <- diagnosisT
+  enum(out$summary$pt$state[[1]]) <- stateT
+  enum(out$summary$pt$state[[2]]) <- diagnosisT
+  enum(out$summary$prev$state[[1]]) <- stateT
+  enum(out$summary$prev$state[[2]]) <- diagnosisT
+  out$summary$pt <- with(out$summary$pt,
+                         data.frame(age = age, state = state[[1]],
+                                    dx = state[[2]], pt = pt))
+  out$summary$prev <- with(out$summary$prev,
+                           data.frame(age = age, state = state[[1]],
+                                      dx = state[[2]], n = n))
+  out$summary$events <- with(out$summary$events,
+                             data.frame(age = age, state = state[[1]],
+                                        event = event, 
+                                        dx = state[[2]], n = n))
   enum(out$lifeHistories$state) <- stateT
   enum(out$lifeHistories$dx) <- diagnosisT
   enum(out$lifeHistories$event) <- eventT

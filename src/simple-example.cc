@@ -66,12 +66,12 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 
 } // handleMessage()
 
-
 RcppExport SEXP vofv() {
-	vector< vector< short > > out;
-	out.push_back(vector<short>(2, 3));
-	out.push_back(vector<short>(2, 1));
-	return Rcpp::wrap(out);
+  using namespace Rcpp;
+  vector< vector< short > > in, out;
+  in.push_back(vector<short>(2,1));
+  in.push_back(vector<short>(2,3));
+  return Rcpp::List::create(transpose(in));
 }
 
 

@@ -277,6 +277,24 @@ extern "C" { // functions that will be called from R
 double discountedInterval(double start, double end, double discountRate);
 
 
+/** 
+    Function to transpose a vector of vectors.
+    This assumes that all inner vectors have the same size and
+    allocates space for the complete result in advance.
+    From  http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors
+*/
+template <class T>
+std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) {
+    std::vector<std::vector<T> > result(data[0].size(),
+                                          std::vector<T>(data.size()));
+    for (typename std::vector<T>::size_type i = 0; i < data[0].size(); i++) 
+        for (typename std::vector<T>::size_type j = 0; j < data.size(); j++) {
+            result[i][j] = data[j][i];
+        }
+    return result;
+}
+
+
 template< class Tstate, class Tevent, class T >
 class EventReport {
 
@@ -293,6 +311,61 @@ public:
     _prev.clear();
     _partition.clear();
   }
+
+  void add(const Tstate state1,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    state.push_back(state4);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
+  	   const Tstate state5,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    state.push_back(state4);
+    state.push_back(state5);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
+  	   const Tstate state5, const Tstate state6,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    state.push_back(state4);
+    state.push_back(state5);
+    state.push_back(state6);
+    add(state,event,lhs,rhs);
+  }
+
   void add(const state_t state, const Tevent event, const T lhs, const T rhs) {
     typename vector< T >::iterator lo, it;
     T itmax;
@@ -310,6 +383,8 @@ public:
 
   SEXP out() {
 
+    using namespace Rcpp;
+
     vector<T> ptAge, ptPt;
     vector<state_t> ptState;
     typename map<T,T>::iterator it;
@@ -321,6 +396,7 @@ public:
 	ptPt.push_back((*it).second);
       }
     }
+    ptState = transpose<Tstate>(ptState);
     
     vector<T> evAge;
     vector<state_t> evState;
@@ -339,6 +415,7 @@ public:
 	}
       }
     }
+    evState = transpose<Tstate>(evState);
     
     typename map<state_t, map<T,int> >::iterator itdi4;
     vector<state_t> prState;
@@ -351,20 +428,21 @@ public:
 	prCount.push_back((*itdi1).second);
       }
     }
+    prState = transpose<Tstate>(prState);
     
-    return Rcpp::List::create(Rcpp::Named("pt") = 
-			      Rcpp::List::create(Rcpp::Named("state") = ptState,
-						      Rcpp::Named("age") = ptAge,
-						      Rcpp::Named("pt") = ptPt),
-			      Rcpp::Named("events") = 
-			      Rcpp::List::create(Rcpp::Named("state") = evState,
-						      Rcpp::Named("event") = evEvent,
-						      Rcpp::Named("age") = evAge,
-						      Rcpp::Named("n") = evCount),
-			      Rcpp::Named("prev") = 
-			      Rcpp::List::create(Rcpp::Named("state") = prState,
-						      Rcpp::Named("age") = prAge,
-						      Rcpp::Named("n") = prCount));
+    return List::create(Named("pt") = 
+			DataFrame::create(Named("state") = ptState,
+				     Named("age") = ptAge,
+				     Named("pt") = ptPt),
+			Named("events") = 
+			DataFrame::create(Named("state") = evState,
+				     Named("event") = evEvent,
+				     Named("age") = evAge,
+				     Named("n") = evCount),
+			Named("prev") = 
+			DataFrame::create(Named("state") = prState,
+				     Named("age") = prAge,
+				     Named("n") = prCount));
   }
   
   T _max;

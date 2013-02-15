@@ -297,7 +297,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
 } // handleMessage()
 
-RcppExport SEXP callFhcrcTest(SEXP parms) {
+RcppExport SEXP callFhcrc(SEXP parms) {
   
   // declarations
   FhcrcPerson person;
