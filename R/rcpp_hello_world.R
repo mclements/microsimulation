@@ -111,9 +111,10 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
 callFhcrcTest <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
                "screen60", "screen70")
-  stateT <- c("Healthy","Localised","Metastatic","ClinicalDiagnosis","ClinicalMetastaticDiagnosis","ScreenDiagnosis","ScreenMetastaticDiagnosis")
-  eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis","toClinicalMetastaticDiagnosis",
-              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis","toScreenMetastaticDiagnosis")
+  stateT <- c("Healthy","Localised","Metastatic")
+  eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
+              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis")
+  diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
   stopifnot(screen %in% screenT)
   screenIndex <- which(screen == screenT) - 1
   out <- .Call("callFhcrcTest",
@@ -121,14 +122,18 @@ callFhcrcTest <- function(n=10,screen="noScreening",nLifeHistories=10,screeningC
                  screeningCompliance=as.double(screeningCompliance)),
                PACKAGE="microsimulation")
   enum(out$summary$events$state1) <- stateT
+  enum(out$summary$events$state2) <- diagnosisT
   enum(out$summary$events$event) <- eventT
   enum(out$summary$pt$state1) <- stateT
+  enum(out$summary$pt$state2) <- diagnosisT
   enum(out$summary$prev$state1) <- stateT
+  enum(out$summary$prev$state2) <- diagnosisT
   enum(out$lifeHistories$state) <- stateT
+  enum(out$lifeHistories$dx) <- diagnosisT
   enum(out$lifeHistories$event) <- eventT
   out$lifeHistories <- data.frame(out$lifeHistories)
   out$parameters <- data.frame(out$parameters)
-  out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT)
+  out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT)
   out$n <- n
   out
 }

@@ -5,5 +5,5 @@ PKG_CFLAGS=-I. -DHAVE_CONFIG_H
 ##SOURCES = $(wildcard */*.c */*/*.c */*/*.c)
 SOURCES = $(wildcard *.c */*.c */*/*.c)
      
-OBJECTS = microsimulation.o person-r.o simple-example.o simple-example2.o fhcrc-example.o fhcrc-test.o ssim.o $(SOURCES:.c=.o)
+OBJECTS = microsimulation.o person-r.o simple-example.o simple-example2.o fhcrc-example.o ssim.o $(SOURCES:.c=.o)
 ## OBJECTS = Rng_wrapper.o microsimulation.o person-r.o simple-example.o ssim.o $(SOURCES:.c=.o)
