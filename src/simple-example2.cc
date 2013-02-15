@@ -37,7 +37,7 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 
   double dwellTime, pDx;
 
-  SimplePerson::report.add(state,msg->kind,previousEventTime,now());
+  SimplePerson::report.add(vector<short>(1,state),msg->kind,previousEventTime,now());
 
   switch(msg->kind) {
 

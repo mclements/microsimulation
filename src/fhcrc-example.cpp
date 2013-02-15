@@ -20,8 +20,9 @@ namespace fhcrcTest {
   double screeningCompliance = 0.50;
   int nLifeHistories = 10;
   Rng * rngNh, * rngOther;
+  vector<short> stateTuple;
 
-  EventReportTwoStates<short,short,short,double> report;
+  EventReport<short,short,double> report;
   map<string, vector<double> > lifeHistories; 
   map<string, vector<double> > parameters;
 
@@ -181,7 +182,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double dwellTime, pDx;
 
   // record information (two states)
-  report.add(state,dx,msg->kind,previousEventTime,now());
+  stateTuple.clear();
+  stateTuple.push_back(state);
+  stateTuple.push_back(dx);
+  report.add(stateTuple,msg->kind,previousEventTime,now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);

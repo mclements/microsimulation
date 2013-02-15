@@ -276,8 +276,12 @@ extern "C" { // functions that will be called from R
   */
 double discountedInterval(double start, double end, double discountRate);
 
+
 template< class Tstate, class Tevent, class T >
 class EventReport {
+
+typedef vector<Tstate> state_t;
+
 public:
   void setPartition(const vector<T> partition) {
     _partition = partition;
@@ -289,7 +293,7 @@ public:
     _prev.clear();
     _partition.clear();
   }
-  void add(const Tstate state, const Tevent event, const T lhs, const T rhs) {
+  void add(const state_t state, const Tevent event, const T lhs, const T rhs) {
     typename vector< T >::iterator lo, it;
     T itmax;
     lo = lower_bound (_partition.begin(), _partition.end(), lhs);
@@ -307,9 +311,9 @@ public:
   SEXP out() {
 
     vector<T> ptAge, ptPt;
-    vector<Tstate> ptState;
+    vector<state_t> ptState;
     typename map<T,T>::iterator it;
-    typename map<Tstate, map<T,T> >::iterator it2;
+    typename map<state_t, map<T,T> >::iterator it2;
     for (it2=_pt.begin(); it2 != _pt.end(); ++it2) {
       for (it=(*it2).second.begin(); it != (*it2).second.end(); ++it) {
 	ptState.push_back((*it2).first);
@@ -319,12 +323,12 @@ public:
     }
     
     vector<T> evAge;
-    vector<Tstate> evState;
+    vector<state_t> evState;
     vector<Tevent> evEvent;
     vector<int> evCount;
     typename map<T,int>::iterator itdi1;
     typename map<Tevent, map<T,int> >::iterator itdi2;
-    typename map<Tstate, map<Tevent, map<T,int> > >::iterator itdi3;
+    typename map<state_t, map<Tevent, map<T,int> > >::iterator itdi3;
     for (itdi3=_events.begin(); itdi3 != _events.end(); ++itdi3) {
       for (itdi2=(*itdi3).second.begin(); itdi2 != (*itdi3).second.end(); ++itdi2) {
 	for (itdi1=(*itdi2).second.begin(); itdi1 != (*itdi2).second.end(); ++itdi1) {
@@ -336,8 +340,8 @@ public:
       }
     }
     
-    typename map<Tstate, map<T,int> >::iterator itdi4;
-    vector<Tstate> prState;
+    typename map<state_t, map<T,int> >::iterator itdi4;
+    vector<state_t> prState;
     vector<T> prAge;
     vector<int> prCount;
     for (itdi4=_prev.begin(); itdi4 != _prev.end(); ++itdi4) {
@@ -349,130 +353,25 @@ public:
     }
     
     return Rcpp::List::create(Rcpp::Named("pt") = 
-			      Rcpp::DataFrame::create(Rcpp::Named("state") = ptState,
+			      Rcpp::List::create(Rcpp::Named("state") = ptState,
 						      Rcpp::Named("age") = ptAge,
 						      Rcpp::Named("pt") = ptPt),
 			      Rcpp::Named("events") = 
-			      Rcpp::DataFrame::create(Rcpp::Named("state") = evState,
+			      Rcpp::List::create(Rcpp::Named("state") = evState,
 						      Rcpp::Named("event") = evEvent,
 						      Rcpp::Named("age") = evAge,
 						      Rcpp::Named("n") = evCount),
 			      Rcpp::Named("prev") = 
-			      Rcpp::DataFrame::create(Rcpp::Named("state") = prState,
+			      Rcpp::List::create(Rcpp::Named("state") = prState,
 						      Rcpp::Named("age") = prAge,
 						      Rcpp::Named("n") = prCount));
   }
   
   T _max;
   vector<T> _partition;
-  map<Tstate, map<T, int> > _prev;
-  map<Tstate, map< T, T > > _pt;
-  map<Tstate, map<Tevent, map< T, int > > > _events;
-};
-
-
-template< class Tstate1, class Tstate2, class Tevent, class T >
-  class EventReportTwoStates {
-public:
-  void setPartition(const vector<T> partition) {
-    _partition = partition;
-    _max = * max_element(_partition.begin(), _partition.end());
-  }
-  void clear() {
-    _pt.clear();
-    _events.clear();
-    _prev.clear();
-    _partition.clear();
-  }
-  void add(const Tstate1 state1, Tstate2 state2, const Tevent event, const T lhs, const T rhs) {
-    typename vector< T >::iterator lo, it;
-    T itmax;
-    pair<Tstate1,Tstate2> state = std::make_pair(state1,state2); // implementation
-    lo = lower_bound (_partition.begin(), _partition.end(), lhs);
-    if (lhs<*lo) lo -= 1;
-    itmax = rhs<_max ? rhs : _max; // truncates if outside of partition!
-    for (it=lo; (*it)<itmax; ++it) {
-      _pt[state][*it] += (*(it+1)<rhs ? (*(it+1)) : rhs) - ((*it)<lhs ? lhs : (*it));
-      if (lhs<=(*it) & (*it)<rhs) 
-	_prev[state][*it] += 1;
-    }
-    if (rhs<_max)
-      _events[state][event][*(it-1)] += 1;
-  }
-
-  SEXP out() {
-
-    vector<T> ptAge, ptPt;
-    vector< Tstate1 > ptState1;
-    vector< Tstate2 > ptState2;
-    typename map<T,T>::iterator it;
-    typename map< pair<Tstate1,Tstate2>, map<T,T> >::iterator it2;
-    for (it2=_pt.begin(); it2 != _pt.end(); ++it2) {
-      for (it=(*it2).second.begin(); it != (*it2).second.end(); ++it) {
-	ptState1.push_back((*it2).first.first);
-	ptState2.push_back((*it2).first.second);
-	ptAge.push_back((*it).first);
-	ptPt.push_back((*it).second);
-      }
-    }
-    
-    vector<T> evAge;
-    vector<Tstate1> evState1;
-    vector<Tstate2> evState2;
-    vector<Tevent> evEvent;
-    vector<int> evCount;
-    typename map<T,int>::iterator itdi1;
-    typename map<Tevent, map<T,int> >::iterator itdi2;
-    typename map< pair<Tstate1,Tstate2>, map<Tevent, map<T,int> > >::iterator itdi3;
-    for (itdi3=_events.begin(); itdi3 != _events.end(); ++itdi3) {
-      for (itdi2=(*itdi3).second.begin(); itdi2 != (*itdi3).second.end(); ++itdi2) {
-	for (itdi1=(*itdi2).second.begin(); itdi1 != (*itdi2).second.end(); ++itdi1) {
-	  evState1.push_back((*itdi3).first.first);
-	  evState2.push_back((*itdi3).first.second);
-	  evEvent.push_back((*itdi2).first);
-	  evAge.push_back((*itdi1).first);
-	  evCount.push_back((*itdi1).second);
-	}
-      }
-    }
-    
-    typename map< pair<Tstate1,Tstate2>, map<T,int> >::iterator itdi4;
-    vector< Tstate1 > prState1;
-    vector< Tstate2 > prState2;
-    vector<T> prAge;
-    vector<int> prCount;
-    for (itdi4=_prev.begin(); itdi4 != _prev.end(); ++itdi4) {
-      for (itdi1=(*itdi4).second.begin(); itdi1 != (*itdi4).second.end(); ++itdi1) {
-	prState1.push_back((*itdi4).first.first);
-	prState2.push_back((*itdi4).first.second);
-	prAge.push_back((*itdi1).first);
-	prCount.push_back((*itdi1).second);
-      }
-    }
-    
-    return Rcpp::List::create(Rcpp::Named("pt") = 
-			      Rcpp::DataFrame::create(Rcpp::Named("state1") = ptState1,
-						      Rcpp::Named("state2") = ptState2,
-						      Rcpp::Named("age") = ptAge,
-						      Rcpp::Named("pt") = ptPt),
-			      Rcpp::Named("events") = 
-			      Rcpp::DataFrame::create(Rcpp::Named("state1") = evState1,
-						      Rcpp::Named("state2") = evState2,
-						      Rcpp::Named("event") = evEvent,
-						      Rcpp::Named("age") = evAge,
-						      Rcpp::Named("n") = evCount),
-			      Rcpp::Named("prev") = 
-			      Rcpp::DataFrame::create(Rcpp::Named("state1") = prState1,
-						      Rcpp::Named("state2") = prState2,
-						      Rcpp::Named("age") = prAge,
-						      Rcpp::Named("n") = prCount));
-  }
-  
-  T _max;
-  vector<T> _partition;
-  map< pair<Tstate1,Tstate2>, map<T, int> > _prev;
-  map< pair<Tstate1,Tstate2>, map< T, T > > _pt;
-  map< pair<Tstate1,Tstate2>, map<Tevent, map< T, int > > > _events;
+  map<state_t, map<T, int> > _prev;
+  map<state_t, map< T, T > > _pt;
+  map<state_t, map<Tevent, map< T, int > > > _events;
 };
 
 

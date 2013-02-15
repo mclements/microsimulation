@@ -67,6 +67,14 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 } // handleMessage()
 
 
+RcppExport SEXP vofv() {
+	vector< vector< short > > out;
+	out.push_back(vector<short>(2, 3));
+	out.push_back(vector<short>(2, 1));
+	return Rcpp::wrap(out);
+}
+
+
 RcppExport SEXP callSimplePerson(SEXP parms) {
   SimplePerson person;
   Rcpp::RNGScope scope;
