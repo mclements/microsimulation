@@ -181,11 +181,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // declarations
   double dwellTime, pDx;
 
-  // record information (two states)
-  stateTuple.clear();
-  stateTuple.push_back(state);
-  stateTuple.push_back(dx);
-  report.add(stateTuple,msg->kind,previousEventTime,now());
+  // record information (two states, event type, start time and end time)
+  report.add(state,dx,msg->kind,previousEventTime,now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);

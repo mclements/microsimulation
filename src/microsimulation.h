@@ -386,7 +386,7 @@ public:
     using namespace Rcpp;
 
     vector<T> ptAge, ptPt;
-    vector<state_t> ptState;
+    vector<vector< Tstate > > ptState;
     typename map<T,T>::iterator it;
     typename map<state_t, map<T,T> >::iterator it2;
     for (it2=_pt.begin(); it2 != _pt.end(); ++it2) {
@@ -431,16 +431,16 @@ public:
     prState = transpose<Tstate>(prState);
     
     return List::create(Named("pt") = 
-			DataFrame::create(Named("state") = ptState,
+			List::create(Named("state") = ptState,
 				     Named("age") = ptAge,
 				     Named("pt") = ptPt),
 			Named("events") = 
-			DataFrame::create(Named("state") = evState,
+			List::create(Named("state") = evState,
 				     Named("event") = evEvent,
 				     Named("age") = evAge,
 				     Named("n") = evCount),
 			Named("prev") = 
-			DataFrame::create(Named("state") = prState,
+			List::create(Named("state") = prState,
 				     Named("age") = prAge,
 				     Named("n") = prCount));
   }

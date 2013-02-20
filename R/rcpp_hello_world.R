@@ -76,10 +76,9 @@ callSimplePerson2 <- function(n=10) {
   out <- .Call("callSimplePerson2",
                parms=list(n=as.integer(n)),
                PACKAGE="microsimulation")
-  enum(out$events$state) <- stateT
+  reader <- function(obj) cbind(data.frame(state=enum(obj$state[[1]],stateT)),data.frame(obj[-1]))
+  out <- lapply(out,reader)
   enum(out$events$event) <- eventT
-  enum(out$pt$state) <- stateT
-  enum(out$prev$state) <- stateT
   out
 }
 
@@ -109,8 +108,8 @@ callFhcrcOld <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCo
 }
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
-  state <- RNGstate(); on.exit(state$reset())
-  RNGkind("user")
+  ##state <- RNGstate(); on.exit(state$reset())
+  ##RNGkind("user")
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
                "screen60", "screen70")
   stateT <- c("Healthy","Localised","Metastatic")
@@ -126,23 +125,10 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
                  screeningCompliance=as.double(screeningCompliance)),
                PACKAGE="microsimulation")
-  enum(out$summary$events$state[[1]]) <- stateT
-  enum(out$summary$events$state[[2]]) <- diagnosisT
+  reader <- function(obj) cbind(data.frame(state=enum(obj$state[[1]],stateT),dx=enum(obj$state[[2]],diagnosisT)),
+                                data.frame(obj[-1]))
+  out$summary <- lapply(out$summary,reader)
   enum(out$summary$events$event) <- eventT
-  enum(out$summary$pt$state[[1]]) <- stateT
-  enum(out$summary$pt$state[[2]]) <- diagnosisT
-  enum(out$summary$prev$state[[1]]) <- stateT
-  enum(out$summary$prev$state[[2]]) <- diagnosisT
-  out$summary$pt <- with(out$summary$pt,
-                         data.frame(age = age, state = state[[1]],
-                                    dx = state[[2]], pt = pt))
-  out$summary$prev <- with(out$summary$prev,
-                           data.frame(age = age, state = state[[1]],
-                                      dx = state[[2]], n = n))
-  out$summary$events <- with(out$summary$events,
-                             data.frame(age = age, state = state[[1]],
-                                        event = event, 
-                                        dx = state[[2]], n = n))
   enum(out$lifeHistories$state) <- stateT
   enum(out$lifeHistories$dx) <- diagnosisT
   enum(out$lifeHistories$event) <- eventT

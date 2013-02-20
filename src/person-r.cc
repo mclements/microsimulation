@@ -217,7 +217,7 @@ extern "C" {
     // tidy up -- what needs to be deleted?
     delete Person::rng["NH"];
     delete Person::rng["S"];
-    Person::rng.clear();
+    // Person::rng.clear();
     // output arguments to R
     return Rcpp::wrap(Person::report);
     
