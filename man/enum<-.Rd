@@ -9,7 +9,7 @@
   
 }
 \usage{
-enum(obj, value)
+enum(obj, labels)
 enum<-(obj, value)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -17,8 +17,11 @@ enum<-(obj, value)
   \item{obj}{
     an integer vector representing the levels of the 0-based factor
 }
-  \item{value}{
+  \item{labels}{
     a vector representing the labels of the factor
+}
+  \item{value}{
+    as per \code{labels} (\code{value} name required for the assignment)
 }
 }
 % \details{
@@ -46,17 +49,9 @@ enum<-(obj, value)
 % \seealso{
 % %% ~~objects to See Also as \code{\link{help}}, ~~~
 % }
-% \examples{
-% ##---- Should be DIRECTLY executable !! ----
-% ##-- ==>  Define data, use random,
-% ##--	or do  help(data=index)  for the standard data sets.
-
-% ## The function is currently defined as
-% function (obj, value) 
-% {
-%     enum(obj, value)
-%   }
-% }
+\examples{
+y <- enum(rep(0:3,each=2), labels = "")
+}
 % % Add one or more standard keywords, see file 'KEYWORDS' in the
 % % R documentation directory.
 % \keyword{ ~kwd1 }

@@ -22,7 +22,7 @@ enum <- function(obj, labels)
   factor(obj, levels=0:(length(labels)-1), labels=labels)
 
 "enum<-" <- function(obj, value) {
-  enum(obj,value)
+  enum(if(is.factor(obj)) unclass(obj)-1 else obj, value)
 }
 
 RNGstate <- function() {

@@ -21,8 +21,8 @@ RNGstate()
 \value{
   Returns a closure with:
   \item{oldseed}{a vector with the previous random number seed}
-  \item{reset(}}{a method to reset the \code{RNGkind} and \code{.Random.seed} to the
-  values that were current when the function was called.
+  \item{reset()}{a method to reset the \code{RNGkind} and \code{.Random.seed} to the
+  values that were current when the function was called.}
 }
 % \references{
 % %% ~put references to the literature/web site here ~

@@ -115,7 +115,6 @@ sim <- Simulation$new()
 sim$run()
 sim$run()
 
-
 ## An extension with individual life histories
 Simulation <-
   setRefClass("Simulation",
