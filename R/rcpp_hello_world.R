@@ -82,30 +82,30 @@ callSimplePerson2 <- function(n=10) {
   out
 }
 
-callFhcrcOld <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
-  screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
-               "screen60", "screen70")
-  stateT <- c("Healthy","Localised","Metastatic","ClinicalDiagnosis","ClinicalMetastaticDiagnosis","ScreenDiagnosis","ScreenMetastaticDiagnosis")
-  eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis","toClinicalMetastaticDiagnosis",
-              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis","toScreenMetastaticDiagnosis")
-  stopifnot(screen %in% screenT)
-  screenIndex <- which(screen == screenT) - 1
-  out <- .Call("callFhcrc",
-               parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
-                 screeningCompliance=as.double(screeningCompliance)),
-               PACKAGE="microsimulation")
-  enum(out$summary$events$state) <- stateT
-  enum(out$summary$events$event) <- eventT
-  enum(out$summary$pt$state) <- stateT
-  enum(out$summary$prev$state) <- stateT
-  enum(out$lifeHistories$state) <- stateT
-  enum(out$lifeHistories$event) <- eventT
-  out$lifeHistories <- data.frame(out$lifeHistories)
-  out$parameters <- data.frame(out$parameters)
-  out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT)
-  out$n <- n
-  out
-}
+## callFhcrcOld <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
+##   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
+##                "screen60", "screen70")
+##   stateT <- c("Healthy","Localised","Metastatic","ClinicalDiagnosis","ClinicalMetastaticDiagnosis","ScreenDiagnosis","ScreenMetastaticDiagnosis")
+##   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis","toClinicalMetastaticDiagnosis",
+##               "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis","toScreenMetastaticDiagnosis")
+##   stopifnot(screen %in% screenT)
+##   screenIndex <- which(screen == screenT) - 1
+##   out <- .Call("callFhcrc",
+##                parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
+##                  screeningCompliance=as.double(screeningCompliance)),
+##                PACKAGE="microsimulation")
+##   enum(out$summary$events$state) <- stateT
+##   enum(out$summary$events$event) <- eventT
+##   enum(out$summary$pt$state) <- stateT
+##   enum(out$summary$prev$state) <- stateT
+##   enum(out$lifeHistories$state) <- stateT
+##   enum(out$lifeHistories$event) <- eventT
+##   out$lifeHistories <- data.frame(out$lifeHistories)
+##   out$parameters <- data.frame(out$parameters)
+##   out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT)
+##   out$n <- n
+##   out
+## }
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
   ##state <- RNGstate(); on.exit(state$reset())

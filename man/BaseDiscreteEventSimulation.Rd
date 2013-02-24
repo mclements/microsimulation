@@ -90,6 +90,7 @@
 %   }
 \examples{
 \dontrun{
+## A simple example
 Simulation <-
   setRefClass("Simulation",
               contains = "BaseDiscreteEventSimulation")
@@ -113,6 +114,44 @@ set.seed(123)
 sim <- Simulation$new()
 sim$run()
 sim$run()
+
+
+## An extension with individual life histories
+Simulation <-
+  setRefClass("Simulation",
+              contains = "BaseDiscreteEventSimulation",
+              fields = list(id = "numeric", state = "character", report = "data.frame"),
+              methods= list(initialize = function(id = 0) callSuper(id = id)))
+Simulation$methods(init = function() {
+  clear()
+  id <<- id + 1
+  state <<- "Healthy"
+  scheduleAt(rweibull(1,8,85), "Death due to other causes")
+  scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+})
+Simulation$methods(handleMessage = function(event) {
+  report <<- rbind(report, data.frame(id = id,
+                                      state = state,
+                                      begin = previousEventTime,
+                                      end = currentTime,
+                                      event=event,
+                                      stringsAsFactors = FALSE))
+  if (event \%in\% c("Death due to other causes", "Cancer death")) {
+    clear()
+  }
+  else if (event == "Cancer diagnosis") {
+    state <<- "Cancer"
+    if (runif(1) < 0.5)
+      scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+  }
+})
+set.seed(123)
+sim <- Simulation$new()
+system.time(for (i in 1:100) sim$run())
+subset(sim$report,id<=4)
+
+## tidy
+rm(sim)
 }
 }
 \seealso{class-EventQueue}
