@@ -30,7 +30,9 @@
 #define _ssim_h
 
 // #include <boost/function.hpp>
-#include "boost/boost/function.hpp"
+// #include "boost/boost/function.hpp"
+#include <tr1/functional>
+using std::tr1::function;
 
 /** \file ssim.h 
  *
@@ -127,7 +129,7 @@ class Event {
 /** Type declaration for a predicate function
  *  used to test for particular events
  **/
-  typedef boost::function<bool (const Event *)> EventPredicate;
+  typedef function<bool (const Event *)> EventPredicate;
 
 
 /** @brief Virtual class (interface) representing processes running
