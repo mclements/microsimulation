@@ -18,7 +18,7 @@
 \usage{
 RNGStream(nextStream = TRUE, iseed = NULL)
 
-with.RNGStream(stream, expr, ...)
+\method{with}{RNGStream}(stream, expr, ...)
 }
 \arguments{
   \item{nextStream}{Boolean to say whether to use the next stream

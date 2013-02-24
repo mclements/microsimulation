@@ -19,7 +19,7 @@ Package: \tab microsimulation\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
 Date: \tab 2013-01-26\cr
-License: \tab GPL >= 3.0\cr
+License: \tab GPL >= 2.0\cr
 }
 
 }

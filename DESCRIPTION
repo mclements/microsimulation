@@ -3,10 +3,10 @@ Type: Package
 Title: Microsimulation in R and C++
 Version: 1.0
 Date: 2013-01-26
-Author: Mark Clements
+Author: Mark Clements, Alexandra, Kalle.
 Maintainer: <mark.clements@ki.se>
-Description: Microsimulation using discrete event simulation in R and C++
-License: GPL >= 2
+Description: Microsimulation using discrete event simulation in R and C++.
+License: GPL (>= 2)
 Depends: Rcpp (>= 0.10.2), methods
 Imports: parallel
 LinkingTo: Rcpp
