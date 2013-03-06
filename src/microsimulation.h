@@ -1,5 +1,5 @@
 /**
- * @file microsimulation.cc
+ * @file microsimulation.h
  * @author  Mark Clements <mark.clements@ki.se>
  * @version 1.0
  *
@@ -116,27 +116,32 @@ public:
 
 
 /** 
-    Function struct used to compare a message name with a given string
+    Event predicate used to compare a message name with a given string
 */
-struct cMessageNameEq : public std::binary_function<const ssim::Event *,string,bool> {
-  bool operator()(const ssim::Event* e, const string s) const;
-};
-inline bool cMessageNameEq::operator() (const ssim::Event * e, const string s) const
-{ 
-  const cMessage * msg = dynamic_cast<const cMessage *>(e);
-  return (msg != NULL && msg->name == s); 
+class cMessageNameEq : public ssim::EventPredicate {
+ public:
+ cMessageNameEq(const string s) : _s(s) {};
+  bool operator()(const ssim::Event* e)  {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    return (msg != NULL && msg->name == _s); 
+  };
+ private:
+  string _s;
 };
 
+
 /** 
-    Function struct used to compare a message kind with a given short
+    Event predicate used to compare a message kind with a given short
 */
-struct cMessageKindEq : public std::binary_function<const ssim::Event *,short,bool> {
-  bool operator()(const ssim::Event* e, const short k) const;
-};
-inline bool cMessageKindEq::operator() (const ssim::Event * e, const short k) const
-{ 
-  const cMessage * msg = dynamic_cast<const cMessage *>(e);
-  return (msg != NULL && msg->kind == k); 
+class cMessageKindEq : public ssim::EventPredicate {
+ public:
+ cMessageKindEq(const short k) : _k(k) {};
+  bool operator()(const ssim::Event* e)  {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    return (msg != NULL && msg->kind == _k); 
+  };
+ private:
+  short _k;
 };
 
 /**

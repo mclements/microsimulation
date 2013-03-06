@@ -10,12 +10,20 @@ double rweibullHR(double shape, double scale, double hr){
 }
 
 void remove_name(string name) {
-  Sim::remove_event(bind2nd(cMessageNameEq(),name));
+  Sim::remove_event(cMessageNameEq(name));
 }
 
 void remove_kind(short kind) {
-  Sim::remove_event(bind2nd(cMessageKindEq(),kind));
+  Sim::remove_event(cMessageKindEq(kind));
 }
+
+// void remove_name(string name) {
+//   Sim::remove_event(bind2nd(cMessageNameEq(),name));
+// }
+
+// void remove_kind(short kind) {
+//   Sim::remove_event(bind2nd(cMessageKindEq(),kind));
+// }
 
 Time now() {
   return Sim::clock();

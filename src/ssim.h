@@ -29,10 +29,8 @@
 #ifndef _ssim_h
 #define _ssim_h
 
-// #include <boost/function.hpp>
-// #include "boost/boost/function.hpp"
-#include <tr1/functional>
-using std::tr1::function;
+//#include <tr1/functional>
+//using std::tr1::function;
 
 /** \file ssim.h 
  *
@@ -126,11 +124,14 @@ class Event {
     friend class Sim;		// these need to be friends to manage refcount
 };
 
-/** Type declaration for a predicate function
+/** class declaration for a predicate function
  *  used to test for particular events
  **/
-  typedef function<bool (const Event *)> EventPredicate;
-
+class EventPredicate {
+public:
+  virtual bool operator()(const Event* e) { return true; } // abstract does not work
+};
+  // typedef function<bool (const Event *)> EventPredicate;
 
 /** @brief Virtual class (interface) representing processes running
  *  within the simulator.

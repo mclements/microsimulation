@@ -28,7 +28,7 @@
 //
 #include <vector>
 #include <algorithm>
-#include <functional>
+//#include <functional>
 
 #include "ssim.h"
 #include "heap.h"
@@ -126,24 +126,13 @@ void Sim::clear() throw() {
 
 typedef a_table_t::iterator ForwardIterator;
 
-  // // for use with STL algorithms
-  // bool test_a_table(ForwardIterator it, EventPredicate pred) {
-  //   if ((*it).type != A_Event) return true;
-  //   const Event * e = (*it).event;
-  //   return (e != NULL && !pred(e));
-  // }
-  // void Sim::remove_event(EventPredicate pred) throw() {
-  //   actions.erase(remove_if(actions.begin(), actions.end(), 
-  // 			    bind2nd(std::ptr_fun<ForwardIterator,EventPredicate,bool>(test_a_table),pred)), 
-  // 		  actions.end());
-  // }
-
 void Sim::remove_event(EventPredicate pred) throw() {
   ForwardIterator first = actions.begin();
   ForwardIterator last = actions.end();
   ForwardIterator result = first;
   for ( ; first != last; ++first) {
     if ((*first).type != A_Event) {
+
       *result++ = *first; } else {
       const Event * e = (*first).event;
       if (e != NULL && !pred(e)) *result++ = *first;
