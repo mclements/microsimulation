@@ -1,6 +1,9 @@
 .onLoad <- function (lib, pkg) {
-    library.dynam("microsimulation", pkg, lib)
-    .microsimulation.init()
+  if (!exists(".Random.seed", envir = .GlobalEnv, 
+              inherits = FALSE))
+    invisible(rnorm(1)) # kludge to initialise the random seed
+  library.dynam("microsimulation", pkg, lib)
+  .microsimulation.init()
 }
 
 .onUnload <- function (libpath) {
