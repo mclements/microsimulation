@@ -34,7 +34,6 @@ RNGstate <- function() {
   reset <- function() {
     if (!is.null(oldseed)) 
       assign(".Random.seed", oldseed, envir = .GlobalEnv)
-    else rm(.Random.seed, envir = .GlobalEnv)
   }
   list(oldseed = oldseed, reset = reset)
 }
