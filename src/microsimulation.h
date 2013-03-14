@@ -198,6 +198,7 @@ private:
  */
 class Rpexp {
 public: 
+  Rpexp() {} // blank default constructor
   Rpexp(double *hin, double *tin, int nin) : n(nin) {
     int i;
     H.resize(n);
@@ -249,6 +250,7 @@ class Rng {
     void set();
     void nextSubstream();
     void nextSubStream();
+    //static void unset();
     RngStream stream;
 };
 
@@ -379,7 +381,7 @@ public:
     itmax = rhs<_max ? rhs : _max; // truncates if outside of partition!
     for (it=lo; (*it)<itmax; ++it) {
       _pt[state][*it] += (*(it+1)<rhs ? (*(it+1)) : rhs) - ((*it)<lhs ? lhs : (*it));
-      if (lhs<=(*it) & (*it)<rhs) 
+      if (lhs<=(*it) && (*it)<rhs) 
 	_prev[state][*it] += 1;
     }
     if (rhs<_max)
@@ -456,6 +458,17 @@ public:
   map<state_t, map< T, T > > _pt;
   map<state_t, map<Tevent, map< T, int > > > _events;
 };
+
+
+// http://en.cppreference.com/w/cpp/algorithm/iota
+template<class ForwardIterator, class T>
+void iota(ForwardIterator first, ForwardIterator last, T value)
+{
+    while(first != last) {
+        *first++ = value;
+        ++value;
+    }
+}
 
 
 namespace R {

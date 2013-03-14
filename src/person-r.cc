@@ -58,7 +58,7 @@ public:
 
   static void resetPopulation ();
   //
-  Person(int i = 0) : dx(false), gleason(nogleason), stage(Healthy), id(i) {};
+  Person(int i = 0) : gleason(nogleason), stage(Healthy), dx(false), id(i) {};
   void init();
   virtual void handleMessage(const cMessage* msg);
   virtual Time age() { return now(); }
@@ -105,7 +105,7 @@ void Person::init() {
  */
 void Person::handleMessage(const cMessage* msg) {
 
-  double dwellTime, pDx;
+  double pDx;
 
   report["id"].push_back(id);
   report["startTime"].push_back(previousEventTime);

@@ -1,6 +1,6 @@
 #include "microsimulation.h"
 
-namespace fhcrcTest {
+namespace fhcrc {
 
   using namespace std;
 
@@ -13,14 +13,19 @@ namespace fhcrcTest {
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen, 
 		toBiopsy,toScreenDiagnosis};
 
-  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70};
+  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake};
 
-  double tau2 = 0.0829;
-  int screen = 0;
+  double tau2 = 0.0829,
+    g0=0.0005, gm=0.0004, gc=0.0015, 
+    thetac=19.1334,
+    mubeta0=-1.6094, varbeta0=0.0568,
+    mubeta1=0.02, varbeta1=0.0019,
+    mubeta2=0.1094,varbeta2=0.0237;
   double screeningCompliance = 0.50;
-  int nLifeHistories = 10;
+  int nLifeHistories = 10, screen = 0;
   Rng * rngNh, * rngOther;
   vector<short> stateTuple;
+  Rpexp rmu0;
 
   EventReport<short,short,double> report;
   map<string, vector<double> > lifeHistories; 
@@ -33,6 +38,7 @@ namespace fhcrcTest {
     obj[variable].push_back(value);
   }
   
+  // all cause mortality rates by single year of age from age 0 could be a parameter input
   double mu0[] = {0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
 		  0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
 		  0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
@@ -49,14 +55,6 @@ namespace fhcrcTest {
 		  0.240339, 0.256215, 0.275103, 0.314157, 0.345252, 0.359275, 0.41768, 
 		  0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
 		  0.782609};
-  double ages0[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 
-		   18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 
-		   34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 
-		   50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 
-		   66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 
-		   82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 
-		   98, 99, 100, 101, 102, 103, 104, 105};
-  Rpexp rmu0 = Rpexp(mu0, ages0, 106);
 
   class FhcrcPerson : public cProcess 
   {
@@ -66,17 +64,22 @@ namespace fhcrcTest {
     state_t state;
     diagnosis_t dx;
     int id;
-    FhcrcPerson(const int i = 0) : id(i) { };
+    double cohort;
+    bool everPSA, previousNegativeBiopsy;
+    FhcrcPerson(const int i = 0, const double coh = 1950) : id(i), cohort(coh) { };
+    double ymean(double t);
     double y(double t);
-    double ymeasured(double t);
     void init();
     virtual void handleMessage(const cMessage* msg);
   };
 
+  
+
   /** 
-      Calculate the PSA value at a given time (** NB: time = age - 35 **)
+      Calculate the (geometric) mean PSA value at a given time (** NB: time = age - 35 **)
   */
-  double FhcrcPerson::y(double t) {
+  double FhcrcPerson::ymean(double t) {
+    if (t<0) t = 0; // is this the correct way to handle PSA before age 35 years?
     double yt = t<t0 ? exp(beta0+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
     return yt;
   }
@@ -84,8 +87,8 @@ namespace fhcrcTest {
   /** 
       Calculate the *measured* PSA value at a given time (** NB: time = age - 35 **)
   */
-  double FhcrcPerson::ymeasured(double t) {
-      double yt = FhcrcPerson::y(t)*exp(R::rnorm(0.0, sqrt(tau2)));
+  double FhcrcPerson::y(double t) {
+      double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(tau2)));
       return yt;
     }
 
@@ -96,19 +99,20 @@ void FhcrcPerson::init() {
   
   // declarations
   double ym, aoc;
-  double g0=0.0005, gm=0.0004, gc=0.0015, thetac=19.1334;
 
   // change state variables
   state = Healthy;
   dx = NotDiagnosed;
+  everPSA = false;
+  previousNegativeBiopsy = false;
   rngNh->set();
-  beta0 = R::rnorm(-1.6094,sqrt(0.0568));
-  beta1 = R::rnormPos(0.02,sqrt(0.0019));
-  beta2 = R::rnormPos(0.1094,sqrt(0.0237));
+  beta0 = R::rnorm(mubeta0,sqrt(varbeta0)); 
+  beta1 = R::rnormPos(mubeta1,sqrt(varbeta1)); 
+  beta2 = R::rnormPos(mubeta2,sqrt(varbeta2)); 
   t0 = sqrt(2*R::rexp(1.0)/g0);
-  y0 = y(t0);
+  y0 = ymean(t0);
   tm = (log((beta1+beta2)*R::rexp(1.0)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
-  ym = y(tm);
+  ym = ymean(tm);
   tc = (log((beta1+beta2)*R::rexp(1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(gc*thetac) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand();
@@ -119,42 +123,42 @@ void FhcrcPerson::init() {
 
   // schedule screening events
   rngOther->set();
-  switch(screen) {
-  case noScreening:
-    break; // no screening
-  case randomScreen50to70:
-    if (R::runif(0.0,1.0)<screeningCompliance) 
+  if (R::runif(0.0,1.0)<screeningCompliance) {
+    switch(screen) {
+    case noScreening:
+      break; // no screening
+    case randomScreen50to70:
       scheduleAt(R::runif(50.0,70.0),toScreen);
-    break;
-  case twoYearlyScreen50to70:
-    if (R::runif(0.0,1.0)<screeningCompliance) { 
+      break;
+    case twoYearlyScreen50to70:
       for (double start = 50.0; start<=70.0; start = start + 2.0) {
 	scheduleAt(start, toScreen);
       }
-    }
-    break;
-  case fourYearlyScreen50to70:
-    if (R::runif(0.0,1.0)<screeningCompliance) {
+      break;
+    case fourYearlyScreen50to70:
       for (double start = 50.0; start<=70.0; start = start + 4.0) {
 	scheduleAt(start, toScreen);
       }
-    }
-    break;
-  case screen50:
-    if (R::runif(0.0,1.0)<screeningCompliance)
+      break;
+    case screen50:
       scheduleAt(50.0,toScreen);
-    break;
-  case screen60:
-    if (R::runif(0.0,1.0)<screeningCompliance)
+      break;
+    case screen60:
       scheduleAt(60.0,toScreen);
-    break;
-  case screen70:
-    if (R::runif(0.0,1.0)<screeningCompliance)
+      break;
+    case screen70:
       scheduleAt(70.0,toScreen);
-    break;
-  default:
-    REprintf("Screening not matched: %i\n",screen);
-    break;
+      break;
+    case screenUptake: {
+      // constant rate from 1995
+      double uptakeRate = -log(1.0-.05);
+      scheduleAt(1995.0 - cohort + R::rexp(1.0)/uptakeRate, toScreen);
+      // and then we need to look at re-screening patterns
+    } break;
+    default:
+      REprintf("Screening not matched: %i\n",screen);
+      break;
+    }
   }
 
   // record some parameters
@@ -170,6 +174,7 @@ void FhcrcPerson::init() {
     record(parameters,"y0",y0);
     record(parameters,"ym",ym);
     record(parameters,"aoc",aoc);
+    record(parameters,"cohort",cohort);
   }
 }
 
@@ -179,10 +184,12 @@ void FhcrcPerson::init() {
 void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // declarations
-  double dwellTime, pDx;
+  double psa;
 
-  // record information (two states, event type, start time and end time)
-  report.add(state,dx,msg->kind,previousEventTime,now());
+  psa = y(now()-35.0);
+
+  // record information (three states, event type, start time, end time)
+  report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort/10)*10, msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);
@@ -191,7 +198,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     record(lifeHistories,"event", (double) msg->kind);
     record(lifeHistories,"begin", previousEventTime);
     record(lifeHistories,"end", now());
-    record(lifeHistories,"psa", y(now()-35.0));
+    record(lifeHistories,"psa", psa);
   }
 
   // by default, use the natural history RNG
@@ -222,7 +229,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     dx = ClinicalDiagnosis;
     remove_kind(toMetastatic); // competing event
     remove_kind(toScreen);
-    scheduleAt(now(), toBiopsy); // for reporting (any earlier biopsies due to clinical symptoms will be missed)
+    scheduleAt(now(), toBiopsy); // for reporting (earlier biopsies due to clinical symptoms will be missed)
     switch(state) {
     case Localised:
       if (R::runif(0.0,1.0) < 0.5) // 50% not cured
@@ -238,11 +245,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
     break;
 
-  case toScreen: {
-    double psa = ymeasured(now()-35.0);
+  case toScreen: 
+    everPSA = true;
     if (psa>=3.0) 
       scheduleAt(now(), toBiopsy); // immediate biopsy
-  } break;
+    break;
     
     
   case toScreenDiagnosis:
@@ -275,6 +282,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     case(NotDiagnosed): 
       switch(state) {
       case Healthy:
+	previousNegativeBiopsy = true;
 	break;
       case Localised:
       case Metastatic:
@@ -295,17 +303,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 } // handleMessage()
 
 RcppExport SEXP callFhcrc(SEXP parms) {
-  
+
+
   // declarations
   FhcrcPerson person;
   //Rcpp::RNGScope scope;
-  vector<double> ages;
 
   // TODO: read in the seed
   long unsigned int seed[] = {12345,12345,12345,12345,12345,12345};
   RngStream_SetPackageSeed(seed);
   rngNh = new Rng();
+  Rprintf("NOTE: Starting.\n");
   rngOther = new Rng();
+  Rprintf("NOTE: Ending.\n");
   rngNh->set();
 
   // read in the parameters
@@ -314,6 +324,12 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   nLifeHistories = Rcpp::as<int>(parmsl["nLifeHistories"]);
   screen = Rcpp::as<int>(parmsl["screen"]);
   screeningCompliance = Rcpp::as<double>(parmsl["screeningCompliance"]);
+  Rcpp::NumericVector cohort = Rcpp::as<Rcpp::NumericVector>(parmsl["cohort"]);
+
+  // set up the parameters
+  double ages0[106];
+  iota(ages0, ages0+106, 0.0);
+  rmu0 = Rpexp(mu0, ages0, 106);
 
   // re-set the output objects
   report.clear();
@@ -321,15 +337,17 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   lifeHistories.clear();
 
   // setup the ages
-  for (double age=0.0; age<=100.0; age++) {
-    ages.push_back(age);
-  }
+  vector<double> ages(101);
+  iota(ages.begin(), ages.end(), 0.0);
+  // for (double age=0.0; age<=100.0; age++) {
+  //   ages.push_back(age);
+  // }
   ages.push_back(1.0e+6);
   report.setPartition(ages);
 
   // main loop
   for (int i = 0; i < n; i++) {
-    person = FhcrcPerson(i);
+    person = FhcrcPerson(i,cohort[i]);
     Sim::create_process(&person);
     Sim::run_simulation();
     Sim::clear();
@@ -340,6 +358,7 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   // tidy up
   delete rngNh;
   delete rngOther;
+
 
   // output
   return Rcpp::List::create(Rcpp::Named("summary") = report.out(),

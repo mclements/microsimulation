@@ -35,11 +35,11 @@ Time simTime() {
 
 
 
-static RngStream current_stream;
+static RngStream current_stream = NULL;
 static double rn = 0.0;
 
-Rng::Rng(std::string n) {
-  stream = RngStream_CreateStream(n.c_str());
+Rng::Rng(std::string s) {
+  stream = RngStream_CreateStream(s.c_str());
 }
 
 Rng::~Rng() {
@@ -56,7 +56,7 @@ void Rng::set() {
 }
 
 void Rng::nextSubstream() {
-  set(); // is this useful?
+  //set(); // is this useful?
   RngStream_ResetNextSubstream(stream);
 }
 
@@ -68,18 +68,18 @@ extern "C" {
 
 void r_create_current_stream()
 {
-  current_stream = (RngStream) malloc (sizeof (struct RngStream_InfoState));
+  // current_stream = (RngStream) malloc (sizeof (struct RngStream_InfoState));
   
-  if (current_stream == NULL) {
-    error("r_create_current_stream: No more memory\n\n");
-  }
-  current_stream->name=(char *)"";
+  // if (current_stream == NULL) {
+  //   error("r_create_current_stream: No more memory\n\n");
+  // }
+  // current_stream->name=(char *)"";
   return;
 }
 
 void r_remove_current_stream()
 {
-  free(current_stream);
+  // free(current_stream);
   /*    RngStream_DeleteStream(&current_stream);*/
   return;
 }

@@ -37,8 +37,6 @@ void Reporting(string name,double value)  {
  */
 void SimplePerson::handleMessage(const cMessage* msg) {
 
-  double dwellTime, pDx;
-
   Reporting("id",id);
   Reporting("startTime",previousEventTime);
   Reporting("endtime", now());
