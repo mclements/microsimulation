@@ -304,7 +304,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
 RcppExport SEXP callFhcrc(SEXP parms) {
 
-
   // declarations
   FhcrcPerson person;
   //Rcpp::RNGScope scope;
@@ -313,9 +312,7 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   long unsigned int seed[] = {12345,12345,12345,12345,12345,12345};
   RngStream_SetPackageSeed(seed);
   rngNh = new Rng();
-  Rprintf("NOTE: Starting.\n");
   rngOther = new Rng();
-  Rprintf("NOTE: Ending.\n");
   rngNh->set();
 
   // read in the parameters
@@ -356,9 +353,9 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   }
 
   // tidy up
+  // Rng::unset();
   delete rngNh;
   delete rngOther;
-
 
   // output
   return Rcpp::List::create(Rcpp::Named("summary") = report.out(),

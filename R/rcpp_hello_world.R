@@ -13,6 +13,17 @@ rcpp_hello_world <- function(){
   return(1)
 }
 
+set.user.Random.seed <- function (seed) {
+  seed <- as.integer(seed)
+  stopifnot(is.integer(seed))
+  .C("r_set_user_random_seed",seed = seed,PACKAGE="microsimulation")
+  ##return(1)
+}
+
+user.Random.seed <- function() {
+  .C("r_get_user_random_seed", seed=rep(1L,6), PACKAGE="microsimulation")
+}
+
 ## callPersonSimulation <- function(n=500L)
 ##   .C("callPersonSimulation",as.integer(rep(12345,6)),
 ##      as.double(1),as.integer(n),
@@ -107,8 +118,9 @@ callSimplePerson2 <- function(n=10) {
 ## }
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5) {
-  ## state <- RNGstate(); on.exit(state$reset())
-  ## RNGkind("user")
+  state <- RNGstate(); on.exit(state$reset())
+  RNGkind("user"); # set.seed(Integer); RNGkind("L'Ecuyer-CMRG"); .Random.seed=c(416,12345,12345,12345,12345,12345,12345)
+  set.user.Random.seed(rep(12345L,6))
   pop1 <- data.frame(cohort=1972:1912, pop=c(17239, 16854, 16085, 15504, 15604, 16381, 16705, 
     16762, 16853, 15487, 14623, 14066, 13568, 13361, 13161, 13234, 
     13088, 12472, 12142, 12062, 12078, 11426, 12027, 11963, 12435, 

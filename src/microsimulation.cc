@@ -36,6 +36,7 @@ Time simTime() {
 
 
 static RngStream current_stream = NULL;
+static RngStream default_stream;
 static double rn = 0.0;
 
 Rng::Rng(std::string s) {
@@ -43,6 +44,8 @@ Rng::Rng(std::string s) {
 }
 
 Rng::~Rng() {
+  if (current_stream == stream)
+    current_stream = default_stream;
   RngStream_DeleteStream(&stream);
 }
 
@@ -64,10 +67,17 @@ void Rng::nextSubStream() {
   nextSubstream();
 }
 
+// void Rng::unset() {
+//   current_stream = default_stream;
+// }
+
+
 extern "C" {
 
 void r_create_current_stream()
 {
+  default_stream = RngStream_CreateStream("default stream");
+  current_stream = default_stream;
   // current_stream = (RngStream) malloc (sizeof (struct RngStream_InfoState));
   
   // if (current_stream == NULL) {
@@ -80,9 +90,26 @@ void r_create_current_stream()
 void r_remove_current_stream()
 {
   // free(current_stream);
-  /*    RngStream_DeleteStream(&current_stream);*/
+  RngStream_DeleteStream(&default_stream);
   return;
 }
+
+  void r_set_user_random_seed(int * inseed) {
+    unsigned long seed[6];
+    for(int i=0; i<6; i++) {
+      seed[i] = (unsigned long)inseed[i];
+    }
+    RngStream_SetSeed (default_stream, seed);
+  }
+
+  void r_get_user_random_seed(int * outseed) {
+    unsigned long seed[6];
+    RngStream_GetState (default_stream, seed);
+    for(int i=0; i<6; i++) {
+      outseed[i] = (int)seed[i];
+    }
+  }
+
 
 double *user_unif_rand ()
 {

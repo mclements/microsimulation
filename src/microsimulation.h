@@ -250,7 +250,7 @@ class Rng {
     void set();
     void nextSubstream();
     void nextSubStream();
-    //static void unset();
+    // static void unset();
     RngStream stream;
 };
 
@@ -268,6 +268,11 @@ extern "C" { // functions that will be called from R
       Used when finalising the microsimulation package in R.
   */
   void r_remove_current_stream();
+
+
+  void r_set_user_random_seed(int * seed);
+
+  void r_get_user_random_seed(int * seed);
   
   /** 
       @brief Simple test of the random streams (with a stupid name)
