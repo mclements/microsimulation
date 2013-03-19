@@ -99,6 +99,7 @@ void r_remove_current_stream()
     for(int i=0; i<6; i++) {
       seed[i] = (unsigned long)inseed[i];
     }
+    RngStream_SetPackageSeed(seed);
     RngStream_SetSeed (default_stream, seed);
   }
 

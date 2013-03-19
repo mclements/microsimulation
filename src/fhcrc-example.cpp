@@ -151,9 +151,12 @@ void FhcrcPerson::init() {
       break;
     case screenUptake: {
       // constant rate from 1995
-      double uptakeRate = -log(1.0-.05);
-      scheduleAt(1995.0 - cohort + R::rexp(1.0)/uptakeRate, toScreen);
-      // and then we need to look at re-screening patterns
+      double meanTimeToUptake = 10.0;
+      if (1995.0 - cohort < 50.0) 
+	scheduleAt(50.0 + R::rexp(1.0)*meanTimeToUptake, toScreen);
+      else
+	scheduleAt(1995.0 - cohort + R::rexp(1.0)*meanTimeToUptake, toScreen);
+      // re-screening patterns: see handleMessage
     } break;
     default:
       REprintf("Screening not matched: %i\n",screen);
@@ -189,7 +192,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   psa = y(now()-35.0);
 
   // record information (three states, event type, start time, end time)
-  report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort/10)*10, msg->kind, previousEventTime, now());
+  report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);
@@ -249,6 +252,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     everPSA = true;
     if (psa>=3.0) 
       scheduleAt(now(), toBiopsy); // immediate biopsy
+    if (screen == screenUptake && now()<70.0)
+      scheduleAt(now()+2.0, toScreen);
     break;
     
     
@@ -308,9 +313,8 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   FhcrcPerson person;
   //Rcpp::RNGScope scope;
 
-  // TODO: read in the seed
-  long unsigned int seed[] = {12345,12345,12345,12345,12345,12345};
-  RngStream_SetPackageSeed(seed);
+  // long unsigned int seed[] = {12345,12345,12345,12345,12345,12345};
+  // RngStream_SetPackageSeed(seed);
   rngNh = new Rng();
   rngOther = new Rng();
   rngNh->set();
@@ -364,4 +368,4 @@ RcppExport SEXP callFhcrc(SEXP parms) {
 			    );
 } 
 
-} // namespace fhcrcTest
+} // namespace fhcrc
