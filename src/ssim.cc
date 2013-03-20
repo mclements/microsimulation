@@ -23,7 +23,6 @@
 //  along with SSim.  If not, see <http://www.gnu.org/licenses/>.
 //
 #include <vector>
-#include <algorithm>
 
 #include <siena/ssim.h>
 #include "heap.h"
