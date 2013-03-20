@@ -28,8 +28,8 @@
 
 */
 
-#ifndef EVENT_H
-#define EVENT_H
+#ifndef MICROSIMULATION_H
+#define MICROSIMULATION_H
 
 #include <R.h>
 #include <Rmath.h>

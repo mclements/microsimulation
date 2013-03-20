@@ -1,42 +1,36 @@
 // -*-C++-*-
 //
 //  This file is part of SSim, a simple discrete-event simulator.
-//  See http://www.inf.unisi.ch/carzaniga/ssim/
-//
-//  Author: Antonio Carzaniga <firstname.lastname@unisi.ch>
-//  See the file AUTHORS for full details. 
-//
+//  See http://www.inf.usi.ch/carzaniga/ssim/
+//  
 //  Copyright (C) 1998-2005 University of Colorado
-//
-//  This program is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public License
-//  as published by the Free Software Foundation; either version 2
-//  of the License, or (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
+//  Copyright (C) 2012 Antonio Carzaniga
+//  
+//  Authors: Antonio Carzaniga <firstname.lastname@usi.ch>
+//           See AUTHORS for full details.
+//  
+//  SSim is free software: you can redistribute it and/or modify it under
+//  the terms of the GNU General Public License as published by the Free
+//  Software Foundation, either version 3 of the License, or (at your
+//  option) any later version.
+//  
+//  SSim is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//
+//  
 //  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307,
-//  USA, or send email to serl@cs.colorado.edu.
-//
-//
-// $Id: ssim.cc,v 1.17 2005/11/01 09:41:27 carzanig Exp $
+//  along with SSim.  If not, see <http://www.gnu.org/licenses/>.
 //
 #include <vector>
 #include <algorithm>
-//#include <functional>
 
-#include "ssim.h"
+#include <siena/ssim.h>
 #include "heap.h"
-#include <cstddef>
 
 namespace ssim {
 
-  //const char * Version = VERSION;
+const char * Version = VERSION;
 
 // these are the "private" static variables and types of the Sim class
 //
@@ -118,21 +112,21 @@ void Sim::clear() throw() {
     if (error_handler) error_handler->clear();
     for(a_table_t::iterator a = actions.begin(); a != actions.end(); ++a) {
 	const Event * e = (*a).event;
-	if (e != NULL && --(e->refcount) == 0) 
+	if (e != 0 && --(e->refcount) == 0) 
 	    delete(e);
     }
     actions.clear();
 }
 
 typedef a_table_t::iterator ForwardIterator;
-
+  
 void Sim::remove_event(EventPredicate pred) throw() {
   ForwardIterator first = actions.begin();
   ForwardIterator last = actions.end();
   ForwardIterator result = first;
   for ( ; first != last; ++first) {
     if ((*first).type != A_Event) {
-
+      
       *result++ = *first; } else {
       const Event * e = (*first).event;
       if (e != NULL && !pred(e)) *result++ = *first;

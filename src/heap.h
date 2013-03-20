@@ -1,30 +1,26 @@
 // -*-C++-*-
 //
 //  This file is part of SSim, a simple discrete-event simulator.
-//  See http://www.inf.unisi.ch/carzaniga/ssim/
-//
-//  Author: Antonio Carzaniga <firstname.lastname@unisi.ch>
-//  See the file AUTHORS for full details. 
-//
+//  See http://www.inf.usi.ch/carzaniga/ssim/
+//  
 //  Copyright (C) 2004-2005 University of Colorado
-//
-//  This program is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public License
-//  as published by the Free Software Foundation; either version 2
-//  of the License, or (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
+//  Copyright (C) 2012 Antonio Carzaniga
+//  
+//  Authors: Antonio Carzaniga <firstname.lastname@usi.ch>
+//           See AUTHORS for full details.
+//  
+//  SSim is free software: you can redistribute it and/or modify it under
+//  the terms of the GNU General Public License as published by the Free
+//  Software Foundation, either version 3 of the License, or (at your
+//  option) any later version.
+//  
+//  SSim is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//
+//  
 //  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307,
-//  USA, or send email to serl@cs.colorado.edu.
-//
-//
-// $Id: heap.h,v 1.4 2005/10/16 21:01:49 carzanig Exp $
+//  along with SSim.  If not, see <http://www.gnu.org/licenses/>.
 //
 #ifndef _heap_h
 #define _heap_h

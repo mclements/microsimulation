@@ -1,36 +1,29 @@
 // -*-C++-*-
 //
 //  This file is part of SSim, a simple discrete-event simulator.
-//  See http://www.inf.unisi.ch/carzaniga/ssim/
-//
-//  Author: Antonio Carzaniga <firstname.lastname@unisi.ch>
-//  See the file AUTHORS for full details. 
-//
+//  See http://www.inf.usi.ch/carzaniga/ssim/
+//  
 //  Copyright (C) 1998-2004 University of Colorado
-//
-//  This program is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU General Public License
-//  as published by the Free Software Foundation; either version 2
-//  of the License, or (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
+//  Copyright (C) 2012 Antonio Carzaniga
+//  
+//  Authors: Antonio Carzaniga <firstname.lastname@usi.ch>
+//           See AUTHORS for full details.
+//  
+//  SSim is free software: you can redistribute it and/or modify it under
+//  the terms of the GNU General Public License as published by the Free
+//  Software Foundation, either version 3 of the License, or (at your
+//  option) any later version.
+//  
+//  SSim is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//
+//  
 //  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307,
-//  USA, or send email to the author.
-//
-//
-// $Id: ssim.h,v 1.24 2005-12-13 09:50:03 carzanig Exp $
+//  along with SSim.  If not, see <http://www.gnu.org/licenses/>.
 //
 #ifndef _ssim_h
 #define _ssim_h
-
-//#include <tr1/functional>
-//using std::tr1::function;
 
 /** \file ssim.h 
  *
@@ -86,7 +79,6 @@ typedef double		Time;
  **/
 const Time		INIT_TIME = 0;
 
-
 /** @brief basic event in the simulation.
  *
  *  This base class represents a piece of information or a signal
@@ -124,14 +116,13 @@ class Event {
     friend class Sim;		// these need to be friends to manage refcount
 };
 
-/** class declaration for a predicate function
+/** @brief Class declaration for a predicate function
  *  used to test for particular events
  **/
 class EventPredicate {
 public:
-  virtual bool operator()(const Event* e) { return true; } // abstract does not work
+  virtual bool operator()(const Event* e) { return true; }
 };
-  // typedef function<bool (const Event *)> EventPredicate;
 
 /** @brief Virtual class (interface) representing processes running
  *  within the simulator.
@@ -597,7 +588,6 @@ public:
      *  @see SimErrorHandler
      **/
     static void		set_error_handler(SimErrorHandler *) throw();
-
     static void remove_event(EventPredicate pred) throw();
 };
 
