@@ -35,7 +35,7 @@
 #include <Rmath.h>
 #include <Rdefines.h>
 #include <R_ext/Random.h>
-#include "ssim.h"
+#include <siena/ssim.h>
 #include "RngStream.h"
 #include <string>
 #include <vector>
