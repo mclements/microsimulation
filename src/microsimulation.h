@@ -31,6 +31,7 @@
 #ifndef MICROSIMULATION_H
 #define MICROSIMULATION_H
 
+#include <Rcpp.h>
 #include <R.h>
 #include <Rmath.h>
 #include <Rdefines.h>
@@ -43,7 +44,6 @@
 #include <algorithm>
 #include <utility>
 #include <map>
-#include <Rcpp.h>
 
 //using namespace std;
 //using namespace ssim;
