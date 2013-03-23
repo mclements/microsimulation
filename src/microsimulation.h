@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <utility>
 #include <map>
+#include <numeric>
 
 //using namespace std;
 //using namespace ssim;
@@ -53,6 +54,8 @@ using std::map;
 using std::pair;
 using ssim::Time;
 using ssim::Sim;
+
+using std::iota;
 
 // should we use the ssim namespace?
 
@@ -466,14 +469,14 @@ public:
 
 
 // http://en.cppreference.com/w/cpp/algorithm/iota
-template<class ForwardIterator, class T>
-void iota(ForwardIterator first, ForwardIterator last, T value)
-{
-    while(first != last) {
-        *first++ = value;
-        ++value;
-    }
-}
+/* template<class ForwardIterator, class T> */
+/* void iota(ForwardIterator first, ForwardIterator last, T value) */
+/* { */
+/*     while(first != last) { */
+/*         *first++ = value; */
+/*         ++value; */
+/*     } */
+/* } */
 
 
 namespace R {

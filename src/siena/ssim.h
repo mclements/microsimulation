@@ -25,6 +25,9 @@
 #ifndef _ssim_h
 #define _ssim_h
 
+#include <tr1/functional>
+using std::tr1::function;
+
 /** \file ssim.h 
  *
  *  This header file defines the simulator API.
@@ -116,13 +119,10 @@ class Event {
     friend class Sim;		// these need to be friends to manage refcount
 };
 
-/** @brief Class declaration for a predicate function
- *  used to test for particular events
- **/
-class EventPredicate {
-public:
-  virtual bool operator()(const Event * e) = 0;
-};
+/** Type declaration for a predicate function
+* used to test for particular events
+**/
+  typedef function<bool (const Event *)> EventPredicate;
 
 /** @brief Virtual class (interface) representing processes running
  *  within the simulator.
@@ -588,7 +588,7 @@ public:
      *  @see SimErrorHandler
      **/
     static void		set_error_handler(SimErrorHandler *) throw();
-    static void remove_event(EventPredicate * pred) throw();
+    static void remove_event(EventPredicate pred) throw();
 };
 
 } // end namespace ssim

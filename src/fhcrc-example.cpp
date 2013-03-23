@@ -27,11 +27,12 @@ namespace fhcrc {
   vector<short> stateTuple;
   Rpexp rmu0;
 
-#define KindPred(kind) cMessageKindEq kind##Pred = cMessageKindEq(kind)
-#define RemoveKind(kind) Sim::remove_event(& kind##Pred)
-  KindPred(toClinicalDiagnosis);
-  KindPred(toMetastatic);
-  KindPred(toScreen);
+  //#define KindPred(kind) cMessageKindEq kind##Pred = cMessageKindEq(kind)
+#define RemoveKind(KIND) remove_kind(KIND)
+  // #define RemoveKind(kind) Sim::remove_event(& kind##Pred)
+  // KindPred(toClinicalDiagnosis);
+  // KindPred(toMetastatic);
+  // KindPred(toScreen);
 
 // #define KindPred2(KIND) class KIND##Pred : public ssim::EventPredicate { \
 //  public: \

@@ -1,8 +1,4 @@
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-
 #include "microsimulation.h"
 
 double rweibullHR(double shape, double scale, double hr){
@@ -11,12 +7,12 @@ double rweibullHR(double shape, double scale, double hr){
 
 void remove_name(string name) {
   cMessageNameEq f = cMessageNameEq(name);
-  Sim::remove_event(&f);
+  Sim::remove_event(f);
 }
 
 void remove_kind(short kind) {
   cMessageKindEq f = cMessageKindEq(kind);
-  Sim::remove_event(&f);
+  Sim::remove_event(f);
 }
 
 Time now() {
