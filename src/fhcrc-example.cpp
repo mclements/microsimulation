@@ -33,6 +33,14 @@ namespace fhcrc {
   KindPred(toMetastatic);
   KindPred(toScreen);
 
+// #define KindPred2(KIND) class KIND##Pred : public ssim::EventPredicate { \
+//  public: \
+//   bool operator()(const ssim::Event* e)  { \
+//     const cMessage * msg = dynamic_cast<const cMessage *>(e); \
+//     return (msg != 0 && msg->kind == KIND);\
+//   }; \
+// };
+
 
   EventReport<short,short,double> report;
   map<string, vector<double> > lifeHistories; 
@@ -243,7 +251,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     dx = ClinicalDiagnosis;
     RemoveKind(toMetastatic); // competing events
     RemoveKind(toScreen);
-    scheduleAt(now(), toBiopsy); // for reporting (earlier biopsies with clinical symptoms are missed)
+    scheduleAt(now(), toBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
+    scheduleAt(now(), toBiopsy);
+    scheduleAt(now(), toBiopsy);
     switch(state) {
     case Localised:
       if (R::runif(0.0,1.0) < 0.5) // 50% not cured

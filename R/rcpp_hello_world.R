@@ -98,13 +98,13 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   RNGkind("user")
   set.user.Random.seed(seed)
   ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
-  pop1 <- data.frame(cohort=1972:1912, pop=c(17239, 16854, 16085, 15504, 15604, 16381, 16705, 
+  pop1 <- data.frame(cohort=1972:1900, pop=c(17239, 16854, 16085, 15504, 15604, 16381, 16705, 
     16762, 16853, 15487, 14623, 14066, 13568, 13361, 13161, 13234, 
     13088, 12472, 12142, 12062, 12078, 11426, 12027, 11963, 12435, 
     12955, 13013, 13125, 13065, 12249, 11103, 9637, 9009, 8828, 
     8350, 7677, 7444, 7175, 6582, 6573, 6691, 6651, 6641, 6268, 
     6691, 6511, 6857, 7304, 7308, 7859, 7277, 8323, 8561, 7173, 
-    6942, 7128, 6819, 5037, 6798, 6567, 6567))
+    6942, 7128, 6819, 5037, 6798, rep(6567,14)))
   cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
                "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
