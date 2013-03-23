@@ -123,7 +123,7 @@ class cMessageNameEq : public ssim::EventPredicate {
  cMessageNameEq(const string s) : _s(s) {};
   bool operator()(const ssim::Event* e)  {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != NULL && msg->name == _s); 
+    return (msg != 0 && msg->name == _s); 
   };
  private:
   string _s;
@@ -138,7 +138,7 @@ class cMessageKindEq : public ssim::EventPredicate {
  cMessageKindEq(const short k) : _k(k) {};
   bool operator()(const ssim::Event* e)  {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != NULL && msg->kind == _k); 
+    return (msg != 0 && msg->kind == _k); 
   };
  private:
   short _k;
