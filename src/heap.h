@@ -26,7 +26,6 @@
 #define _heap_h
 
 #include <vector>
-#include <algorithm>
 
 namespace ssim {
 

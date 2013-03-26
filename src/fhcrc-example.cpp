@@ -11,9 +11,9 @@ namespace fhcrc {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen, 
-		toBiopsy,toScreenDiagnosis};
+		toBiopsy,toScreenDiagnosis,toOrganised};
 
-  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake};
+  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
 
   double tau2 = 0.0829,
     g0=0.0005, gm=0.0004, gc=0.0015, 
@@ -26,6 +26,21 @@ namespace fhcrc {
   Rng * rngNh, * rngOther;
   vector<short> stateTuple;
   Rpexp rmu0;
+
+#define KindPred(kind) cMessageKindEq kind##Pred = cMessageKindEq(kind)
+#define RemoveKind(kind) Sim::remove_event(& kind##Pred)
+  KindPred(toClinicalDiagnosis);
+  KindPred(toMetastatic);
+  KindPred(toScreen);
+
+// #define KindPred2(KIND) class KIND##Pred : public ssim::EventPredicate { \
+//  public: \
+//   bool operator()(const ssim::Event* e)  { \
+//     const cMessage * msg = dynamic_cast<const cMessage *>(e); \
+//     return (msg != 0 && msg->kind == KIND);\
+//   }; \
+// };
+
 
   EventReport<short,short,double> report;
   map<string, vector<double> > lifeHistories; 
@@ -65,7 +80,7 @@ namespace fhcrc {
     diagnosis_t dx;
     int id;
     double cohort;
-    bool everPSA, previousNegativeBiopsy;
+    bool everPSA, previousNegativeBiopsy, organised;
     FhcrcPerson(const int i = 0, const double coh = 1950) : id(i), cohort(coh) { };
     double ymean(double t);
     double y(double t);
@@ -103,8 +118,7 @@ void FhcrcPerson::init() {
   // change state variables
   state = Healthy;
   dx = NotDiagnosed;
-  everPSA = false;
-  previousNegativeBiopsy = false;
+  everPSA = previousNegativeBiopsy = organised = false;
   rngNh->set();
   beta0 = R::rnorm(mubeta0,sqrt(varbeta0)); 
   beta1 = R::rnormPos(mubeta1,sqrt(varbeta1)); 
@@ -149,19 +163,25 @@ void FhcrcPerson::init() {
     case screen70:
       scheduleAt(70.0,toScreen);
       break;
+    case stockholm3_goteborg:
+    case stockholm3_risk_stratified:
     case screenUptake: {
-      // constant rate from 1995
-      double meanTimeToUptake = 10.0;
+      // screening participation increases with time
       if (1995.0 - cohort < 50.0) 
-	scheduleAt(50.0 + R::rexp(1.0)*meanTimeToUptake, toScreen);
+	scheduleAt(50.0 + R::rweibull(2.0,10.0), toScreen);
       else
-	scheduleAt(1995.0 - cohort + R::rexp(1.0)*meanTimeToUptake, toScreen);
-      // re-screening patterns: see handleMessage
+	scheduleAt(1995.0 - cohort + R::rweibull(2.0,10.0), toScreen);
+      // for re-screening patterns: see handleMessage()
     } break;
     default:
       REprintf("Screening not matched: %i\n",screen);
       break;
     }
+  }
+  if (R::runif(0.0,1.0)<9.0/26.0 &&
+      ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
+      (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
+    scheduleAt(R::runif(2013.0,2015.0) - cohort, toOrganised);
   }
 
   // record some parameters
@@ -187,9 +207,8 @@ void FhcrcPerson::init() {
 void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // declarations
-  double psa;
-
-  psa = y(now()-35.0);
+  double psa = y(now()-35.0);
+  //double year = now() + cohort;
 
   // record information (three states, event type, start time, end time)
   report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
@@ -224,15 +243,17 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   
   case toMetastatic:
     state = Metastatic;
-    remove_kind(toClinicalDiagnosis);
+    RemoveKind(toClinicalDiagnosis);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
     break;
     
   case toClinicalDiagnosis:
     dx = ClinicalDiagnosis;
-    remove_kind(toMetastatic); // competing event
-    remove_kind(toScreen);
-    scheduleAt(now(), toBiopsy); // for reporting (earlier biopsies due to clinical symptoms will be missed)
+    RemoveKind(toMetastatic); // competing events
+    RemoveKind(toScreen);
+    scheduleAt(now(), toBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
+    scheduleAt(now(), toBiopsy);
+    scheduleAt(now(), toBiopsy);
     switch(state) {
     case Localised:
       if (R::runif(0.0,1.0) < 0.5) // 50% not cured
@@ -248,20 +269,60 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
     break;
 
+  case toOrganised:
+    organised = true;
+    RemoveKind(toScreen); // remove other screens
+    scheduleAt(now(), toScreen); // now start organised screening
+    break;
+
   case toScreen: 
     everPSA = true;
-    if (psa>=3.0) 
+    if (psa>=3.0) {
       scheduleAt(now(), toBiopsy); // immediate biopsy
-    if (screen == screenUptake && now()<70.0)
-      scheduleAt(now()+2.0, toScreen);
+    } else { // re-screening schedules
+      rngOther->set();
+      if (organised) {
+	switch (screen) {
+	case stockholm3_goteborg:
+	  scheduleAt(now() + 2.0, toScreen);
+	  break;
+	case stockholm3_risk_stratified:
+	  if (psa<1.0)
+	    scheduleAt(now() + 6.0, toScreen);
+	  else 
+	    scheduleAt(now() + 2.0, toScreen);
+	  break;
+	default:
+	  REprintf("Organised screening state not matched: %s\n",screen);
+	  break;
+	}
+      } else  // opportunistic screening
+	switch(screen) {
+	case screenUptake:
+	case stockholm3_goteborg:
+	case stockholm3_risk_stratified:
+	  double tm;
+	  if (psa<3)
+	    tm = now() + R::rweibull(1.16,4.79);
+	  else if (psa<4)
+	    tm = now() + R::rweibull(0.913,2.94);
+	  else
+	    tm = now() + R::rweibull(0.335,0.188);
+	  scheduleAt(tm, toScreen);
+	  break;
+	default:
+	  // do not schedule any other screens
+	  break;
+	}
+      rngNh->set();
+    }
     break;
-    
     
   case toScreenDiagnosis:
     dx = ScreenDiagnosis;
-    remove_kind(toMetastatic); // competing events
-    remove_kind(toClinicalDiagnosis); // competing events
-    remove_kind(toScreen);
+    RemoveKind(toMetastatic); // competing events
+    RemoveKind(toClinicalDiagnosis);
+    RemoveKind(toScreen);
     switch(state) {
     case Localised:
       if (R::runif(0.0,1.0) < 0.45) // assume slightly better stage-specific cure: 55% cf. 50%
@@ -288,6 +349,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       switch(state) {
       case Healthy:
 	previousNegativeBiopsy = true;
+	scheduleAt(now() + 1.0, toScreen);
 	break;
       case Localised:
       case Metastatic:
@@ -307,14 +369,15 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
 } // handleMessage()
 
+RcppExport SEXP testrexp() {
+  return Rcpp::wrap(R::rexp(100.0));
+}
+
 RcppExport SEXP callFhcrc(SEXP parms) {
 
   // declarations
   FhcrcPerson person;
-  //Rcpp::RNGScope scope;
 
-  // long unsigned int seed[] = {12345,12345,12345,12345,12345,12345};
-  // RngStream_SetPackageSeed(seed);
   rngNh = new Rng();
   rngOther = new Rng();
   rngNh->set();
@@ -331,19 +394,15 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   double ages0[106];
   iota(ages0, ages0+106, 0.0);
   rmu0 = Rpexp(mu0, ages0, 106);
+  vector<double> ages(101);
+  iota(ages.begin(), ages.end(), 0.0);
+  ages.push_back(1.0e+6);
 
   // re-set the output objects
   report.clear();
   parameters.clear();
   lifeHistories.clear();
 
-  // setup the ages
-  vector<double> ages(101);
-  iota(ages.begin(), ages.end(), 0.0);
-  // for (double age=0.0; age<=100.0; age++) {
-  //   ages.push_back(age);
-  // }
-  ages.push_back(1.0e+6);
   report.setPartition(ages);
 
   // main loop
@@ -357,7 +416,6 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   }
 
   // tidy up
-  // Rng::unset();
   delete rngNh;
   delete rngOther;
 

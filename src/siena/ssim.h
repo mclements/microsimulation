@@ -121,7 +121,7 @@ class Event {
  **/
 class EventPredicate {
 public:
-  virtual bool operator()(const Event* e) { return true; }
+  virtual bool operator()(const Event * e) = 0;
 };
 
 /** @brief Virtual class (interface) representing processes running
@@ -588,7 +588,7 @@ public:
      *  @see SimErrorHandler
      **/
     static void		set_error_handler(SimErrorHandler *) throw();
-    static void remove_event(EventPredicate pred) throw();
+    static void remove_event(EventPredicate * pred) throw();
 };
 
 } // end namespace ssim

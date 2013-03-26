@@ -118,18 +118,23 @@ void Sim::clear() throw() {
 }
 
 typedef a_table_t::iterator ForwardIterator;
-  
-void Sim::remove_event(EventPredicate pred) throw() {
+
+void Sim::remove_event(EventPredicate * pred) throw() {
   ForwardIterator first = actions.begin();
   ForwardIterator last = actions.end();
   ForwardIterator result = first;
-  for ( ; first != last; ++first) {
+  while (first != last) {
     if ((*first).type != A_Event) {
-      
-      *result++ = *first; } else {
+      *result = *first;
+      ++result;
+    } else {
       const Event * e = (*first).event;
-      if (e != NULL && !pred(e)) *result++ = *first;
+      if (e != 0 && !(*pred)(e)) {
+	*result = *first;
+      ++result;
+      }
     }
+    ++first;
   }
   actions.erase(result, actions.end());
 }

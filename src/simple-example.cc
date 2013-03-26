@@ -1,11 +1,10 @@
 #include "microsimulation.h"
-#include <Rcpp.h>
 
 using namespace std;
 
 enum state_t {Healthy,Cancer,Death};
 
-enum event_t {toOtherDeath, toCancer, toCancerDeath};
+enum event_t {toOtherDeath, toCancer, toCancerDeath,toCheck};
 
 class SimplePerson : public cProcess 
 {
@@ -24,7 +23,9 @@ map<string, vector<double> > report;
  */
 void SimplePerson::init() {
   state = Healthy;
-  scheduleAt(R::rweibull(8.0,85.0),toOtherDeath);
+  double tm = R::rweibull(8.0,85.0); 
+  scheduleAt(tm,toCheck);
+  scheduleAt(tm,toOtherDeath);
   scheduleAt(R::rweibull(3.0,90.0),toCancer);
 }
 
@@ -55,6 +56,9 @@ void SimplePerson::handleMessage(const cMessage* msg) {
     if (R::runif(0.0,1.0) < 0.5)
       scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
     break;
+
+  case toCheck:
+    break;
   
   default:
     REprintf("No valid kind of event\n");
@@ -78,6 +82,7 @@ RcppExport SEXP callSimplePerson(SEXP parms) {
   Rcpp::RNGScope scope;
   Rcpp::List parmsl(parms);
   int n = Rcpp::as<int>(parmsl["n"]);
+  report.clear();
   for (int i = 0; i < n; i++) {
     person = SimplePerson(i);
     Sim::create_process(&person);

@@ -18,17 +18,12 @@ set.user.Random.seed <- function (seed) {
   stopifnot(is.integer(seed))
   if (length(seed) == 1) seed <- rep(seed,6)
   .C("r_set_user_random_seed",seed = seed,PACKAGE="microsimulation")
-  ##return(1)
+  return(invisible(TRUE))
 }
 
 user.Random.seed <- function() {
   .C("r_get_user_random_seed", seed=rep(1L,6), PACKAGE="microsimulation")
 }
-
-## callPersonSimulation <- function(n=500L)
-##   .C("callPersonSimulation",as.integer(rep(12345,6)),
-##      as.double(1),as.integer(n),
-##      out=as.double(1:2),as.integer(2),PACKAGE="microsimulation")$out
 
 enum <- function(obj, labels)
   factor(obj, levels=0:(length(labels)-1), labels=labels)
@@ -71,8 +66,10 @@ callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
 }
 
 callSimplePerson <- function(n=10) {
+  state <- RNGstate(); on.exit(state$reset())
+  RNGkind("Mersenne-Twister")
   stateT <- c("Healthy","Cancer","Death")
-  eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
+  eventT <- c("toOtherDeath", "toCancer", "toCancerDeath", "toCheck")
   out <- .Call("callSimplePerson",
                parms=list(n=as.integer(n)),
                PACKAGE="microsimulation")
@@ -83,6 +80,8 @@ callSimplePerson <- function(n=10) {
 }
 
 callSimplePerson2 <- function(n=10) {
+  state <- RNGstate(); on.exit(state$reset())
+  RNGkind("Mersenne-Twister")
   stateT <- c("Healthy","Cancer","Death")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
   out <- .Call("callSimplePerson2",
@@ -94,23 +93,26 @@ callSimplePerson2 <- function(n=10) {
   out
 }
 
-callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.5,seed=12345) {
+callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,seed=12345) {
   state <- RNGstate(); on.exit(state$reset())
-  RNGkind("user"); # set.seed(Integer); RNGkind("L'Ecuyer-CMRG"); .Random.seed=c(416,12345,12345,12345,12345,12345,12345)
+  RNGkind("user")
   set.user.Random.seed(seed)
-  pop1 <- data.frame(cohort=1972:1912, pop=c(17239, 16854, 16085, 15504, 15604, 16381, 16705, 
+  ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
+  pop1 <- data.frame(cohort=1972:1900, pop=c(17239, 16854, 16085, 15504, 15604, 16381, 16705, 
     16762, 16853, 15487, 14623, 14066, 13568, 13361, 13161, 13234, 
     13088, 12472, 12142, 12062, 12078, 11426, 12027, 11963, 12435, 
     12955, 13013, 13125, 13065, 12249, 11103, 9637, 9009, 8828, 
     8350, 7677, 7444, 7175, 6582, 6573, 6691, 6651, 6641, 6268, 
     6691, 6511, 6857, 7304, 7308, 7859, 7277, 8323, 8561, 7173, 
-    6942, 7128, 6819, 5037, 6798, 6567, 6567))
+    6942, 7128, 6819, 5037, 6798, rep(6567,14)))
   cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
-               "screen60", "screen70", "screenUptake")
+               "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
+               "stockholm3_risk_stratified")
   stateT <- c("Healthy","Localised","Metastatic")
   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
-              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis")
+              "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis",
+              "toOrganised")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
   psaT <- c("PSA<3","PSA>=3")
   stopifnot(screen %in% screenT)
