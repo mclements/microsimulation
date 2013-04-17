@@ -23,24 +23,16 @@ namespace fhcrc {
     mubeta2=0.1094,varbeta2=0.0237;
   double screeningCompliance = 0.50;
   int nLifeHistories = 10, screen = 0;
-  Rng * rngNh, * rngOther;
+  Rng * rngNh, * rngOther, * rngScreen;
   vector<short> stateTuple;
   Rpexp rmu0;
 
-#define KindPred(kind) cMessageKindEq kind##Pred = cMessageKindEq(kind)
+#define KindPred(kind) cMessageKindEq kind##Pred(kind)
 #define RemoveKind(kind) Sim::remove_event(& kind##Pred)
+  //cMessageKindEq toClinicalDiagnosisPred(toClinicalDiagnosis);
   KindPred(toClinicalDiagnosis);
   KindPred(toMetastatic);
   KindPred(toScreen);
-
-// #define KindPred2(KIND) class KIND##Pred : public ssim::EventPredicate { \
-//  public: \
-//   bool operator()(const ssim::Event* e)  { \
-//     const cMessage * msg = dynamic_cast<const cMessage *>(e); \
-//     return (msg != 0 && msg->kind == KIND);\
-//   }; \
-// };
-
 
   EventReport<short,short,double> report;
   map<string, vector<double> > lifeHistories; 
@@ -87,7 +79,6 @@ namespace fhcrc {
     void init();
     virtual void handleMessage(const cMessage* msg);
   };
-
   
 
   /** 
@@ -106,6 +97,7 @@ namespace fhcrc {
       double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(tau2)));
       return yt;
     }
+
 
 /** 
     Initialise a simulation run for an individual
@@ -136,7 +128,7 @@ void FhcrcPerson::init() {
   scheduleAt(aoc,toOtherDeath);
 
   // schedule screening events
-  rngOther->set();
+  rngScreen->set();
   if (R::runif(0.0,1.0)<screeningCompliance) {
     switch(screen) {
     case noScreening:
@@ -178,11 +170,13 @@ void FhcrcPerson::init() {
       break;
     }
   }
-  if (R::runif(0.0,1.0)<9.0/26.0 &&
+  if (R::runif(0.0,1.0)<5.0/26.0 &&
       ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
       (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
     scheduleAt(R::runif(2013.0,2015.0) - cohort, toOrganised);
   }
+
+  rngNh->set();
 
   // record some parameters
   // faster: initialise the length of the vectors and use an index
@@ -280,7 +274,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (psa>=3.0) {
       scheduleAt(now(), toBiopsy); // immediate biopsy
     } else { // re-screening schedules
-      rngOther->set();
+      rngScreen->set();
       if (organised) {
 	switch (screen) {
 	case stockholm3_goteborg:
@@ -288,9 +282,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  break;
 	case stockholm3_risk_stratified:
 	  if (psa<1.0)
-	    scheduleAt(now() + 6.0, toScreen);
+	    scheduleAt(now() + 8.0, toScreen);
 	  else 
-	    scheduleAt(now() + 2.0, toScreen);
+	    scheduleAt(now() + 4.0, toScreen);
 	  break;
 	default:
 	  REprintf("Organised screening state not matched: %s\n",screen);
@@ -380,6 +374,7 @@ RcppExport SEXP callFhcrc(SEXP parms) {
 
   rngNh = new Rng();
   rngOther = new Rng();
+  rngScreen = new Rng();
   rngNh->set();
 
   // read in the parameters
@@ -413,11 +408,13 @@ RcppExport SEXP callFhcrc(SEXP parms) {
     Sim::clear();
     rngNh->nextSubstream();
     rngOther->nextSubstream();
+    rngScreen->nextSubstream();
   }
 
   // tidy up
   delete rngNh;
   delete rngOther;
+  delete rngScreen;
 
   // output
   return Rcpp::List::create(Rcpp::Named("summary") = report.out(),

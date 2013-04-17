@@ -1,22 +1,92 @@
-try(detach("package:microsimulation", unload=TRUE))
+## try(detach("package:microsimulation", unload=TRUE))
+## require(microsimulation)
+## microsimulation:::.testPackage()
+
+options(width=110)
 require(microsimulation)
-microsimulation:::.testPackage()
+n <- 1e7
+noScreening <- callFhcrc(n,screen="noScreening")
+## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
+uptake <- callFhcrc(n,screen="screenUptake")
+goteborg <- callFhcrc(n,screen="stockholm3_goteborg",)
+riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified")
+
+## rate calculations
+pop <- data.frame(age=0:100,pop=c(12589, 14785, 15373, 14899, 14667,
+14437, 14076, 13386, 13425, 12971, 12366, 11659, 11383, 10913, 11059,
+11040, 11429, 12303, 13368, 13388, 13670, 13539, 13886, 13913, 14269,
+14508, 15073, 15419, 15767, 15721, 16328, 16489, 17126, 16345, 15573,
+15702, 16017, 16251, 17069, 16853, 16898, 16506, 15738, 15151, 15224,
+15960, 16248, 16272, 16325, 14963, 14091, 13514, 13000, 12758, 12521,
+12534, 12333, 11699, 11320, 11167, 11106, 10427, 10889, 10732, 11042,
+11367, 11269, 11210, 10982, 10115, 9000, 7652, 6995, 6680, 6144, 5473,
+5108, 4721, 4130, 3911, 3756, 3507, 3249, 2803, 2708, 2355, 2188,
+2020, 1734, 1558, 1183, 1064, 847, 539, 381, 277, 185, 90, 79, 48,
+61))
+w <- with(subset(pop,age>=50 & age<80),data.frame(age=age,wt=pop/sum(pop)))
+require(sqldf)
+eventRates <- function(obj,pattern="Diagnosis") {
+  ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
+  pt <- obj$summary$pt
+  events <- obj$summary$events
+  sqldf("select year, sum(pt) as pt, sum(n) as n, sum(rate*wt) as rate from (select cohort+age as year, age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select cohort, age, sum(pt) as pt from pt group by cohort, age) as t1 natural left outer join (select cohort, age, sum(n) as n from events natural join ev group by cohort, age) as t2) as main natural join w where year>=1990 and year<2020 group by year")
+}
+
+with(eventRates(noScreening),
+     plot(year, rate, type="l",ylim=c(0,0.01),
+          xlab="Age (years)", ylab="Rate"))
+with(eventRates(uptake), lines(year, rate, col="red"))
+with(eventRates(goteborg), lines(year, rate, col="green"))
+with(eventRates(riskStrat), lines(year, rate, col="blue"))
+
+## Plot of the cohorts over the Lexis diagram
+plot(c(1900,2020),c(0,100),type="n",xlab="Calendar period",ylab="Age (years)")
+polygon(c(1900,1970,1970+50,1970+50,1970+50-20,1900),
+        c(0,0,50,100,100,0))
+polygon(c(1990,2020,2020,1990),
+        c(50,50,80,80),
+        lty=2)
+
+
+
+pdf("~/work/screening-comparison-20130222.pdf")
+layout(matrix(1:4,nrow=2,byrow=TRUE))
+with(eventRates(temp), plot(age, rate, type="l",
+                            xlab="Age (years)", ylab="Rate", main="None verus two-yearly screening"))
+with(eventRates(temp2), lines(age, rate, col="red"))
+legend("topleft", legend=c("No screening","Two-yearly screening"), lty=1, col=c("black","red"), bty="n")
+##
+with(eventRates(temp), plot(age, rate, type="l",
+                            xlab="Age (years)", ylab="Rate", main="None versus four-yearly screening"))
+with(eventRates(temp4), lines(age, rate, col="blue"))
+legend("topleft", legend=c("No screening","Four-yearly screening"), lty=1, col=c("black","blue"), bty="n")
+##
+with(eventRates(temp), plot(age, rate, type="l",
+                            xlab="Age (years)", ylab="Rate", main="None versus screening at age 50"))
+with(eventRates(temp50), lines(age, rate, col="green"))
+legend("topleft", legend=c("No screening","Screening at age 50"), lty=1, col=c("black","green"), bty="n")
+##
+with(eventRates(temp), plot(age, rate, type="l",
+                            xlab="Age (years)", ylab="Rate", main="None versus screening at age 60"))
+with(eventRates(temp60), lines(age, rate, col="orange"))
+legend("topleft", legend=c("No screening","Screening at age 60"), lty=1, col=c("black","orange"), bty="n")
+dev.off()
+
 
 ### FHCRC model ###
 options(width=110)
 require(microsimulation)
-RNGkind("user")
-temp <- callFhcrc(1e5,screen="noScreening")
-temp2 <- callFhcrc(1e5,screen="twoYearlyScreen50to70")
-temp4 <- callFhcrc(1e5,screen="fourYearlyScreen50to70")
-temp50 <- callFhcrc(1e5,screen="screen50")
-temp60 <- callFhcrc(1e5,screen="screen60")
-temp70 <- callFhcrc(1e5,screen="screen70")
+n <- 1e5
+temp <- callFhcrc(n,screen="noScreening")
+temp2 <- callFhcrc(n,screen="twoYearlyScreen50to70")
+temp4 <- callFhcrc(n,screen="fourYearlyScreen50to70")
+temp50 <- callFhcrc(n,screen="screen50")
+temp60 <- callFhcrc(n,screen="screen60")
+temp70 <- callFhcrc(n,screen="screen70")
 
 ## rate calculations
 require(sqldf)
-pattern <- "Diagnosis"
-eventRates <- function(obj) {
+eventRates <- function(obj,pattern="Diagnosis") {
   ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
   pt <- obj$summary$pt
   events <- obj$summary$events
