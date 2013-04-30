@@ -21,8 +21,12 @@ namespace fhcrc {
     mubeta0=-1.6094, varbeta0=0.0568,
     mubeta1=0.02, varbeta1=0.0019,
     mubeta2=0.1094,varbeta2=0.0237;
+
+  // input parameters
   double screeningCompliance = 0.50;
+  double studyParticipation = 0.0;
   int nLifeHistories = 10, screen = 0;
+
   Rng * rngNh, * rngOther, * rngScreen;
   vector<short> stateTuple;
   Rpexp rmu0;
@@ -383,6 +387,7 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   nLifeHistories = Rcpp::as<int>(parmsl["nLifeHistories"]);
   screen = Rcpp::as<int>(parmsl["screen"]);
   screeningCompliance = Rcpp::as<double>(parmsl["screeningCompliance"]);
+  studyParticipation = Rcpp::as<double>(parmsl["studyParticipation"]);
   Rcpp::NumericVector cohort = Rcpp::as<Rcpp::NumericVector>(parmsl["cohort"]);
 
   // set up the parameters

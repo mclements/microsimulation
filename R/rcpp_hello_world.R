@@ -93,12 +93,13 @@ callSimplePerson2 <- function(n=10) {
   out
 }
 
-callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,seed=12345) {
+callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
+                      seed=12345, studyParticipation=50/260) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("user")
   set.user.Random.seed(seed)
   ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
-  pop1 <- data.frame(cohort=1972:1900, pop=c(17239, 16854, 16085, 15504, 15604, 16381, 16705, 
+  pop1 <- data.frame(cohort=1980:1900, pop=c(rep(17239,9), 16854, 16085, 15504, 15604, 16381, 16705, 
     16762, 16853, 15487, 14623, 14066, 13568, 13361, 13161, 13234, 
     13088, 12472, 12142, 12062, 12078, 11426, 12027, 11963, 12435, 
     12955, 13013, 13125, 13065, 12249, 11103, 9637, 9009, 8828, 
@@ -122,8 +123,11 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   if (is.na(n)) n <- length(cohort) else cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
   screenIndex <- which(screen == screenT) - 1
   out <- .Call("callFhcrc",
-               parms=list(n=as.integer(n),screen=as.integer(screenIndex),nLifeHistories=as.integer(nLifeHistories),
+               parms=list(n=as.integer(n),
+                 screen=as.integer(screenIndex),
+                 nLifeHistories=as.integer(nLifeHistories),
                  screeningCompliance=as.double(screeningCompliance),
+                 studyParticipation=as.double(studyParticipation),
                  cohort=as.double(cohort)),
                PACKAGE="microsimulation")
   reader <- function(obj) {

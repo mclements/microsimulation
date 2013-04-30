@@ -29,24 +29,124 @@ eventRates <- function(obj,pattern="Diagnosis") {
   ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
   pt <- obj$summary$pt
   events <- obj$summary$events
-  sqldf("select year, sum(pt) as pt, sum(n) as n, sum(rate*wt) as rate from (select cohort+age as year, age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select cohort, age, sum(pt) as pt from pt group by cohort, age) as t1 natural left outer join (select cohort, age, sum(n) as n from events natural join ev group by cohort, age) as t2) as main natural join w where year>=1990 and year<2020 group by year")
+  sqldf("select year, sum(pt) as pt, sum(n) as n, sum(rate*wt) as rate from (select cohort+age as year, age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select cohort, age, sum(pt) as pt from pt group by cohort, age) as t1 natural left outer join (select cohort, age, sum(n) as n from events natural join ev group by cohort, age) as t2) as main natural join w where year>=1990 and year<2030 group by year")
 }
+plotEvents <- function(pattern,ylab="Rate",main=NULL,legend.x="topleft",
+                       include.legend=TRUE, legend.y=NULL) {
+  with(eventRates(noScreening,pattern),
+       plot(year, rate, type="l",ylim=c(0,max(eventRates(goteborg,pattern)$rate)),
+            xlab="Age (years)", ylab=ylab, main=main))
+  with(eventRates(uptake,pattern), lines(year, rate, col="red"))
+  with(eventRates(goteborg,pattern), lines(year, rate, col="green"))
+  with(eventRates(riskStrat,pattern), lines(year, rate, col="blue"))
+  if (include.legend)
+    legend(legend.x,legend.y,
+           legend=c("No screening",
+             "Opportunistic screening",
+             "Göteborg protocol",
+             "Risk-stratified protocol (4+8)"),
+           lty=1,
+           col=c("black","red","green","blue"),
+           bty="n")
+}
+prevRatios <- function(obj,predicate) {
+  ## ev <- data.frame(event=grep(pattern,levels(obj$summary$prev$event),value=TRUE))
+  prev <- obj$summary$prev
+  sqldf(sprintf("select year, sum(n) as n, sum(y) as y, sum(p*wt) as prev from (select cohort+age as year, age, t1.n as n, coalesce(t2.y,0.0) as y, 1.0*coalesce(t2.y,0.0)/t1.n*1.0 as p from (select cohort, age, sum(n) as n from prev group by cohort, age) as t1 natural left outer join (select cohort, age, sum(n) as y from prev where %s group by cohort, age) as t2) as main natural join w where year>=1990 and year<2030 group by year", predicate))
+}
+plotPrev <- function(pattern,ylab="Prevalence",main=NULL,legend.x="topleft",
+                       include.legend=TRUE, legend.y=NULL) {
+  with(prevRatios(noScreening,pattern),
+       plot(year, prev, type="l",ylim=c(0,max(prevRatios(goteborg,pattern)$prev)),
+            xlab="Age (years)", ylab=ylab, main=main))
+  with(prevRatios(uptake,pattern), lines(year, prev, col="red"))
+  with(prevRatios(goteborg,pattern), lines(year, prev, col="green"))
+  with(prevRatios(riskStrat,pattern), lines(year, prev, col="blue"))
+  if (include.legend)
+    legend(legend.x,legend.y,
+           legend=c("No screening",
+             "Opportunistic screening",
+             "Göteborg protocol",
+             "Risk-stratified protocol (4+8)"),
+           lty=1,
+           col=c("black","red","green","blue"),
+           bty="n")
+}
+table(goteborg$summary$events$event)
+table(goteborg$summary$prev$dx)
 
-with(eventRates(noScreening),
-     plot(year, rate, type="l",ylim=c(0,0.01),
-          xlab="Age (years)", ylab="Rate"))
-with(eventRates(uptake), lines(year, rate, col="red"))
-with(eventRates(goteborg), lines(year, rate, col="green"))
-with(eventRates(riskStrat), lines(year, rate, col="blue"))
+##path <- function(filename) sprintf("/media/sf_C_DRIVE/usr/tmp/tmp/%s",filename)
+##pdf(path("screening_20130425.pdf"),width=7,height=6)
+##par(mfrow=c(2,2))
+plotEvents("^toScreen$",main="PSA screen",legend.x=2010,legend.y=0.1)
+plotEvents("Biopsy",main="Biopsies",legend.x=2010,legend.y=0.03)
+plotEvents("Diagnosis",main="Prostate cancer incidence",include.legend=FALSE)
+plotEvents("^toClinicalDiagnosis$",legend.x="bottomleft",
+           main="PC incidence (Clinical Dx)")
+plotPrev("dx!='NotDiagnosed'",main="PC diagnosis",legend.x=2010,legend.y=0.04)
+plotEvents("^toCancerDeath$",legend.x="bottomleft",main="PC mortality (*NOT CALIBRATED*)")
+##dev.off()
+
+
+
+
+
 
 ## Plot of the cohorts over the Lexis diagram
-plot(c(1900,2020),c(0,100),type="n",xlab="Calendar period",ylab="Age (years)")
-polygon(c(1900,1970,1970+50,1970+50,1970+50-20,1900),
+plot(c(1900,2030),c(0,100),type="n",xlab="Calendar period",ylab="Age (years)")
+polygon(c(1900,1980,1980+50,1980+50,1980+50-30,1900),
         c(0,0,50,100,100,0))
-polygon(c(1990,2020,2020,1990),
+polygon(c(1990,2030,2030,1990),
         c(50,50,80,80),
-        lty=2)
+        lty=2, border="blue")
 
+
+
+### FHCRC model ###
+options(width=110)
+require(microsimulation)
+n <- 1e6
+temp <- callFhcrc(n,screen="noScreening")
+temp2 <- callFhcrc(n,screen="twoYearlyScreen50to70")
+temp4 <- callFhcrc(n,screen="fourYearlyScreen50to70")
+temp50 <- callFhcrc(n,screen="screen50")
+temp60 <- callFhcrc(n,screen="screen60")
+temp70 <- callFhcrc(n,screen="screen70")
+
+## rate calculations
+require(sqldf)
+eventRates <- function(obj,pattern="Diagnosis") {
+  ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
+  pt <- obj$summary$pt
+  events <- obj$summary$events
+  sqldf("select age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select age, sum(pt) as pt from pt group by age) as t1 natural left outer join (select age, sum(n) as n from events natural join ev group by age) as t2")
+}
+
+
+png("/media/sf_C_DRIVE/usr/tmp/tmp/screening-comparison-20130222.png",height=2,width=4,res=1200,units="in",pointsize=3)
+##x11(width=8,height=5)
+##layout(matrix(1:2,nrow=1,byrow=TRUE))
+par(mfrow=c(1,2),
+  mar      = c(5+2, 4+2, 4+2, 1+2)+0.1,
+  ##xaxs     = "i",
+  ##yaxs     = "i",
+  cex.main = 2,
+  cex.axis = 2,
+  cex.lab  = 2
+)
+with(eventRates(temp), plot(age, rate, type="l",
+                            xlab="Age (years)", ylab="Prostate cancer incidence rate",
+                            main="None verus two-yearly screening"))
+with(eventRates(temp2), lines(age, rate, col="red"))
+legend("topleft", legend=c("No screening","Two-yearly\nscreening"), lty=1, col=c("black","red"), bty="n",
+       cex=2)
+##
+with(eventRates(temp), plot(age, rate, type="l",
+                            xlab="Age (years)", ylab="Prostate cancer incidence rate", main="None versus four-yearly screening"))
+with(eventRates(temp4), lines(age, rate, col="blue"))
+legend("topleft", legend=c("No screening","Four-yearly\nscreening"), lty=1, col=c("black","blue"), bty="n",
+       cex=2)
+dev.off()
 
 
 pdf("~/work/screening-comparison-20130222.pdf")
@@ -71,27 +171,6 @@ with(eventRates(temp), plot(age, rate, type="l",
 with(eventRates(temp60), lines(age, rate, col="orange"))
 legend("topleft", legend=c("No screening","Screening at age 60"), lty=1, col=c("black","orange"), bty="n")
 dev.off()
-
-
-### FHCRC model ###
-options(width=110)
-require(microsimulation)
-n <- 1e5
-temp <- callFhcrc(n,screen="noScreening")
-temp2 <- callFhcrc(n,screen="twoYearlyScreen50to70")
-temp4 <- callFhcrc(n,screen="fourYearlyScreen50to70")
-temp50 <- callFhcrc(n,screen="screen50")
-temp60 <- callFhcrc(n,screen="screen60")
-temp70 <- callFhcrc(n,screen="screen70")
-
-## rate calculations
-require(sqldf)
-eventRates <- function(obj,pattern="Diagnosis") {
-  ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
-  pt <- obj$summary$pt
-  events <- obj$summary$events
-  sqldf("select age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select age, sum(pt) as pt from pt group by age) as t1 natural left outer join (select age, sum(n) as n from events natural join ev group by age) as t2")
-}
 
 pdf("~/work/screening-comparison-20130222.pdf")
 layout(matrix(1:4,nrow=2,byrow=TRUE))
