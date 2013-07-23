@@ -98,6 +98,10 @@ void r_remove_current_stream()
     }
   }
 
+void r_next_rng_stream() {
+  //RngStream_ResetStartStream(default_stream);
+  RngStream_ResetNextSubstream(default_stream);
+}
 
 double *user_unif_rand ()
 {

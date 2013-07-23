@@ -21,6 +21,11 @@ set.user.Random.seed <- function (seed) {
   return(invisible(TRUE))
 }
 
+next.user.Random.stream <- function () {
+  .C("r_next_rng_stream",PACKAGE="microsimulation")
+  return(invisible(TRUE))
+}
+
 user.Random.seed <- function() {
   .C("r_get_user_random_seed", seed=rep(1L,6), PACKAGE="microsimulation")
 }
@@ -93,8 +98,24 @@ callSimplePerson2 <- function(n=10) {
   out
 }
 
+callIllnessDeath <- function(n=10) {
+  state <- RNGstate(); on.exit(state$reset())
+  RNGkind("Mersenne-Twister")
+  stateT <- c("Healthy","Cancer")
+  eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
+  out <- .Call("callIllnessDeath",
+               parms=list(n=as.integer(n)),
+               PACKAGE="microsimulation")
+  reader <- function(obj)
+    cbind(data.frame(state=enum(obj$state[[1]],stateT)),
+          data.frame(obj[-1]))
+  out <- lapply(out,reader)
+  out$events <- transform(out$events,event=enum(event,eventT))
+  out
+}
+
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260) {
+                      seed=12345, studyParticipation=50/260, mc.cores=1) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("user")
   set.user.Random.seed(seed)
@@ -120,16 +141,35 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   stopifnot(is.na(n) || is.integer(as.integer(n)))
   stopifnot(is.integer(as.integer(nLifeHistories)))
   stopifnot(is.double(as.double(screeningCompliance)))
-  if (is.na(n)) n <- length(cohort) else cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
   screenIndex <- which(screen == screenT) - 1
-  out <- .Call("callFhcrc",
-               parms=list(n=as.integer(n),
-                 screen=as.integer(screenIndex),
-                 nLifeHistories=as.integer(nLifeHistories),
-                 screeningCompliance=as.double(screeningCompliance),
-                 studyParticipation=as.double(studyParticipation),
-                 cohort=as.double(cohort)),
-               PACKAGE="microsimulation")
+  ## NB: sample() calls the random number generator (!)
+  if (is.na(n)) n <- length(cohort) else cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
+  cohort <- sort(cohort)
+  ## now separate the data into chunks
+  chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)
+  ## set the initial random numbers
+  ## set.user.Random.seed(c(rep(12345L,6)))
+  currentSeed <- c(407L, user.Random.seed()$seed)
+  initialSeeds <- lapply(1:mc.cores, function(i) {
+    newseed <- currentSeed
+    for (j in 1:3)
+      currentSeed <<- parallel::nextRNGStream(currentSeed)
+    newseed[-1]
+  })
+  ## now run the chunks separately
+  out <- lapply(1:mc.cores,
+                function(i) {
+                  chunk <- chunks[[i]]
+                  set.user.Random.seed(initialSeeds[[i]])
+                  .Call("callFhcrc",
+                        parms=list(n=as.integer(nrow(chunk)),
+                          screen=as.integer(screenIndex),
+                          nLifeHistories=as.integer(nLifeHistories),
+                          screeningCompliance=as.double(screeningCompliance),
+                          studyParticipation=as.double(studyParticipation),
+                          cohort=as.double(chunk)),
+                        PACKAGE="microsimulation")
+                })
   reader <- function(obj) {
     out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
                             dx=enum(obj$state[[2]],diagnosisT),
@@ -139,7 +179,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
     out$year <- out$cohort + out$age
     out
   }
-  out$summary <- lapply(out$summary,reader)
+  out$summary <- lapply(seq_along(out$summary[[1]]),
+                        function(i) reader(do.call("cbind",lapply(out$summary, "[[", i))))
   enum(out$summary$events$event) <- eventT
   enum(out$lifeHistories$state) <- stateT
   enum(out$lifeHistories$dx) <- diagnosisT
@@ -151,6 +192,13 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   out$n <- n
   out
 }
+
+## utility - not exported
+assignList <- function(lst,...)
+  for(i in 1:length(lst))
+    assign(names(lst)[i], lst[[i]], ...)
+## assignList(formals(callFhcrc),pos=1)
+
 
 
 .testPackage <- function() {
@@ -224,6 +272,7 @@ RNGStream <- function(nextStream = TRUE, iseed = NULL) {
       assign(".Random.seed", oldseed, envir = .GlobalEnv)
     else rm(.Random.seed, envir = .GlobalEnv)
   },
+                 seed = function() current,
                  open = function() .Random.seed <<- current,
                  close = function() current <<- .Random.seed,
                  resetStream = function() .Random.seed <<- current <<- startOfSubStream <<- startOfStream,

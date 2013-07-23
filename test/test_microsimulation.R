@@ -2,6 +2,25 @@
 ## require(microsimulation)
 ## microsimulation:::.testPackage()
 
+require(parallel)
+require(microsimulation)
+n <- 1e4
+system.time(test <- mclapply(1:10,
+                             function(i) callFhcrc(n,screen="noScreening"),
+                             mc.cores=10))
+
+test <- lapply(1:10, function(i) callFhcrc(10,screen="noScreening"))
+test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeHistories)),
+              enum=test[[1]]$enum,
+              n=sum(sapply(test,function(obj) obj$n)),
+              parameters=do.call("rbind", lapply(test,"[[", "parameters")),
+              summary=list(pt=do.call("rbind", lapply(test,function(obj) obj$summary$pt)),
+                events=do.call("rbind", lapply(test,function(obj) obj$summary$events)),
+                prev=do.call("rbind", lapply(test,function(obj) obj$summary$prev))))
+
+       
+
+     
 options(width=110)
 require(microsimulation)
 n <- 1e7
