@@ -10,6 +10,8 @@ namespace illnessDeath {
 
   EventReport<short,short,double> report;
   cMessageKindEq toOtherDeathPred(toOtherDeath);
+  double cure, zsd; // parameters - could be static class variables
+  
 
   double b_weibull(double mean, double a, double rr = 1.0) {
     return mean/R::gammafn(1.0+1.0/a)*pow(rr,-1.0/a);
@@ -31,10 +33,10 @@ namespace illnessDeath {
   */
   void SimplePerson::init() {
     state = Healthy;
-    z = 1.0;
-    scheduleAt(R::rweibull(4.0,b_weibull(4.0,80.0)), toOtherDeath);
-    if (R::runif(0.0,1.0)<0.1)
-      scheduleAt(R::rweibull(3.0,b_weibull(4.0,80.0,z)), toCancer);
+    z = exp(R::rnorm(0.0,zsd));
+    scheduleAt(R::rweibull(4.0,b_weibull(80.0,4.0)), toOtherDeath);
+    if (R::runif(0.0,1.0)>cure)
+      scheduleAt(R::rweibull(3.0,b_weibull(80.0,3.0,z)), toCancer);
   }
   
   /** 
@@ -48,6 +50,7 @@ namespace illnessDeath {
       
     case toOtherDeath: 
     case toCancerDeath: 
+      // reporting already completed: stop the simulation
       Sim::stop_simulation();
       break;
       
@@ -71,6 +74,8 @@ namespace illnessDeath {
     Rcpp::RNGScope scope;
     Rcpp::List parmsl(parms);
     int n = Rcpp::as<int>(parmsl["n"]);
+    cure = Rcpp::as<double>(parmsl["cure"]);
+    zsd = Rcpp::as<double>(parmsl["zsd"]);
     
     vector<double> ages(101);
     iota(ages.begin(), ages.end(), 0.0);

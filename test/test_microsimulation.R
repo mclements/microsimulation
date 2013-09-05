@@ -2,6 +2,22 @@
 ## require(microsimulation)
 ## microsimulation:::.testPackage()
 
+## Reading in the data from FHCRC
+temp <- lapply(dir("~/src/fhcrc/data")[-10],
+               function(name) structure(read.table(paste("~/src/fhcrc/data/",name,sep=""),
+                                                   head=TRUE,sep=","),
+                                        filename=name))
+names(temp) <- lapply(temp,attr,"filename")
+lapply(temp,head)
+
+## biopsy frequency
+with(temp[[2]],data.frame(psa=rep(PSA.beg,5),
+                          age=rep(c(55,60,65,70,75),each=3),
+                          biopsy_frequency=unlist(temp[[2]][,-(1:2)])))
+temp[[2]]
+
+
+
 require(parallel)
 require(microsimulation)
 n <- 1e4

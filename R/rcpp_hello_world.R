@@ -98,13 +98,13 @@ callSimplePerson2 <- function(n=10) {
   out
 }
 
-callIllnessDeath <- function(n=10) {
+callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("Mersenne-Twister")
   stateT <- c("Healthy","Cancer")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
   out <- .Call("callIllnessDeath",
-               parms=list(n=as.integer(n)),
+               parms=list(n=as.integer(n),cure=as.double(cure),zsd=as.double(zsd)),
                PACKAGE="microsimulation")
   reader <- function(obj)
     cbind(data.frame(state=enum(obj$state[[1]],stateT)),
