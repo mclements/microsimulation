@@ -4,7 +4,9 @@
 #include <Rcpp.h>
 
 #include <functional>
-#include "triple.h"
+// #include "triple.h"
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 
 using namespace std;
 using namespace Rcpp;
@@ -119,7 +121,7 @@ public:
 template<class I1, class I2, class I3, class Outcome>
 class Table3D {
 public:
-  typedef triple<I1,I2,I3> Index;
+  typedef boost::tuple<I1,I2,I3> Index;
   typedef map<Index,Outcome,greater<Index> > Map;
   Map data;
   Table3D(DataFrame df) { 
@@ -128,7 +130,7 @@ public:
     Vector<Rcpp::traits::r_sexptype_traits<I2>::rtype> df2 = df(2);
     Vector<Rcpp::traits::r_sexptype_traits<Outcome>::rtype> df3 = df(3);
     for (int i=0; i<df0.size(); i++) {
-      data[make_triple(df0[i],df1[i],df2[i])] = df3[i];
+      data[Index(df0[i],df1[i],df2[i])] = df3[i];
     }
   }
   virtual Outcome lookup(Index index) {
@@ -138,7 +140,7 @@ public:
     return lookup(index);
   }
   virtual Outcome lookup(I1 i1, I2 i2, I3 i3) {
-    return data.lower_bound(make_triple(i1,i2,i3))->second;
+    return data.lower_bound(Index(i1,i2,i3))->second;
   }
   virtual Outcome operator()(I1 i1, I2 i2, I3 i3) {
     return lookup(i1,i2,i3);
@@ -155,6 +157,13 @@ RcppExport SEXP testTable2(SEXP df, SEXP x1, SEXP x2) {
   Table2D<double,double,double> table = 
     Table2D<double,double,double>(as<DataFrame>(df));
   return wrap<double>(table.lookup(as<double>(x1),as<double>(x2)));
+}
+
+RcppExport SEXP testTable3(SEXP df, SEXP x1, SEXP x2, SEXP x3) {
+  Table3D<double,double,double,double> table = 
+    Table3D<double,double,double,double>(as<DataFrame>(df));
+  return wrap<double>(table.lookup(as<double>(x1),as<double>(x2),
+				   as<double>(x3)));
 }
 
 #endif /* RCPP_TABLE_H */
