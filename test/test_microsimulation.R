@@ -1,6 +1,36 @@
 ## try(detach("package:microsimulation", unload=TRUE))
-## require(microsimulation)
-## microsimulation:::.testPackage()
+require(microsimulation)
+microsimulation:::.testPackage()
+
+require(microsimulation)
+noScreening <- callFhcrc(10,screen="noScreening")
+
+signed <- function(seed) as.integer(ifelse(seed>2^31, seed-2^32, seed))
+
+require(microsimulation)
+##callFhcrc(10,screen="noScreening") # FAILS
+init.seed <- as.integer(c(407,rep(12345,6)))
+RNGkind("user")
+set.user.Random.seed(init.seed[-1])
+runif(2)
+next.user.Random.substream()
+runif(2)
+set.user.Random.seed(parallel::nextRNGStream(init.seed)[-1])
+newSeed <- c(407L,as.integer(signed(user.Random.seed()$seed)))
+runif(2)
+set.user.Random.seed(parallel::nextRNGStream(newSeed)[-1])
+runif(2)
+
+RNGkind("L'Ecuyer-CMRG")
+init.seed <- as.integer(c(407,rep(12345,6)))
+.Random.seed <- init.seed
+runif(2)
+.Random.seed <- parallel::nextRNGSubStream(init.seed)
+runif(2)
+newSeed <- .Random.seed <- parallel::nextRNGStream(init.seed)
+runif(2)
+.Random.seed <- parallel::nextRNGStream(newSeed)
+runif(2)
 
 ## Reading in the data from FHCRC
 temp <- lapply(dir("~/src/fhcrc/data")[-10],
@@ -35,6 +65,7 @@ test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeH
                 prev=do.call("rbind", lapply(test,function(obj) obj$summary$prev))))
 
        
+
 
      
 options(width=110)

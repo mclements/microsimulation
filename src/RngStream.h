@@ -35,6 +35,9 @@ void RngStream_ResetStartSubstream (RngStream g);
 void RngStream_ResetNextSubstream (RngStream g);
 
 
+  // double[] RngStream_nextRNGStream (RngStream g);
+
+
 void RngStream_SetAntithetic (RngStream g, int a);
 
 

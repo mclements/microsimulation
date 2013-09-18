@@ -53,7 +53,6 @@ void Rng::set() {
 }
 
 void Rng::nextSubstream() {
-  //set(); // is this useful?
   RngStream_ResetNextSubstream(stream);
 }
 
@@ -75,13 +74,13 @@ void r_create_current_stream()
   return;
 }
 
-void r_remove_current_stream()
-{
-  RngStream_DeleteStream(&default_stream);
-  return;
-}
+  void r_remove_current_stream()
+  {
+    RngStream_DeleteStream(&default_stream);
+    return;
+  }
 
-  void r_set_user_random_seed(int * inseed) {
+  void r_set_user_random_seed(double * inseed) {
     unsigned long seed[6];
     for(int i=0; i<6; i++) {
       seed[i] = (unsigned long)inseed[i];
@@ -90,16 +89,15 @@ void r_remove_current_stream()
     RngStream_SetSeed (default_stream, seed);
   }
 
-  void r_get_user_random_seed(int * outseed) {
+  void r_get_user_random_seed(double * outseed) {
     unsigned long seed[6];
     RngStream_GetState (default_stream, seed);
     for(int i=0; i<6; i++) {
-      outseed[i] = (int)seed[i];
+      outseed[i] = (double)seed[i];
     }
   }
 
-void r_next_rng_stream() {
-  //RngStream_ResetStartStream(default_stream);
+void r_next_rng_substream() {
   RngStream_ResetNextSubstream(default_stream);
 }
 

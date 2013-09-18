@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <utility>
 #include <map>
+#include <functional>
 
 //using namespace std;
 //using namespace ssim;
@@ -51,6 +52,7 @@ using std::string;
 using std::vector;
 using std::map;
 using std::pair;
+using std::greater;
 using ssim::Time;
 using ssim::Sim;
 
@@ -273,17 +275,22 @@ extern "C" { // functions that will be called from R
   /** 
       @brief A utility function to set the user random seed for the simulation.
   */
-  void r_set_user_random_seed(int * seed);
+  void r_set_user_random_seed(double * seed);
 
   /** 
       @brief A utility function to set the user random seed for the simulation.
   */
-  void r_get_user_random_seed(int * seed);
+  void r_get_user_random_seed(double * seed);
 
+  /* /\**  */
+  /*     @brief A utility function to move to the next user random stream for the simulation. */
+  /* *\/ */
+  /* void r_next_rng_stream(); */
+  
   /** 
       @brief A utility function to move to the next user random stream for the simulation.
   */
-  void r_next_rng_stream();
+  void r_next_rng_substream();
   
   /** 
       @brief Simple test of the random streams (with a stupid name)
@@ -316,25 +323,6 @@ std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) 
         }
     return result;
 }
-
-template<class T1, class T2, class T3>
-  struct Tuple3 {
-    T1 first;
-    T2 second;
-    T3 third;
-  };
-template<class T1, class T2, class T3>
-  bool operator<(const Tuple3<T1,T2,T3> &lhs, const Tuple3<T1,T2,T3> &rhs) {
-// http://stackoverflow.com/questions/3882467/defining-operator-for-a-struct
-#define COMPARE(x) if((lhs.x) < (rhs.x)) return true;	\
-                   if((lhs.x) > (rhs.x)) return false;
-      COMPARE(first)
-      COMPARE(second)
-      COMPARE(third)
-      return false;
-#undef COMPARE
-  }
-
 
 // old EventReport which uses vector<Tstate> to record state rather than Tstate itself
 template< class Tstate, class Tevent, class T >
@@ -495,6 +483,154 @@ public:
 };
 
 
+// old EventReport which uses vector<Tstate> to record state rather than Tstate itself
+template< class Tstate, class Tevent, class T >
+class EventReport2 {
+typedef vector<Tstate> state_t;
+public:
+  void setPartition(const vector<T> partition) {
+    _partition = partition;
+    _max = * max_element(_partition.begin(), _partition.end());
+  }
+  void clear() {
+    _pt.clear();
+    _events.clear();
+    _prev.clear();
+    _partition.clear();
+  }
+  void add(const Tstate state1,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    state.push_back(state4);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
+  	   const Tstate state5,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    state.push_back(state4);
+    state.push_back(state5);
+    add(state,event,lhs,rhs);
+  }
+  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
+  	   const Tstate state5, const Tstate state6,
+  	   const Tevent event, const T lhs, const T rhs) {
+    state_t state;
+    state.push_back(state1);
+    state.push_back(state2);
+    state.push_back(state3);
+    state.push_back(state4);
+    state.push_back(state5);
+    state.push_back(state6);
+    add(state,event,lhs,rhs);
+  }
+  void add(const state_t state, const Tevent event, const T lhs, const T rhs) {
+    typename vector< T >::iterator lo, it;
+    T itmax;
+    lo = lower_bound (_partition.begin(), _partition.end(), lhs, greater<T>() );
+    //if (lhs<*lo) lo -= 1;
+    itmax = rhs<_max ? rhs : _max; // truncates if outside of partition (why?)
+    for (it=lo; (*it)<itmax; ++it) {
+      _pt[state][*it] += (*(it+1)<rhs ? (*(it+1)) : rhs) - ((*it)<lhs ? lhs : (*it));
+      if (lhs<=(*it) && (*it)<rhs) 
+	_prev[state][*it] += 1;
+    }
+    if (rhs<_max)
+      _events[state][event][*(it-1)] += 1;
+  }
+  SEXP out() {
+    using namespace Rcpp;
+    vector<T> ptAge, ptPt;
+    vector<vector< Tstate > > ptState;
+    typename map<T,T>::iterator it;
+    typename map<state_t, map<T,T> >::iterator it2;
+    for (it2=_pt.begin(); it2 != _pt.end(); ++it2) {
+      for (it=(*it2).second.begin(); it != (*it2).second.end(); ++it) {
+	ptState.push_back((*it2).first);
+	ptAge.push_back((*it).first);
+	ptPt.push_back((*it).second);
+      }
+    }
+    ptState = transpose<Tstate>(ptState);
+    vector<T> evAge;
+    vector<state_t> evState;
+    vector<Tevent> evEvent;
+    vector<int> evCount;
+    typename map<T,int>::iterator itdi1;
+    typename map<Tevent, map<T,int> >::iterator itdi2;
+    typename map<state_t, map<Tevent, map<T,int> > >::iterator itdi3;
+    for (itdi3=_events.begin(); itdi3 != _events.end(); ++itdi3) {
+      for (itdi2=(*itdi3).second.begin(); itdi2 != (*itdi3).second.end(); ++itdi2) {
+	for (itdi1=(*itdi2).second.begin(); itdi1 != (*itdi2).second.end(); ++itdi1) {
+	  evState.push_back((*itdi3).first);
+	  evEvent.push_back((*itdi2).first);
+	  evAge.push_back((*itdi1).first);
+	  evCount.push_back((*itdi1).second);
+	}
+      }
+    }
+    evState = transpose<Tstate>(evState);
+    typename map<state_t, map<T,int> >::iterator itdi4;
+    vector<state_t> prState;
+    vector<T> prAge;
+    vector<int> prCount;
+    for (itdi4=_prev.begin(); itdi4 != _prev.end(); ++itdi4) {
+      for (itdi1=(*itdi4).second.begin(); itdi1 != (*itdi4).second.end(); ++itdi1) {
+	prState.push_back((*itdi4).first);
+	prAge.push_back((*itdi1).first);
+	prCount.push_back((*itdi1).second);
+      }
+    }
+    prState = transpose<Tstate>(prState);
+    return List::create(Named("pt") = 
+			List::create(Named("state") = ptState,
+				     Named("age") = ptAge,
+				     Named("pt") = ptPt),
+			Named("events") = 
+			List::create(Named("state") = evState,
+				     Named("event") = evEvent,
+				     Named("age") = evAge,
+				     Named("n") = evCount),
+			Named("prev") = 
+			List::create(Named("state") = prState,
+				     Named("age") = prAge,
+				     Named("n") = prCount));
+  }
+  T _max;
+  vector<T> _partition;
+  map<state_t, map<T, int> > _prev;
+  map<state_t, map< T, T > > _pt;
+  map<state_t, map<Tevent, map< T, int > > > _events;
+};
+
+
 template< class Tstate, class Tevent, class T >
 class EventReportNew {
 public:
@@ -589,9 +725,9 @@ public:
   
   T _max;
   vector<T> _partition;
-  map<Tstate, map<T, int> > _prev;
-  map<Tstate, map< T, T > > _pt;
-  map<Tstate, map<Tevent, map< T, int > > > _events;
+  map<Tstate, map<T, int, std::greater<T> >, std::greater<Tstate> > _prev;
+  map<Tstate, map< T, T, greater<T> >, std::greater<Tstate> > _pt;
+  map<Tstate, map<Tevent, map< T, int > >, std::greater<Tstate> > _events;
 };
 
 

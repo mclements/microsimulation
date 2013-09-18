@@ -390,6 +390,16 @@ void RngStream_ResetNextSubstream (RngStream g)
 
 /*-------------------------------------------------------------------------*/
 
+/* double[6] RngStream_nextRNGStream (double[6] seed) */
+/* { */
+/*   double[6] out; */
+/*   MatVecModM (A1p127, v, out, m1); */
+/*   MatVecModM (A2p127, &v[3], &out[3], m2); */
+/*   return out; */
+/* } */
+
+/*-------------------------------------------------------------------------*/
+
 void RngStream_ResetStartSubstream (RngStream g)
 {
    int i;

@@ -58,48 +58,6 @@ namespace fhcrc {
   // }
 
 
-  template <typename T1, typename T2, typename T3>
-  class Triple {
-    T1 first;
-    T2 second;
-    T3 third;
-    Triple(T1 first_, T2 second_, T3 third_) : first(first_), second(second_),
-					       third(third_) {};
-  };
-  template <typename T1, typename T2, typename T3>
-  bool operator<(const Triple<T1,T2,T3> &lhs, const Triple<T1,T2,T3> &rhs) {
-    if((lhs.first) < (rhs.first)) return true;
-    if((lhs.first) > (rhs.first)) return false;
-    if((lhs.second) < (rhs.second)) return true;
-    if((lhs.second) > (rhs.second)) return false;
-    if((lhs.third) < (rhs.third)) return true;
-    if((lhs.third) > (rhs.third)) return false;
-    return false;
-  }
-
-  template <typename T1, typename T2, typename T3, typename T4>
-  class Quadruple {
-    T1 first;
-    T2 second;
-    T3 third;
-    T4 fourth;
-    Quadruple(T1 first_, T2 second_, T3 third_, T4 fourth_) : 
-      first(first_), second(second_), third(third_), fourth(fourth_) {};
-  };
-  template <typename T1, typename T2, typename T3, typename T4>
-  bool operator<(const Quadruple<T1,T2,T3,T4> &lhs, const Quadruple<T1,T2,T3,T4> &rhs) {
-    if((lhs.first) < (rhs.first)) return true;
-    if((lhs.first) > (rhs.first)) return false;
-    if((lhs.second) < (rhs.second)) return true;
-    if((lhs.second) > (rhs.second)) return false;
-    if((lhs.third) < (rhs.third)) return true;
-    if((lhs.third) > (rhs.third)) return false;
-    if((lhs.fourth) < (rhs.fourth)) return true;
-    if((lhs.fourth) > (rhs.fourth)) return false;
-    return false;
-  }
-
-
 // RcppExport SEXP testKalle3()
 // {
 //         typedef pair<int,double> State;
@@ -130,23 +88,23 @@ namespace fhcrc {
 
   // Rather than using vector<short> as a map key for EventReport, we could use a custom struct
   // and define weak ordering
-  struct FullState {
-    short state, dx;
-    bool psa_ge_3;
-    double cohort;
-  };
-  bool operator<(const FullState &lhs, const FullState &rhs) {
-// http://stackoverflow.com/questions/3882467/defining-operator-for-a-struct
-#define COMPARE(x) if((lhs.x) < (rhs.x)) return true;	\
-                   if((lhs.x) > (rhs.x)) return false;
-      COMPARE(state)
-      COMPARE(dx)
-      COMPARE(psa_ge_3)
-      COMPARE(cohort)
-      return false;
-#undef COMPARE
-  }
-  // TODO: conversion for Rcpp to a data-frame?
+//   struct FullState {
+//     short state, dx;
+//     bool psa_ge_3;
+//     double cohort;
+//   };
+//   bool operator<(const FullState &lhs, const FullState &rhs) {
+// // http://stackoverflow.com/questions/3882467/defining-operator-for-a-struct
+// #define COMPARE(x) if((lhs.x) < (rhs.x)) return true;	\
+//                    if((lhs.x) > (rhs.x)) return false;
+//       COMPARE(state)
+//       COMPARE(dx)
+//       COMPARE(psa_ge_3)
+//       COMPARE(cohort)
+//       return false;
+// #undef COMPARE
+//   }
+//   // TODO: conversion for Rcpp to a data-frame?
 
   EventReport<short,short,double> report;
   map<string, vector<double> > lifeHistories; 
@@ -533,9 +491,10 @@ RcppExport SEXP callFhcrc(SEXP parms) {
 
   // output
   return Rcpp::List::create(Rcpp::Named("summary") = report.out(),
-			    Rcpp::Named("lifeHistories") = Rcpp::wrap(lifeHistories),
-			    Rcpp::Named("parameters") = Rcpp::wrap(parameters)
-			    );
+  			    Rcpp::Named("lifeHistories") = Rcpp::wrap(lifeHistories),
+  			    Rcpp::Named("parameters") = Rcpp::wrap(parameters)
+  			    );
+  // return Rcpp::wrap<int>(1);
 } 
 
 } // namespace fhcrc

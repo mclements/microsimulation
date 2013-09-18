@@ -12,22 +12,24 @@ rcpp_hello_world <- function(){
   .Call("r_remove_current_stream",PACKAGE="microsimulation")
   return(1)
 }
+## http://r.789695.n4.nabble.com/How-to-construct-a-valid-seed-for-l-Ecuyer-s-method-with-given-Random-seed-td4656340.html
+unsigned <- function(seed) ifelse(seed < 0, seed + 2^32, seed)
+signed <- function(seed) ifelse(seed>2^31, seed-2^32, seed)
 
 set.user.Random.seed <- function (seed) {
-  seed <- as.integer(seed)
-  stopifnot(is.integer(seed))
+  seed <- as.double(unsigned(seed))
   if (length(seed) == 1) seed <- rep(seed,6)
   .C("r_set_user_random_seed",seed = seed,PACKAGE="microsimulation")
   return(invisible(TRUE))
 }
 
-next.user.Random.stream <- function () {
-  .C("r_next_rng_stream",PACKAGE="microsimulation")
+next.user.Random.substream <- function () {
+  .C("r_next_rng_substream",PACKAGE="microsimulation")
   return(invisible(TRUE))
 }
 
 user.Random.seed <- function() {
-  .C("r_get_user_random_seed", seed=rep(1L,6), PACKAGE="microsimulation")
+  .C("r_get_user_random_seed", seed=as.double(rep(1,6)), PACKAGE="microsimulation")
 }
 
 enum <- function(obj, labels)
@@ -148,21 +150,17 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ## now separate the data into chunks
   chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)
   ## set the initial random numbers
-  ## set.user.Random.seed(c(rep(12345L,6)))
-  currentSeed <- c(407L, user.Random.seed()$seed)
-  initialSeeds <- lapply(1:mc.cores, function(i) {
-    newseed <- currentSeed
-    for (j in 1:3)
-      currentSeed <<- parallel::nextRNGStream(currentSeed)
-    newseed[-1]
-  })
+  currentSeed <- c(407L, as.integer(signed(user.Random.seed()$seed)))
+  initialSeeds <- Reduce(function(seed,i) parallel::nextRNGStream(seed),
+                         1:mc.cores, currentSeed, accumulate=TRUE)[-1]
+  initialSeeds <- lapply(initialSeeds, function(x) x[-1])
   ## now run the chunks separately
   out <- lapply(1:mc.cores,
                 function(i) {
                   chunk <- chunks[[i]]
                   set.user.Random.seed(initialSeeds[[i]])
                   .Call("callFhcrc",
-                        parms=list(n=as.integer(nrow(chunk)),
+                        parms=list(n=as.integer(length(chunk)),
                           screen=as.integer(screenIndex),
                           nLifeHistories=as.integer(nLifeHistories),
                           screeningCompliance=as.double(screeningCompliance),
