@@ -15,6 +15,14 @@ namespace fhcrc {
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
 
+  typedef boost::tuple<short,short,bool,double> FullState; // stage, dx, psa_ge_3, cohort
+  string astates[] = {"stage", "dx", "psa_ge_3", "cohort"};
+  vector<string> states(astates,astates+4);
+  EventReport<FullState,short,double> report;
+  //EventReportOld<short,short,double> report;
+  map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
+  map<string, vector<double> > parameters;
+
   double tau2 = 0.0829,
     g0=0.0005, gm=0.0004, gc=0.0015, 
     thetac=19.1334,
@@ -28,7 +36,6 @@ namespace fhcrc {
   int nLifeHistories = 10, screen = 0;
 
   Rng * rngNh, * rngOther, * rngScreen;
-  vector<short> stateTuple;
   Rpexp rmu0;
 
 #define KindPred(kind) cMessageKindEq kind##Pred(kind)
@@ -38,77 +45,6 @@ namespace fhcrc {
   KindPred(toMetastatic);
   KindPred(toScreen);
 
-  // // draft conversion from vector<FullState> to Rcpp::DataFrame
-  // // (annoying boilerplate code)
-  // SEXP wrap(vector<FullState> v) {
-  //   vector<short> state, dx;
-  //   vector<bool> psa_ge_3;
-  //   vector<double> cohort;
-  //   vector<FullState>:iterator it;
-  //   for (it=v.begin(); it!=v.end(); ++it) {
-  //     state.push_back(it->state);
-  //     dx.push_back(it->dx);
-  //     psa_ge_3.push_back(it->psa_ge_3);
-  //     cohort.push_back(it->cohort);
-  //   }
-  //   return Rcpp::DataFrame::create(Named("state") = state,
-  // 			      Named("dx") = dx,
-  // 			      Named("psa_ge_3") = psa_ge_3,
-  // 			      Named("cohort") = cohort);
-  // }
-
-
-// RcppExport SEXP testKalle3()
-// {
-//         typedef pair<int,double> State;
-// 	typedef std::map<State, int> Map;
-
-// 	//insert two rows into a table
-// 	Map table;
-// 	table[State(1,2.0)] = 1;
-// 	table[State(3,4.0)] = 3;
-	
-// 	//copy the table to the result table
-// 	Rcpp::DataFrame result;
-// 	std::vector<int> foo;
-// 	std::vector<double> bar;
-// 	std::vector<int> value;
-// 	for (Map::iterator row = table.begin(); row != table.end(); ++row) {
-// 	  foo.push_back((row->first).first);
-// 	  bar.push_back((row->first).bar);
-// 	  value.push_back(row->second);
-// 	}
-// 	result.push_back(foo);
-// 	result.push_back(bar);
-// 	result.push_back(value);
-	
-// 	return result;
-// }
- 
-
-  // Rather than using vector<short> as a map key for EventReport, we could use a custom struct
-  // and define weak ordering
-//   struct FullState {
-//     short state, dx;
-//     bool psa_ge_3;
-//     double cohort;
-//   };
-//   bool operator<(const FullState &lhs, const FullState &rhs) {
-// // http://stackoverflow.com/questions/3882467/defining-operator-for-a-struct
-// #define COMPARE(x) if((lhs.x) < (rhs.x)) return true;	\
-//                    if((lhs.x) > (rhs.x)) return false;
-//       COMPARE(state)
-//       COMPARE(dx)
-//       COMPARE(psa_ge_3)
-//       COMPARE(cohort)
-//       return false;
-// #undef COMPARE
-//   }
-//   // TODO: conversion for Rcpp to a data-frame?
-
-  EventReport<short,short,double> report;
-  map<string, vector<double> > lifeHistories; 
-  map<string, vector<double> > parameters;
 
   /** 
       Utility to record information in a map<string vector<double> > object
@@ -277,7 +213,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   //double year = now() + cohort;
 
   // record information (three states, event type, start time, end time)
-  report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
+  //report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
+  report.add(FullState(state, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
+  //report.add(make_pair(state, make_pair(dx, make_pair(psa>=3.0, cohort))), msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);
@@ -439,6 +377,30 @@ RcppExport SEXP testrexp() {
   return Rcpp::wrap(R::rexp(100.0));
 }
 
+  RcppExport SEXP testLongList(SEXP in_n) {
+    int nrow = Rcpp::as<int>(in_n);
+    Rcpp::List obj;
+    for (int i=0; i<nrow; ++i) {
+      obj.push_back(Rcpp::DataFrame::create(1,2.0,"3"));
+    }
+    return obj;
+  }
+
+  RcppExport SEXP testVectorTuple2DataFrame(SEXP in_n, SEXP in_names) {
+    // read in the arguments
+    int nrow = Rcpp::as<int>(in_n);
+    // generate some data
+    vector<boost::tuple<int,int,double> > v(nrow);
+    for (int i=0; i<nrow; ++i) {
+      v[i] = boost::make_tuple(i,i,i*i*1.0);
+    }
+    // wrap
+    Rcpp::DataFrame out = Rcpp::wrap(v);
+    out.attr("names") = Rcpp::CharacterVector(in_names);
+    return out;
+  }
+    
+
 RcppExport SEXP callFhcrc(SEXP parms) {
 
   // declarations
@@ -490,11 +452,11 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   delete rngScreen;
 
   // output
-  return Rcpp::List::create(Rcpp::Named("summary") = report.out(),
-  			    Rcpp::Named("lifeHistories") = Rcpp::wrap(lifeHistories),
-  			    Rcpp::Named("parameters") = Rcpp::wrap(parameters)
+  // TODO: clean up these objects in C++ (cf. R)
+  return Rcpp::List::create(Rcpp::_("summary") = report.out(),
+  			    Rcpp::_("lifeHistories") = Rcpp::wrap(lifeHistories),
+  			    Rcpp::_("parameters") = Rcpp::wrap(parameters)
   			    );
-  // return Rcpp::wrap<int>(1);
 } 
 
 } // namespace fhcrc

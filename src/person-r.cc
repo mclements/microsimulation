@@ -27,7 +27,8 @@
 */
 
 #include "microsimulation.h"
-#include <Rcpp.h>
+
+namespace person_r {
 
 using namespace std;
 
@@ -224,3 +225,5 @@ extern "C" {
   } // callPersonSimulation()
   
 } // extern "C"
+
+}

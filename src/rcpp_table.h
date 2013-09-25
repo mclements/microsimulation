@@ -4,7 +4,6 @@
 #include <Rcpp.h>
 
 #include <functional>
-// #include "triple.h"
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
@@ -44,31 +43,6 @@ public:
     return y[--i];
   }
 };
-
-// template<class Index, class Outcome>
-// class Table {
-// public:
-//   typedef map<Index,Outcome,greater<Index> > Map;
-//   Map data;
-//   Table(vector<Index> inx, vector<Outcome> iny) { 
-//     for (size_t i=0; i<inx.size(); i++) {
-//       data[inx[i]] = iny[i];
-//     }
-//   }
-//   explicit Table(Index inx[], Outcome iny[]) { 
-//     typename Index::const_iterator it1;
-//     typename Outcome::const_iterator it2;
-//     for (it1=inx.begin(),it2=iny.begin(); it1!=inx.end(); it1++, it2++) {
-//       data[*it1] = *it2;
-//     }
-//   }
-//   virtual Outcome lookup(Index index) {
-//     return data.lower_bound(index)->second;
-//   }
-//   virtual Outcome operator()(Index index) {
-//     return lookup(index);
-//   }
-// };
 
 template<class Index, class Outcome>
 class Table1D {
@@ -147,23 +121,23 @@ public:
   }
 };
 
-RcppExport SEXP testTable(SEXP df, SEXP x) {
-  Table1D<double,double> table = 
-    Table1D<double,double>(as<DataFrame>(df));
-  return wrap<double>(table.lookup(as<double>(x)));
-}
+/* RcppExport SEXP testTable(SEXP df, SEXP x) { */
+/*   Table1D<double,double> table =  */
+/*     Table1D<double,double>(as<DataFrame>(df)); */
+/*   return wrap<double>(table.lookup(as<double>(x))); */
+/* } */
 
-RcppExport SEXP testTable2(SEXP df, SEXP x1, SEXP x2) {
-  Table2D<double,double,double> table = 
-    Table2D<double,double,double>(as<DataFrame>(df));
-  return wrap<double>(table.lookup(as<double>(x1),as<double>(x2)));
-}
+/* RcppExport SEXP testTable2(SEXP df, SEXP x1, SEXP x2) { */
+/*   Table2D<double,double,double> table =  */
+/*     Table2D<double,double,double>(as<DataFrame>(df)); */
+/*   return wrap<double>(table.lookup(as<double>(x1),as<double>(x2))); */
+/* } */
 
-RcppExport SEXP testTable3(SEXP df, SEXP x1, SEXP x2, SEXP x3) {
-  Table3D<double,double,double,double> table = 
-    Table3D<double,double,double,double>(as<DataFrame>(df));
-  return wrap<double>(table.lookup(as<double>(x1),as<double>(x2),
-				   as<double>(x3)));
-}
+/* RcppExport SEXP testTable3(SEXP df, SEXP x1, SEXP x2, SEXP x3) { */
+/*   Table3D<double,double,double,double> table =  */
+/*     Table3D<double,double,double,double>(as<DataFrame>(df)); */
+/*   return wrap<double>(table.lookup(as<double>(x1),as<double>(x2), */
+/* 				   as<double>(x3))); */
+/* } */
 
 #endif /* RCPP_TABLE_H */

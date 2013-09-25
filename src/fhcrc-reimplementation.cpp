@@ -18,6 +18,12 @@ namespace fhcrcReimplementation {
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
 
+
+  typedef boost::tuple<short,short,bool,double> FullState; // stage, dx, psa_ge_3, cohort
+  EventReport<FullState,short,double> report;
+  map<string, vector<double> > lifeHistories; 
+  map<string, vector<double> > parameters;
+
   //namespace par {
 
     /* general natural history model parameters */
@@ -67,29 +73,6 @@ namespace fhcrcReimplementation {
   KindPred(toMetastatic);
   KindPred(toScreen);
 
-//   // Rather than using vector<short> as a map key for EventReport, we could use a custom struct
-//   // and define weak ordering
-//   struct FullState {
-//     short stage, dx;
-//     bool psa_ge_3;
-//     double cohort;
-//   };
-//   bool operator<(const FullState &lhs, const FullState &rhs) {
-// // http://stackoverflow.com/questions/3882467/defining-operator-for-a-struct
-// #define COMPARE(x) if((lhs.x) < (rhs.x)) return true;	\
-//                    if((lhs.x) > (rhs.x)) return false;
-//       COMPARE(stage)
-//       COMPARE(dx)
-//       COMPARE(psa_ge_3)
-//       COMPARE(cohort)
-//       return false;
-// #undef COMPARE
-//   }
-//   // TODO: conversion for Rcpp to a data-frame?
-
-  EventReport<short,short,double> report;
-  map<string, vector<double> > lifeHistories; 
-  map<string, vector<double> > parameters;
 
   /** 
       Utility to record information in a map<string vector<double> > object
@@ -267,7 +250,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   //double year = now() + cohort;
 
   // record information (three states, event type, start time, end time)
-  report.add(stage, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
+  report.add(FullState(stage, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);

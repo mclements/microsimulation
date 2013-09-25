@@ -19,8 +19,9 @@ signed <- function(seed) ifelse(seed>2^31, seed-2^32, seed)
 set.user.Random.seed <- function (seed) {
   seed <- as.double(unsigned(seed))
   if (length(seed) == 1) seed <- rep(seed,6)
+  if (length(seed) == 7) seed <- seed[-1]
   .C("r_set_user_random_seed",seed = seed,PACKAGE="microsimulation")
-  return(invisible(TRUE))
+  return(invisible(seed))
 }
 
 next.user.Random.substream <- function () {
@@ -29,11 +30,15 @@ next.user.Random.substream <- function () {
 }
 
 user.Random.seed <- function() {
-  .C("r_get_user_random_seed", seed=as.double(rep(1,6)), PACKAGE="microsimulation")
+  c(407L,
+    as.integer(signed(.C("r_get_user_random_seed", seed=as.double(rep(1,6)),
+                         PACKAGE="microsimulation")$seed)))
 }
 
-enum <- function(obj, labels)
+enum <- function(obj, labels) {
+  if (is.logical(obj)) obj <- obj+0
   factor(obj, levels=0:(length(labels)-1), labels=labels)
+}
 
 "enum<-" <- function(obj, value) {
   enum(if(is.factor(obj)) unclass(obj)-1 else obj, value)
@@ -150,12 +155,16 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ## now separate the data into chunks
   chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)
   ## set the initial random numbers
-  currentSeed <- c(407L, as.integer(signed(user.Random.seed()$seed)))
-  initialSeeds <- Reduce(function(seed,i) parallel::nextRNGStream(seed),
+  currentSeed <- user.Random.seed()
+  powerFun <- function(obj,FUN,n,...) {
+    for(i in 1:n)
+      obj <- FUN(obj,...)
+    obj
+  }
+  initialSeeds <- Reduce(function(seed,i) powerFun(seed,parallel::nextRNGStream,3),
                          1:mc.cores, currentSeed, accumulate=TRUE)[-1]
-  initialSeeds <- lapply(initialSeeds, function(x) x[-1])
   ## now run the chunks separately
-  out <- lapply(1:mc.cores,
+  out <- parallel::mclapply(1:mc.cores,
                 function(i) {
                   chunk <- chunks[[i]]
                   set.user.Random.seed(initialSeeds[[i]])
@@ -168,27 +177,45 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                           cohort=as.double(chunk)),
                         PACKAGE="microsimulation")
                 })
+  ## reader <- function(obj) {
+  ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
+  ##                           dx=enum(obj$state[[2]],diagnosisT),
+  ##                           psa=enum(obj$state[[3]],psaT),
+  ##                           cohort=obj$state[[4]]),
+  ##                data.frame(obj[-1]))
+  ##   out$year <- out$cohort + out$age
+  ##   out
+  ## }
+  cbindList <- function(obj) # recursive
+    if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
   reader <- function(obj) {
-    out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
-                            dx=enum(obj$state[[2]],diagnosisT),
-                            psa=enum(obj$state[[3]],psaT),
-                            cohort=obj$state[[4]]),
-                 data.frame(obj[-1]))
-    out$year <- out$cohort + out$age
+    obj <- cbindList(obj)
+    out <- cbind(data.frame(state=enum(obj[[1]],stateT),
+                            dx=enum(obj[[2]],diagnosisT),
+                            psa=enum(obj[[3]],psaT),
+                            cohort=obj[[4]]),
+                 data.frame(obj[,-(1:4)]))
     out
   }
-  out$summary <- lapply(seq_along(out$summary[[1]]),
-                        function(i) reader(do.call("cbind",lapply(out$summary, "[[", i))))
-  enum(out$summary$events$event) <- eventT
-  enum(out$lifeHistories$state) <- stateT
-  enum(out$lifeHistories$dx) <- diagnosisT
-  enum(out$lifeHistories$event) <- eventT
-  out$lifeHistories <- data.frame(out$lifeHistories)
-  out$parameters <- data.frame(out$parameters)
-  out$enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
+  summary <- lapply(seq_along(out[[1]]$summary),
+                    function(i) do.call("rbind",
+                                        lapply(out, function(obj) reader(obj$summary[[i]]))))
+  names(summary) <- names(out[[1]]$summary)
+  states <- c("state","dx","psa","cohort")
+  names(summary$prev) <- c(states,"age","count")
+  names(summary$pt) <- c(states,"age","pt")
+  names(summary$events) <- c(states,"event","age","pt")
+  summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
+  map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
+  lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
+  parameters <- map2df(out[[1]]$parameters)
+  enum(summary$events$event) <- eventT
+  enum(lifeHistories$state) <- stateT
+  enum(lifeHistories$dx) <- diagnosisT
+  enum(lifeHistories$event) <- eventT
+  enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                    psaT = psaT)
-  out$n <- n
-  out
+  list(n=n,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary)
 }
 
 ## utility - not exported

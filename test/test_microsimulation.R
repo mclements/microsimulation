@@ -1,26 +1,22 @@
 ## try(detach("package:microsimulation", unload=TRUE))
-require(microsimulation)
-microsimulation:::.testPackage()
+## require(microsimulation)
+## microsimulation:::.testPackage()
 
-require(microsimulation)
-noScreening <- callFhcrc(10,screen="noScreening")
-
-signed <- function(seed) as.integer(ifelse(seed>2^31, seed-2^32, seed))
-
+## testing the user-defined random number generator
 require(microsimulation)
 ##callFhcrc(10,screen="noScreening") # FAILS
 init.seed <- as.integer(c(407,rep(12345,6)))
 RNGkind("user")
-set.user.Random.seed(init.seed[-1])
+set.user.Random.seed(init.seed)
 runif(2)
 next.user.Random.substream()
 runif(2)
-set.user.Random.seed(parallel::nextRNGStream(init.seed)[-1])
-newSeed <- c(407L,as.integer(signed(user.Random.seed()$seed)))
+set.user.Random.seed(parallel::nextRNGStream(init.seed))
+newSeed <- user.Random.seed()
 runif(2)
-set.user.Random.seed(parallel::nextRNGStream(newSeed)[-1])
+set.user.Random.seed(parallel::nextRNGStream(newSeed))
 runif(2)
-
+##
 RNGkind("L'Ecuyer-CMRG")
 init.seed <- as.integer(c(407,rep(12345,6)))
 .Random.seed <- init.seed
@@ -39,22 +35,21 @@ temp <- lapply(dir("~/src/fhcrc/data")[-10],
                                         filename=name))
 names(temp) <- lapply(temp,attr,"filename")
 lapply(temp,head)
-
+##
 ## biopsy frequency
 with(temp[[2]],data.frame(psa=rep(PSA.beg,5),
                           age=rep(c(55,60,65,70,75),each=3),
                           biopsy_frequency=unlist(temp[[2]][,-(1:2)])))
 temp[[2]]
 
-
-
+## testing using parallel
 require(parallel)
 require(microsimulation)
 n <- 1e4
 system.time(test <- mclapply(1:10,
                              function(i) callFhcrc(n,screen="noScreening"),
-                             mc.cores=10))
-
+                             mc.cores=1))
+##
 test <- lapply(1:10, function(i) callFhcrc(10,screen="noScreening"))
 test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeHistories)),
               enum=test[[1]]$enum,
@@ -64,18 +59,15 @@ test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeH
                 events=do.call("rbind", lapply(test,function(obj) obj$summary$events)),
                 prev=do.call("rbind", lapply(test,function(obj) obj$summary$prev))))
 
-       
 
-
-     
 options(width=110)
 require(microsimulation)
 n <- 1e7
-noScreening <- callFhcrc(n,screen="noScreening")
+noScreening <- callFhcrc(n,screen="noScreening",mc.cores=2)
 ## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
-uptake <- callFhcrc(n,screen="screenUptake")
-goteborg <- callFhcrc(n,screen="stockholm3_goteborg",)
-riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified")
+uptake <- callFhcrc(n,screen="screenUptake",mc.cores=2)
+goteborg <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=2)
+riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=2)
 
 ## rate calculations
 pop <- data.frame(age=0:100,pop=c(12589, 14785, 15373, 14899, 14667,
@@ -153,8 +145,31 @@ plotPrev("dx!='NotDiagnosed'",main="PC diagnosis",legend.x=2010,legend.y=0.04)
 plotEvents("^toCancerDeath$",legend.x="bottomleft",main="PC mortality (*NOT CALIBRATED*)")
 ##dev.off()
 
+plotPrev("dx='NotDiagnosed' and state!='Healthy'",main="Latent disease",
+         legend.x=2010,legend.y=0.04)
+plotPrev("dx='NotDiagnosed' and state!='Healthy' and psa='PSA>=3'",
+         main="Latent screen-detectable disease",
+         legend.x=2010,legend.y=0.04)
 
+temp0 <- subset(uptake$summary$prev,year==2010 & dx=='NotDiagnosed')
+temp <- subset(temp0,state!='Healthy' & psa=='PSA>=3')
+temp2 <- sqldf("select pop.age,pop,coalesce(n,0) as n,coalesce(n,0)*1.0/pop as prev  from
+(select age, sum(n) as pop from temp0 group by age) as pop natural left join
+(select age, sum(n) as n from temp group by age) as cases")
+##
+temp <- subset(temp0,psa=='PSA>=3')
+temp3 <- sqldf("select pop.age,pop,coalesce(n,0) as n,coalesce(n,0)*1.0/pop as prev  from
+(select age, sum(n) as pop from temp0 group by age) as pop natural left join
+(select age, sum(n) as n from temp group by age) as cases")
+with(temp3, plot(age,prev,type="l",ylim=c(0,0.55)))
+with(temp2, lines(age,prev,lty=2))
 
+w <- with(subset(pop,age>=50 & age<70),data.frame(age=age,wt=pop/sum(pop)))
+
+sqldf("select sum(wt*prev)/sum(wt) from temp3 natural join w") # prev of PSA 3+ | Not diagnosed
+sqldf("select sum(wt*prev)/sum(wt) from temp2 natural join w") # prev of PSA 3+ & cancer | Not diagnosed
+5e4*sqldf("select sum(wt*prev)/sum(wt) from temp3 natural join w")
+5e4*sqldf("select sum(wt*prev)/sum(wt) from temp2 natural join w")
 
 
 
