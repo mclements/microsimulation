@@ -1,6 +1,6 @@
 #include "microsimulation.h"
 
-namespace fhcrcReimplementation {
+namespace fhcrcReimplementation { // can we use an anonymous namespace?
 
   using namespace std;
 
@@ -151,7 +151,7 @@ void FhcrcPerson::init() {
   rngNh->set();
   age_o = sqrt(2*R::rexp(1.0)/c_onset_rate) + c_age_offset;
   t_o = age_o - c_age_offset; // convenience
-  grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t_o) ? LocoRegional : Metastatic; // fixed
+  grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t_o) ? GleasonLE7 : GleasonGE8; // fixed
   // TODO: extended_grade
   // TODO: treatment
   // TODO: survival

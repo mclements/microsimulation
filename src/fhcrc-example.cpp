@@ -3,8 +3,16 @@
 namespace fhcrc {
 
   using namespace std;
+  using namespace Rcpp;
 
   // declarations
+
+  namespace base {
+    enum grade_t {Gleason_le_7,Gleason_ge_8};
+  }
+  namespace ext {
+    enum grade_t {Gleason_le_6,Gleason_7,Gleason_ge_8};
+  }
   
   enum state_t {Healthy,Localised,Metastatic};
 
@@ -15,9 +23,9 @@ namespace fhcrc {
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
 
-  typedef boost::tuple<short,short,bool,double> FullState; // stage, dx, psa_ge_3, cohort
-  string astates[] = {"stage", "dx", "psa_ge_3", "cohort"};
-  vector<string> states(astates,astates+4);
+  typedef boost::tuple<short,short,short,bool,double> FullState;
+  //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
+  //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
   //EventReportOld<short,short,double> report;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
@@ -26,18 +34,25 @@ namespace fhcrc {
   double tau2 = 0.0829,
     g0=0.0005, gm=0.0004, gc=0.0015, 
     thetac=19.1334,
-    mubeta0=-1.6094, varbeta0=0.0568,
-    mubeta1=0.02, varbeta1=0.0019,
-    mubeta2=0.1094,varbeta2=0.0237;
+    mubeta0=-1.609, sebeta0=0.2384,
+    mubeta1=0.04463, sebeta1=0.0430,
+    mubeta2[2]={0.0397,0.1678},sebeta2[2]={0.0913,0.3968};
 
-  // input parameters
-  double screeningCompliance = 0.50;
-  double studyParticipation = 0.0;
+  NumericInterpolate interp_prob_grade7;
+
+  // initialise input parameters (see R::callFhcrc for actual defaults)
+  double screeningCompliance = 0.75;
+  double studyParticipation = 35.0/260.0;
   int nLifeHistories = 10, screen = 0;
+  double psaThreshold = 3.0;
+
+  // new parameters (we need to merge the old and new implementations)
+  double c_low_grade_slope=-0.006;
 
   Rng * rngNh, * rngOther, * rngScreen;
   Rpexp rmu0;
 
+  // this is ugly: we could change to using functions and lambdas
 #define KindPred(kind) cMessageKindEq kind##Pred(kind)
 #define RemoveKind(kind) Sim::remove_event(& kind##Pred)
   //cMessageKindEq toClinicalDiagnosisPred(toClinicalDiagnosis);
@@ -78,6 +93,8 @@ namespace fhcrc {
     double t0, y0, tm, tc, tmc;
     state_t state;
     diagnosis_t dx;
+    base::grade_t grade;
+    ext::grade_t ext_grade;
     int id;
     double cohort;
     bool everPSA, previousNegativeBiopsy, organised;
@@ -120,17 +137,20 @@ void FhcrcPerson::init() {
   dx = NotDiagnosed;
   everPSA = previousNegativeBiopsy = organised = false;
   rngNh->set();
-  beta0 = R::rnorm(mubeta0,sqrt(varbeta0)); 
-  beta1 = R::rnormPos(mubeta1,sqrt(varbeta1)); 
-  beta2 = R::rnormPos(mubeta2,sqrt(varbeta2)); 
   t0 = sqrt(2*R::rexp(1.0)/g0);
   y0 = ymean(t0);
+  grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
+  beta0 = R::rnorm(mubeta0,sebeta0); 
+  beta1 = R::rnormPos(mubeta1,sebeta1); 
+  beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]); 
   tm = (log((beta1+beta2)*R::rexp(1.0)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
   tc = (log((beta1+beta2)*R::rexp(1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(gc*thetac) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand();
-
+  ext_grade= (grade==base::Gleason_le_7) ? 
+    (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
+    ext::Gleason_ge_8;
   // schedule natural history events
   scheduleAt(t0+35.0,toLocalised);
   scheduleAt(aoc,toOtherDeath);
@@ -178,7 +198,7 @@ void FhcrcPerson::init() {
       break;
     }
   }
-  if (R::runif(0.0,1.0)<5.0/26.0 &&
+  if (R::runif(0.0,1.0)<studyParticipation &&
       ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
       (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
     scheduleAt(R::runif(2013.0,2015.0) - cohort, toOrganised);
@@ -189,6 +209,7 @@ void FhcrcPerson::init() {
   // record some parameters
   // faster: initialise the length of the vectors and use an index
   if (id<nLifeHistories) {
+    record(parameters,"id",double(id));
     record(parameters,"beta0",beta0);
     record(parameters,"beta1",beta1);
     record(parameters,"beta2",beta2);
@@ -200,8 +221,33 @@ void FhcrcPerson::init() {
     record(parameters,"ym",ym);
     record(parameters,"aoc",aoc);
     record(parameters,"cohort",cohort);
+    record(parameters,"ext_grade",ext_grade);
   }
 }
+
+  // struct Parameters {
+  //   int id;
+  //   double beta0, beta1, beta2, t0, tm, tc, tmc, y0, ym, aoc, cohort;
+  // };
+  // typedef boost::tuple<int,double,double,double,double,double,double,double,double,double,double,double> Parameters;
+  // std::vector<Parameters> parameters;
+  // // Each time, we would do the following:
+  // parameters.push_back(Parameters(id,beta0, beta1, beta2, t0, tm, tc, tmc, y0, ym, aoc, cohort));
+
+  // List wrap_parameter(std::vector<Parameters> parameters) {
+  //   int n = parameters.size();
+  //   vector<int> ids(n);
+  //   vector<vector<double> > others(n);
+  //   Parameters row;
+  //   vector<double> doubles;
+  //   for (int i=0; i<n; i++) {
+  //     row = parameters[i];
+  //     ids[i] = row.id;
+  //     others[i] = row.beta0;
+  //     others[i].push_back(beta1); // etc
+  //   }
+  //   return List(ids,others);
+  // }
 
 /** 
     Handle self-messages received
@@ -214,12 +260,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record information (three states, event type, start time, end time)
   //report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
-  report.add(FullState(state, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
+  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
   //report.add(make_pair(state, make_pair(dx, make_pair(psa>=3.0, cohort))), msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);
     record(lifeHistories,"state", (double) state);
+    record(lifeHistories,"ext_grade", (double) ext_grade);
     record(lifeHistories,"dx", (double) dx);
     record(lifeHistories,"event", (double) msg->kind);
     record(lifeHistories,"begin", previousEventTime);
@@ -281,14 +328,17 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toScreen: 
     everPSA = true;
-    if (psa>=3.0) {
+    if (psa>=psaThreshold) {
       scheduleAt(now(), toBiopsy); // immediate biopsy
     } else { // re-screening schedules
       rngScreen->set();
       if (organised) {
 	switch (screen) {
 	case stockholm3_goteborg:
-	  scheduleAt(now() + 2.0, toScreen);
+	  if (psa<1.0)
+	    scheduleAt(now() + 4.0, toScreen);
+	  else 
+	    scheduleAt(now() + 2.0, toScreen);
 	  break;
 	case stockholm3_risk_stratified:
 	  if (psa<1.0)
@@ -374,34 +424,34 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 } // handleMessage()
 
 RcppExport SEXP testrexp() {
-  return Rcpp::wrap(R::rexp(100.0));
+  return wrap(R::rexp(100.0));
 }
 
   RcppExport SEXP testLongList(SEXP in_n) {
-    int nrow = Rcpp::as<int>(in_n);
-    Rcpp::List obj;
+    int nrow = as<int>(in_n);
+    List obj;
     for (int i=0; i<nrow; ++i) {
-      obj.push_back(Rcpp::DataFrame::create(1,2.0,"3"));
+      obj.push_back(DataFrame::create(1,2.0,"3"));
     }
     return obj;
   }
 
   RcppExport SEXP testVectorTuple2DataFrame(SEXP in_n, SEXP in_names) {
     // read in the arguments
-    int nrow = Rcpp::as<int>(in_n);
+    int nrow = as<int>(in_n);
     // generate some data
     vector<boost::tuple<int,int,double> > v(nrow);
     for (int i=0; i<nrow; ++i) {
       v[i] = boost::make_tuple(i,i,i*i*1.0);
     }
     // wrap
-    Rcpp::DataFrame out = Rcpp::wrap(v);
-    out.attr("names") = Rcpp::CharacterVector(in_names);
+    DataFrame out = wrap(v);
+    out.attr("names") = CharacterVector(in_names);
     return out;
   }
     
 
-RcppExport SEXP callFhcrc(SEXP parms) {
+RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // declarations
   FhcrcPerson person;
@@ -412,13 +462,16 @@ RcppExport SEXP callFhcrc(SEXP parms) {
   rngNh->set();
 
   // read in the parameters
-  Rcpp::List parmsl(parms);
-  int n = Rcpp::as<int>(parmsl["n"]);
-  nLifeHistories = Rcpp::as<int>(parmsl["nLifeHistories"]);
-  screen = Rcpp::as<int>(parmsl["screen"]);
-  screeningCompliance = Rcpp::as<double>(parmsl["screeningCompliance"]);
-  studyParticipation = Rcpp::as<double>(parmsl["studyParticipation"]);
-  Rcpp::NumericVector cohort = Rcpp::as<Rcpp::NumericVector>(parmsl["cohort"]);
+  List parms(parmsIn);
+  List tables = parms["tables"];
+  int n = as<int>(parms["n"]);
+  interp_prob_grade7 = NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
+  nLifeHistories = as<int>(parms["nLifeHistories"]);
+  screen = as<int>(parms["screen"]);
+  screeningCompliance = as<double>(parms["screeningCompliance"]);
+  studyParticipation = as<double>(parms["studyParticipation"]);
+  psaThreshold = as<double>(parms["psaThreshold"]);
+  NumericVector cohort = as<NumericVector>(parms["cohort"]);
 
   // set up the parameters
   double ages0[106];
@@ -453,9 +506,9 @@ RcppExport SEXP callFhcrc(SEXP parms) {
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  return Rcpp::List::create(Rcpp::_("summary") = report.out(),
-  			    Rcpp::_("lifeHistories") = Rcpp::wrap(lifeHistories),
-  			    Rcpp::_("parameters") = Rcpp::wrap(parameters)
+  return List::create(_("summary") = report.out(),
+  			    _("lifeHistories") = wrap(lifeHistories),
+  			    _("parameters") = wrap(parameters)
   			    );
 } 
 

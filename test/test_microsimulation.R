@@ -29,18 +29,44 @@ runif(2)
 runif(2)
 
 ## Reading in the data from FHCRC
-temp <- lapply(dir("~/src/fhcrc/data")[-10],
-               function(name) structure(read.table(paste("~/src/fhcrc/data/",name,sep=""),
+fhcrcData <- lapply(dir("~/src/fhcrc/data")[-10],
+               function(name) structure(read.table(paste("~/src/fhcrc/data/",
+                                                         name,sep=""),
                                                    head=TRUE,sep=","),
                                         filename=name))
-names(temp) <- lapply(temp,attr,"filename")
-lapply(temp,head)
+lookup <- data.frame(filename=c("all_cause_mortality.csv",
+   "biopsy_frequency.csv",
+   "biopsy_sensitivity_smoothed.csv",
+   "seer_incidence_imputed.csv",
+   "hormone_frequency.csv",
+   "primary_treatment_frequency.csv",
+   "dre_sensitivity.csv",
+   "gleason_7_frequency.csv",
+   "stage_T2a_frequency.csv",
+   "prostate_cancer_survival_local-regional.csv",
+   "prostate_cancer_survival_distant.csv"),
+  enum=c("all_cause_mortality",
+    "biopsy_frequency",
+    "biopsy_sensitivity",
+    "obs_incidence",
+    "pradt",
+    "prtx",
+    "dre",
+    "prob_grade7",
+    "prob_earlystage",
+    "survival_local",
+    "survival_dist"), stringsAsFactors = FALSE)
+lookup <- subset(lookup, enum!="obs_incidence")
+names(fhcrcData) <- with(lookup, enum[match(lapply(fhcrcData,attr,"filename"),
+                                            filename)])
+save("fhcrcData",file="~/src/R/microsimulation/data/fhcrcData.rda")
+## lapply(fhcrcData,head)
 ##
 ## biopsy frequency
-with(temp[[2]],data.frame(psa=rep(PSA.beg,5),
-                          age=rep(c(55,60,65,70,75),each=3),
-                          biopsy_frequency=unlist(temp[[2]][,-(1:2)])))
-temp[[2]]
+## with(fhcrcData[[2]],data.frame(psa=rep(PSA.beg,5),
+##                           age=rep(c(55,60,65,70,75),each=3),
+##                           biopsy_frequency=unlist(temp[[2]][,-(1:2)])))
+## fhcrcData[[2]]
 
 ## testing using parallel
 require(parallel)
@@ -59,15 +85,23 @@ test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeH
                 events=do.call("rbind", lapply(test,function(obj) obj$summary$events)),
                 prev=do.call("rbind", lapply(test,function(obj) obj$summary$prev))))
 
-
+## baseline analysis
 options(width=110)
 require(microsimulation)
 n <- 1e7
+compliance <- 0.75
+participation <- 1.0
 noScreening <- callFhcrc(n,screen="noScreening",mc.cores=2)
 ## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
-uptake <- callFhcrc(n,screen="screenUptake",mc.cores=2)
-goteborg <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=2)
-riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=2)
+uptake <- callFhcrc(n,screen="screenUptake",mc.cores=2,
+                    studyParticipation=participation,
+                    screeningCompliance=compliance)
+goteborg <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=2,
+                      studyParticipation=participation,
+                      screeningCompliance=compliance)
+riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=2,
+                       studyParticipation=participation,
+                       screeningCompliance=compliance)
 
 ## rate calculations
 pop <- data.frame(age=0:100,pop=c(12589, 14785, 15373, 14899, 14667,
@@ -136,7 +170,7 @@ table(goteborg$summary$prev$dx)
 ##path <- function(filename) sprintf("/media/sf_C_DRIVE/usr/tmp/tmp/%s",filename)
 ##pdf(path("screening_20130425.pdf"),width=7,height=6)
 ##par(mfrow=c(2,2))
-plotEvents("^toScreen$",main="PSA screen",legend.x=2010,legend.y=0.1)
+plotEvents("^toScreen$",main="PSA screen",legend.x="topleft")
 plotEvents("Biopsy",main="Biopsies",legend.x=2010,legend.y=0.03)
 plotEvents("Diagnosis",main="Prostate cancer incidence",include.legend=FALSE)
 plotEvents("^toClinicalDiagnosis$",legend.x="bottomleft",
@@ -145,6 +179,65 @@ plotPrev("dx!='NotDiagnosed'",main="PC diagnosis",legend.x=2010,legend.y=0.04)
 plotEvents("^toCancerDeath$",legend.x="bottomleft",main="PC mortality (*NOT CALIBRATED*)")
 ##dev.off()
 
+## extend the plots to include general conditions
+eventRatesCondition <- function(obj,condition,substitute.condition=FALSE) {
+  if (substitute.condition)
+    condition <- substitute(condition)
+  events <- eval(substitute(subset(obj$summary$events, condition), list(condition=condition)))
+  pt <- obj$summary$pt
+  sqldf("select year, sum(pt) as pt, sum(n) as n, sum(rate*wt) as rate from (select cohort+age as year, age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select cohort, age, sum(pt) as pt from pt group by cohort, age) as t1 natural left outer join (select cohort, age, sum(n) as n from events group by cohort, age) as t2) as main natural join w where year>=1990 and year<2030 group by year")
+}
+plotEventsCondition <- function(condition,ylab="Rate",main=NULL,legend.x="topleft",
+                       include.legend=TRUE, legend.y=NULL) {
+  condition <- substitute(condition)
+  with(eventRatesCondition(noScreening,condition),
+       plot(year, rate, type="l",ylim=c(0,max(eventRatesCondition(goteborg,condition)$rate)),
+            xlab="Age (years)", ylab=ylab, main=main))
+  with(eventRatesCondition(uptake,condition), lines(year, rate, col="red"))
+  with(eventRatesCondition(goteborg,condition), lines(year, rate, col="green"))
+  with(eventRatesCondition(riskStrat,condition), lines(year, rate, col="blue"))
+  if (include.legend)
+    legend(legend.x,legend.y,
+           legend=c("No screening",
+             "Opportunistic screening",
+             "Göteborg protocol",
+             "Risk-stratified protocol (4+8)"),
+           lty=1,
+           col=c("black","red","green","blue"),
+           bty="n")
+}
+plotEventsCondition(grepl("Diagnosis",event) & grade %in% c("Gleason_7","Gleason_ge_8"),
+                    legend.x="bottomleft",main="PC incidence Gleason 7+")
+
+## How many PSA tests, biopsies etc in the eight years of follow-up?
+ratio <- 35000/sum(subset(goteborg$summary$prev,year==2013)$count)
+lastYear <- 2014+8
+describe <- function(a,b)
+  sprintf("pchange=%.1f%%,change=%.1f",100*(1-b/a),(a-b)*ratio)
+## PSA tests
+describe(sum(subset(riskStrat$summary$events,year>=2013 & year<=lastYear & grepl("toScreen",event))$n),
+  sum(subset(goteborg$summary$events,year>=2013 & year<=lastYear & grepl("toScreen",event))$n))
+## biopsies
+describe(sum(subset(riskStrat$summary$events,year>=2013 & year<=lastYear & grepl("toBiopsy",event))$n),
+         sum(subset(goteborg$summary$events,year>=2013 & year<=lastYear & grepl("toBiopsy",event))$n))
+## Cancer Gleason 6
+describe(sum(subset(riskStrat$summary$events,year>=2013 & year<=lastYear & grepl("Diagnosis",event) & grade == "Gleason_le_6")$n),
+  sum(subset(goteborg$summary$events,year>=2013 & year<=lastYear & grepl("Diagnosis",event) & grade == "Gleason_le_6")$n))
+## Cancer Gleason 7+
+describe(sum(subset(riskStrat$summary$events,year>=2013 & year<=lastYear & grepl("Diagnosis",event) & grade %in% c("Gleason_7","Gleason_ge_8"))$n),
+  sum(subset(goteborg$summary$events,year>=2013 & year<=lastYear & grepl("Diagnosis",event) & grade %in% c("Gleason_7","Gleason_ge_8"))$n))
+## metastatic cancer
+describe(sum(subset(riskStrat$summary$events,year>=2013 & year<=lastYear & grepl("Diagnosis",event) & state=="Metastatic")$n),
+  sum(subset(goteborg$summary$events,year>=2013 & year<=lastYear & grepl("Diagnosis",event) & state == "Metastatic")$n))
+
+
+
+## In summary, compared with the modified Göteborg protocol over eight years of follow-up, the risk-stratified protocol is expected to have 30% fewer PSA tests (approximately 15,000 fewer), 10% fewer biopsies (~2000 fewer), 3% fewer prostate cancer diagnoses for Gleason 6 cancers (~40 fewer) and 2% fewer cancer diagnoses for Gleason 7+ cancers (~15 fewer cases).
+
+## These results are very similar to those obtained by Gulati et al (2013?).
+  
+
+  
 plotPrev("dx='NotDiagnosed' and state!='Healthy'",main="Latent disease",
          legend.x=2010,legend.y=0.04)
 plotPrev("dx='NotDiagnosed' and state!='Healthy' and psa='PSA>=3'",

@@ -122,8 +122,10 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
 }
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, mc.cores=1) {
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, mc.cores=1) {
+  ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
+  ## yes, we use the user-defined RNG
   RNGkind("user")
   set.user.Random.seed(seed)
   ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
@@ -134,23 +136,29 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
     8350, 7677, 7444, 7175, 6582, 6573, 6691, 6651, 6641, 6268, 
     6691, 6511, 6857, 7304, 7308, 7859, 7277, 8323, 8561, 7173, 
     6942, 7128, 6819, 5037, 6798, rep(6567,14)))
-  cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
+  ## these enum strings should be moved to C++
   screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
                "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
                "stockholm3_risk_stratified")
   stateT <- c("Healthy","Localised","Metastatic")
+  gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
               "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis",
               "toOrganised")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
-  psaT <- c("PSA<3","PSA>=3")
+  psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
+  ## check the input arguments
   stopifnot(screen %in% screenT)
   stopifnot(is.na(n) || is.integer(as.integer(n)))
   stopifnot(is.integer(as.integer(nLifeHistories)))
   stopifnot(is.double(as.double(screeningCompliance)))
   screenIndex <- which(screen == screenT) - 1
   ## NB: sample() calls the random number generator (!)
-  if (is.na(n)) n <- length(cohort) else cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
+  if (is.na(n)) {
+    cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
+    n <- length(cohort)
+  } else
+    cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
   cohort <- sort(cohort)
   ## now separate the data into chunks
   chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)
@@ -174,9 +182,12 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                           nLifeHistories=as.integer(nLifeHistories),
                           screeningCompliance=as.double(screeningCompliance),
                           studyParticipation=as.double(studyParticipation),
-                          cohort=as.double(chunk)),
+                          psaThreshold=as.double(psaThreshold),
+                          cohort=as.double(chunk),
+                          tables=fhcrcData),
                         PACKAGE="microsimulation")
                 })
+  ## Apologies: we now need to massage the chunks from C++
   ## reader <- function(obj) {
   ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
   ##                           dx=enum(obj$state[[2]],diagnosisT),
@@ -191,20 +202,21 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   reader <- function(obj) {
     obj <- cbindList(obj)
     out <- cbind(data.frame(state=enum(obj[[1]],stateT),
-                            dx=enum(obj[[2]],diagnosisT),
-                            psa=enum(obj[[3]],psaT),
-                            cohort=obj[[4]]),
-                 data.frame(obj[,-(1:4)]))
+                            grade=enum(obj[[2]],gradeT),
+                            dx=enum(obj[[3]],diagnosisT),
+                            psa=enum(obj[[4]],psaT),
+                            cohort=obj[[5]]),
+                 data.frame(obj[,-(1:5)]))
     out
   }
   summary <- lapply(seq_along(out[[1]]$summary),
                     function(i) do.call("rbind",
                                         lapply(out, function(obj) reader(obj$summary[[i]]))))
   names(summary) <- names(out[[1]]$summary)
-  states <- c("state","dx","psa","cohort")
+  states <- c("state","grade","dx","psa","cohort")
   names(summary$prev) <- c(states,"age","count")
   names(summary$pt) <- c(states,"age","pt")
-  names(summary$events) <- c(states,"event","age","pt")
+  names(summary$events) <- c(states,"event","age","n")
   summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
   map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))

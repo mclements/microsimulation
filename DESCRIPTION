@@ -10,3 +10,4 @@ License: GPL (>= 3)
 Depends: Rcpp (>= 0.10.2), methods, BH
 Imports: parallel
 LinkingTo: Rcpp, BH
+LazyData: true

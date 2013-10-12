@@ -11,27 +11,52 @@ using namespace std;
 using namespace Rcpp;
 
 class Interpolate {
-public:
+ public:
   vector<double> x, y, slope;
-  Interpolate(vector<double> inx, vector<double> iny) : 
-    x(inx), y(iny) { 
+  Interpolate()  {
+  }
+ Interpolate(vector<double> inx, vector<double> iny) : 
+  x(inx), y(iny) { 
     // calculate the slope between points
     for (size_t i=0; i<x.size()-1; i++) {
       slope.push_back((y[i+1]-y[i]) / (x[i+1]-x[i]));
-    };
-  }
-  Interpolate(DataFrame df) {
-    NumericVector x = df(0);
-    NumericVector y = df(1);
-    // calculate the slope between points
-    for (int i=0; i<x.size()-1; i++) {
-      slope.push_back((y[i+1]-y[i]) / (x[i+1]-x[i]));
-    };
+    }
   }
   double approx(double xfind) {
     int i;
     if (xfind<=x[0]) return y[0];
     else if (xfind>=*(--x.end())) return *(--y.end());
+    else {
+      i = lower_bound(x.begin(), x.end(), xfind) - x.begin();
+      return y[i]+slope[i]*(xfind-x[i]);
+    }
+  }
+  double operator()(double xfind) {
+    if (xfind<=x[0]) return y[0];
+    int i = lower_bound(x.begin(), x.end(), xfind) - x.begin();
+    return y[--i];
+  }
+};
+
+class NumericInterpolate {
+ public:
+  NumericVector x, y, slope;
+  int n;
+  NumericInterpolate()  {
+  }
+  NumericInterpolate(DataFrame df) { 
+    // calculate the slope between points
+    x = df(0);
+    y = df(1);
+    n = x.size();
+    for (int i=0; i<n-1; i++) {
+      slope.push_back((y[i+1]-y[i]) / (x[i+1]-x[i]));
+    }
+  }
+  double approx(double xfind) {
+    int i;
+    if (xfind<=x[0]) return y[0];
+    else if (xfind>=x[n-1]) return y[n-1];
     else {
       i = lower_bound(x.begin(), x.end(), xfind) - x.begin();
       return y[i]+slope[i]*(xfind-x[i]);

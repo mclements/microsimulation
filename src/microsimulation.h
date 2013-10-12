@@ -676,6 +676,7 @@ SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
   }
 
 // NB : this re-defines wrap(const std::map<std::string, T>)
+// It would be less intrusive to define this as a separate function, e.g. wrap_map
 template <class T1, class T2>
 	      SEXP wrap(const std::map<T1,T2> v) {
 	int i;
