@@ -103,6 +103,43 @@ riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=2,
                        studyParticipation=participation,
                        screeningCompliance=compliance)
 
+n <- 1e3
+compliance <- 0.75
+participation <- 1.0
+noScreening2 <- callFhcrc(n,screen="noScreening",mc.cores=1,nLifeHistories=n)
+## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
+uptake2 <- callFhcrc(n,screen="screenUptake",mc.cores=1,
+                    studyParticipation=participation,
+                    screeningCompliance=compliance,nLifeHistories=n)
+goteborg2 <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=1,
+                      studyParticipation=participation,
+                      screeningCompliance=compliance,nLifeHistories=n)
+riskStrat2 <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=1,
+                       studyParticipation=participation,
+                       screeningCompliance=compliance,nLifeHistories=n)
+
+## Lexis diagrams
+plotLexis <- function(obj) {
+    stopifnot(require(Epi))
+    stopifnot(require(sqldf))
+    history <- obj$lifeHistories
+    param <- obj$parameters
+    tab <- sqldf("select t1.*, ageAtCancerDiagnosis, cohort, t0 from (select id, end as ageAtDeath, (event='toCancerDeath') as cancerDeath from history where event in ('toOtherDeath','toCancerDeath')) as t1  inner join param as p on p.id=t1.id left join (select id, end as ageAtCancerDiagnosis from history where event in ('toClinicalDiagnosis','toScreenDiagnosis')) as t2 on t1.id=t2.id")
+    lexis1 <- Lexis(entry=list(coh=cohort,age=0),exit=list(coh=cohort+ageAtDeath,age=ageAtDeath),
+                    data=tab)
+    plot(lexis1, xlab="Calendar period", ylab="Age (year)", ylim=c(0,100), asp=1)
+    with(subset(tab,!is.na(ageAtCancerDiagnosis)),
+         points(cohort+ageAtCancerDiagnosis,ageAtCancerDiagnosis,pch=19,cex=0.4,col="red"))
+    with(subset(tab,t0+35<ageAtDeath),
+         points(cohort+t0+35,t0+35,pch=19,cex=0.2,col="blue"))
+    legend("topleft",legend=c("Latent cancer onset","Cancer diagnosis"),
+           pch=19,col=c("blue","red"),bty="n")
+}
+pdf(file="~/work/lexis-20131128.pdf",width=5,height=4)
+par(mar=c(5.1, 4.1, 4.1-2, 2.1))
+plotLexis(noScreening2)
+dev.off()
+
 ## rate calculations
 pop <- data.frame(age=0:100,pop=c(12589, 14785, 15373, 14899, 14667,
 14437, 14076, 13386, 13425, 12971, 12366, 11659, 11383, 10913, 11059,
@@ -116,8 +153,10 @@ pop <- data.frame(age=0:100,pop=c(12589, 14785, 15373, 14899, 14667,
 2020, 1734, 1558, 1183, 1064, 847, 539, 381, 277, 185, 90, 79, 48,
 61))
 w <- with(subset(pop,age>=50 & age<80),data.frame(age=age,wt=pop/sum(pop)))
+
 require(sqldf)
 eventRates <- function(obj,pattern="Diagnosis") {
+    stopifnot(require(sqldf))
   ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
   pt <- obj$summary$pt
   events <- obj$summary$events
@@ -135,7 +174,7 @@ plotEvents <- function(pattern,ylab="Rate",main=NULL,legend.x="topleft",
     legend(legend.x,legend.y,
            legend=c("No screening",
              "Opportunistic screening",
-             "Göteborg protocol",
+             "Göteborg protocol (2+2)",
              "Risk-stratified protocol (4+8)"),
            lty=1,
            col=c("black","red","green","blue"),
@@ -143,8 +182,9 @@ plotEvents <- function(pattern,ylab="Rate",main=NULL,legend.x="topleft",
 }
 prevRatios <- function(obj,predicate) {
   ## ev <- data.frame(event=grep(pattern,levels(obj$summary$prev$event),value=TRUE))
+    stopifnot(require(sqldf))
   prev <- obj$summary$prev
-  sqldf(sprintf("select year, sum(n) as n, sum(y) as y, sum(p*wt) as prev from (select cohort+age as year, age, t1.n as n, coalesce(t2.y,0.0) as y, 1.0*coalesce(t2.y,0.0)/t1.n*1.0 as p from (select cohort, age, sum(n) as n from prev group by cohort, age) as t1 natural left outer join (select cohort, age, sum(n) as y from prev where %s group by cohort, age) as t2) as main natural join w where year>=1990 and year<2030 group by year", predicate))
+  sqldf(sprintf("select year, sum(n) as n, sum(y) as y, sum(p*wt) as prev from (select cohort+age as year, age, t1.n as n, coalesce(t2.y,0.0) as y, 1.0*coalesce(t2.y,0.0)/t1.n*1.0 as p from (select cohort, age, sum(count) as n from prev group by cohort, age) as t1 natural left outer join (select cohort, age, sum(count) as y from prev where %s group by cohort, age) as t2) as main natural join w where year>=1990 and year<2030 group by year", predicate))
 }
 plotPrev <- function(pattern,ylab="Prevalence",main=NULL,legend.x="topleft",
                        include.legend=TRUE, legend.y=NULL) {
@@ -158,7 +198,7 @@ plotPrev <- function(pattern,ylab="Prevalence",main=NULL,legend.x="topleft",
     legend(legend.x,legend.y,
            legend=c("No screening",
              "Opportunistic screening",
-             "Göteborg protocol",
+             "Göteborg protocol (2+2)",
              "Risk-stratified protocol (4+8)"),
            lty=1,
            col=c("black","red","green","blue"),
@@ -170,13 +210,25 @@ table(goteborg$summary$prev$dx)
 ##path <- function(filename) sprintf("/media/sf_C_DRIVE/usr/tmp/tmp/%s",filename)
 ##pdf(path("screening_20130425.pdf"),width=7,height=6)
 ##par(mfrow=c(2,2))
+pdf(file="~/work/screening-comparison.pdf",width=6,height=5)
 plotEvents("^toScreen$",main="PSA screen",legend.x="topleft")
-plotEvents("Biopsy",main="Biopsies",legend.x=2010,legend.y=0.03)
-plotEvents("Diagnosis",main="Prostate cancer incidence",include.legend=FALSE)
+dev.off()
+pdf(file="~/work/biopsy-comparison.pdf",width=6,height=5)
+plotEvents("Biopsy",main="Biopsies",legend.x="topleft")
+dev.off()
+pdf(file="~/work/diagnosis-comparison.pdf",width=6,height=5)
+plotEvents("Diagnosis",main="Prostate cancer incidence",legend.x="topleft")
+dev.off()
+pdf(file="~/work/clinicaldx-comparison.pdf",width=6,height=5)
 plotEvents("^toClinicalDiagnosis$",legend.x="bottomleft",
            main="PC incidence (Clinical Dx)")
+dev.off()
+pdf(file="~/work/prevalence-comparison.pdf",width=6,height=5)
 plotPrev("dx!='NotDiagnosed'",main="PC diagnosis",legend.x=2010,legend.y=0.04)
+dev.off()
+pdf(file="~/work/mortality-comparison.pdf",width=6,height=5)
 plotEvents("^toCancerDeath$",legend.x="bottomleft",main="PC mortality (*NOT CALIBRATED*)")
+dev.off()
 ##dev.off()
 
 ## extend the plots to include general conditions

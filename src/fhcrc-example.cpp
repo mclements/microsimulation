@@ -465,6 +465,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   List parms(parmsIn);
   List tables = parms["tables"];
   int n = as<int>(parms["n"]);
+  int firstId = as<int>(parms["firstId"]);
   interp_prob_grade7 = NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
   nLifeHistories = as<int>(parms["nLifeHistories"]);
   screen = as<int>(parms["screen"]);
@@ -490,7 +491,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // main loop
   for (int i = 0; i < n; i++) {
-    person = FhcrcPerson(i,cohort[i]);
+    person = FhcrcPerson(i+firstId,cohort[i]);
     Sim::create_process(&person);
     Sim::run_simulation();
     Sim::clear();

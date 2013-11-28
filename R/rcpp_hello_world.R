@@ -70,7 +70,8 @@ callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
                as.integer(rep(seed,length=6)), # magic
                list(n=as.integer(n)),
                PACKAGE="microsimulation")
-  out <- transform(as.data.frame(out),
+  out <- `names<-`(as.data.frame(out$Value),out$Key)
+  out <- transform(out,
                    state=enum(state,stateT),
                    event=enum(event,eventT))
   ## tidy up
@@ -171,6 +172,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   }
   initialSeeds <- Reduce(function(seed,i) powerFun(seed,parallel::nextRNGStream,3),
                          1:mc.cores, currentSeed, accumulate=TRUE)[-1]
+  ns <- cumsum(sapply(chunks,length))
+  ns <- c(0,ns[-length(ns)])
   ## now run the chunks separately
   out <- parallel::mclapply(1:mc.cores,
                 function(i) {
@@ -178,6 +181,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                   set.user.Random.seed(initialSeeds[[i]])
                   .Call("callFhcrc",
                         parms=list(n=as.integer(length(chunk)),
+                            firstId=ns[i],
                           screen=as.integer(screenIndex),
                           nLifeHistories=as.integer(nLifeHistories),
                           screeningCompliance=as.double(screeningCompliance),
@@ -227,8 +231,14 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   enum(lifeHistories$event) <- eventT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                    psaT = psaT)
-  list(n=n,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary)
+  structure(list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary),
+            class="fhcrc")
 }
+
+print.fhcrc <- function(obj,...)
+    cat(sprintf("FHCRC prostate cancer model with %i individuals under scenario '%s'\n",
+                obj$n, obj$screen),
+        ...)
 
 ## utility - not exported
 assignList <- function(lst,...)
