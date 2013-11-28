@@ -6,10 +6,13 @@ callCalibrationPerson <- function(seed=rep(12345,6),n=500,runpar=c(4,0.5,0.05,10
 	
   out <- .Call("callCalibrationSimulation",as.integer(seed),list(n=as.integer(n),runpar=as.double(runpar)),PACKAGE="microsimulation")
   states <- c("DiseaseFree","Precursor","PreClinical","Clinical")
-  curnames <- names(out)
+  curnames<-out$Key
+#  curnames <- names(out)
   mat <- matrix(0,nr=10,ncol=length(states))
   colnames(mat) <- states; rownames(mat) <- seq(10,100,10)
-  mat[,states[states %in% curnames]]<-data.matrix(transform(as.data.frame(out[states[states %in% curnames]])))
+  pick <- match(states,out$Key)
+  pick <- pick[!is.na(pick)]
+  mat[,states %in% out$Key]<-data.matrix(as.data.frame(out$Value[pick]))
 	
-  list(StateOccupancy=mat, TimeAtRisk=out$TimeAtRisk)
+  list(StateOccupancy=mat, TimeAtRisk=out$Value[out$Key=="TimeAtRisk"][[1]])
 }
