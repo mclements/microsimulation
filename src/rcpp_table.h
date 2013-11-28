@@ -419,11 +419,11 @@ public:
 /*   return wrap<double>(table.lookup(as<double>(x))); */
 /* } */
 
-RcppExport SEXP testTable2(SEXP df, SEXP x1, SEXP x2) {
-  Table<pair<double,double>,double> table =
-    Table<pair<double,double>,double>(as<DataFrame>(df));
-  return wrap<double>(table.lookup(as<double>(x1),as<double>(x2)));
-}
+/* RcppExport SEXP testTable2(SEXP df, SEXP x1, SEXP x2) { */
+/*   Table<pair<double,double>,double> table = */
+/*     Table<pair<double,double>,double>(as<DataFrame>(df)); */
+/*   return wrap<double>(table.lookup(as<double>(x1),as<double>(x2))); */
+/* } */
 // .Call("testTable2",data.frame(x1=rep(1:2,each=2),x2=rep(1:2,2),val=1:4),2.1,1.5,PACKAGE="microsimulation")
 
 
