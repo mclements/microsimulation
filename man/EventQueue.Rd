@@ -66,6 +66,12 @@
 %   }
 \examples{
 \dontrun{
+queue <- EventQueue$new()
+queue$insert(2,"B")
+queue$insert(1,"A")
+queue$insert(3,"C")
+while (!queue$empty())
+  print(queue$pop())
 }
 }
 \seealso{class-BaseDiscreteEventSimulation}

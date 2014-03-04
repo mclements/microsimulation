@@ -1,8 +1,7 @@
 PKG_LIBS = `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"`
-PKG_CXXFLAGS = -I. -Wall -DVERSION=\"1.7.6\"
+PKG_CXXFLAGS = -I. -DVERSION=\"1.7.6\"
 PKG_CFLAGS = -I.
 
 SOURCES = $(wildcard *.c */*.c */*/*.c)
 
-## architecture dependent (ucontext.h): tprocess.o
-OBJECTS = microsimulation.o person-r.o calibperson-r.o simple-example.o simple-example2.o fhcrc-example.o illness-death.o ssim.o $(SOURCES:.c=.o)
+OBJECTS = microsimulation.o person-r.o calibperson-r.o simple-example.o simple-example2.o fhcrc-example.o illness-death.o ssim.o tprocess.o $(SOURCES:.c=.o)

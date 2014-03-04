@@ -1,156 +1,277 @@
 \name{BaseDiscreteEventSimulation}
 \docType{methods}
 \alias{class-BaseDiscreteEventSimulation}
+\alias{new,BaseDiscreteEventSimulation-method}
 \alias{scheduleAt,BaseDiscreteEventSimulation-method}
 \alias{init,BaseDiscreteEventSimulation-method}
 \alias{handleMessage,BaseDiscreteEventSimulation-method}
+\alias{final,BaseDiscreteEventSimulation-method}
 \alias{now,BaseDiscreteEventSimulation-method}
+\alias{reset,BaseDiscreteEventSimulation-method}
 \alias{run,BaseDiscreteEventSimulation-method}
+%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-  Base R5 class for discrete event simulation
+An R5 reference class to implement discrete event simulation. 
 }
 \description{
-  Base R5 class for discrete event simulation. It requires that an
-  inherited R5 class defines the init()
-  and handleMessage(event) methods (and possibly the final()
-  method). See below for a simple example. 
+Inherit from this class to represent a discrete event simulation. The
+API is similar to that for Omnet++, where an \code{init} method sets up
+the initial events using the \code{scheduleAt(time,event)} method, the
+messages are handled using the \code{handleMessage(event)} method, the
+simulation is run using the \code{run} method, and the \code{final}
+method is called at the end of the simulation.
 }
 \usage{
-\S4method{scheduleAt}{BaseDiscreteEventSimulation}(time, event)
+\S4method{new}{BaseDiscreteEventSimulation}(currentTime,previousEventTime)
+\S4method{scheduleAt}{BaseDiscreteEventSimulation}(time,event)
 \S4method{init}{BaseDiscreteEventSimulation}()
 \S4method{handleMessage}{BaseDiscreteEventSimulation}(event)
+\S4method{final}{BaseDiscreteEventSimulation}()
 \S4method{now}{BaseDiscreteEventSimulation}()
-\S4method{run}{BaseDiscreteEventSimulation}()
+\S4method{reset}{BaseDiscreteEventSimulation}(startTime = 0.0)
+\S4method{run}{BaseDiscreteEventSimulation}(startTime = 0.0)
 }
+%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{time}{Scheduled time for the event (numeric).}
-  \item{event}{An arbitrary object representing an event (or
-    message). The event will be handled by the \code{handleMessage(event)} method.
+  \item{currentTime}{
+    Simulation-level variable recording the current time. This is also
+    returned by the \code{now} method.
   }
-}
-\section{Methods}{
-  \describe{
-    \item{\code{init()}}{
-      Initialise the simulation run, inserting one or more events using
-      \code{scheduleAt(time,event).}
-    }
-    \item{\code{scheduleAt(time,event)}}{
-      Insert an event at a given time into the event queue.
-    }
-    \item{\code{now()}}{
-      Utility function to get the current simulation time.
-    }
-    \item{\code{handleMessage(event)}}{
-      
-    }
-    \item{\code{run()}}{
-    }
-  }
-  Other methods are inherited from \code{\link{class-EventQueue}}.
+  \item{previousEventTime}{Simulation-level variable recording the
+    previous event time.}
+  \item{time}{schedule time that the event will take place}
+  \item{event}{A value that represents the type of event. How this value
+    is used is determined by the \code{handleMessage} method.}
+  \item{startTime}{From when the simulation starts (or is reset)}
 }
 \details{
-  
-  This is a simple discrete event simulation system based on the
-  event-oriented paradigm with a single process. An inherited class
-  defines the \code{init()} and \code{handleMessage()} methods and then an instance can
-  \code{run()}'s the model once or more. For microsimulation, the model would
-  be run many times.
-  
-  The \code{now()} method provides the current time. There are two useful
-  fields: \code{currentTime}, which is returned by \code{run()}, and
-  \code{previousEventTime}.  The simulation model uses the \code{EventQueue}
-  class. The \code{run()} method sets \code{previousEventTime}, calls \code{init()},
-  then processes the event queue until it is empty, and finishes by
-  calling \code{final()}. The inherited
-  \code{clear()} and \code{remove(eventPredicate)} methods from the \code{EventQueue} class
-  are also useful: the former clears the event queue, while the latter
-  removes events from the queue that satisfy the event predicate.
-  
-  This is a lightweight class, where the form of the events (or
-  "self-messages", in OMNeT++ parlance) is arbitrary and determined by
-  the handleMessage() method. At present, there is little infrastructure
-  for reporting from a simulation; any such report could be stored as a
-  field in the inherited class and possibly returned by the \code{final()} method.
-  
-  For context, the event orientation is different to the process
-  orientation found in \href{http://simpy.sourceforge.net/}{Simpy}. The API used here borrows from the \href{www.omnetpp.org}{OMNeT++}
-  API for the
-  \href{http://www.omnetpp.org/doc/omnetpp/api/classcSimpleModule.html}{cSimpleModule()}
-  class (although we changed the OMNET++ \code{initialise()} and \code{finalise()}
-  methods to \code{init()} and \code{final()} to avoid confusion with R5's
-  \code{initialize()} method).
-  
-  This class is useful for introducing discrete event simulation and for
-  prototyping, however it is not ideal for large-scale microsimulation
-  due to slow execution time -- which largely explains the parallel
-  development in C++.
+A concrete discrete event simulation class would inherit from this
+class; see below for examples. The methods for \code{init} and
+\code{handleMessage} are required to be implemented in the concrete class.
+
+The \code{scheduleAt} method adds attributes to the event for the
+\code{time} for the scheduled event and the \code{sendingTime} when the
+event was originally scheduled. 
+
+The implementation inherits from the R5 reference class
+\code{EventQueue}. The events are inserted using an ordered vector
+(rather than something more sophisticated, such as \code{findInterval}).
+
 }
-% \value{
-%   The output class can be
-%   }
+%% \value{
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+%% }
+%% \references{
+%% %% ~put references to the literature/web site here ~
+%% }
+%% \author{
+%% %%  ~~who you are~~
+%% }
+%% \note{
+%% %%  ~~further notes~~
+%% }
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+%%\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+%%}
 \examples{
 \dontrun{
-## A simple example
-Simulation <-
-  setRefClass("Simulation",
-              contains = "BaseDiscreteEventSimulation")
-Simulation$methods(init = function() {
-  clear()
-  scheduleAt(rweibull(1,8,85), "Death due to other causes")
-  scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
-})
-Simulation$methods(handleMessage = function(event) {
-  if (event \%in\% c("Death due to other causes", "Cancer death")) {
-    clear()
-    print(event)
-  }
-  else if (event == "Cancer diagnosis") {
-    if (runif(1) < 0.5)
-      scheduleAt(now() + rweibull(1,2,10), "Cancer death")
-    print(event)
-  }
-})
-set.seed(123)
-sim <- Simulation$new()
-sim$run()
-sim$run()
+testRsimulation1 <- function() {
+    ## A simple example
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation")
+    Simulation$methods(
+        init = function() {
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+        },
+        handleMessage = function(event) {
+            if (event \%in\% c("Death due to other causes", "Cancer death")) {
+                clear()
+                print(event)
+            }
+            else if (event == "Cancer diagnosis") {
+                if (runif(1) < 0.5)
+                    scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+                print(event)
+            }
+        })
+    Simulation$new()$run()
+}
 
 ## An extension with individual life histories
-Simulation <-
-  setRefClass("Simulation",
-              contains = "BaseDiscreteEventSimulation",
-              fields = list(id = "numeric", state = "character", report = "data.frame"),
-              methods= list(initialize = function(id = 0) callSuper(id = id)))
-Simulation$methods(init = function() {
-  clear()
-  id <<- id + 1
-  state <<- "Healthy"
-  scheduleAt(rweibull(1,8,85), "Death due to other causes")
-  scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
-})
-Simulation$methods(handleMessage = function(event) {
-  report <<- rbind(report, data.frame(id = id,
-                                      state = state,
-                                      begin = previousEventTime,
-                                      end = currentTime,
-                                      event=event,
-                                      stringsAsFactors = FALSE))
-  if (event \%in\% c("Death due to other causes", "Cancer death")) {
-    clear()
-  }
-  else if (event == "Cancer diagnosis") {
-    state <<- "Cancer"
-    if (runif(1) < 0.5)
-      scheduleAt(now() + rweibull(1,2,10), "Cancer death")
-  }
-})
-set.seed(123)
-sim <- Simulation$new()
-system.time(for (i in 1:100) sim$run())
-subset(sim$report,id<=4)
+testRsimulation2 <- function(n=100) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(state = "character", report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            state <<- "Healthy"
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(state = state,
+                                                begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event \%in\% c("Death due to other causes", "Cancer death")) {
+                clear()
+            }
+            else if (event == "Cancer diagnosis") {
+                state <<- "Cancer"
+                if (runif(1) < 0.5)
+                    scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+            }
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
 
-## tidy
-rm(sim)
+## reversible illness-death model
+testRsimulation3 <- function(n=100) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(state = "character", everCancer = "logical", report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            state <<- "Healthy"
+            everCancer <<- FALSE
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(state = state,
+                                                everCancer = everCancer,
+                                                begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event \%in\% c("Death due to other causes", "Cancer death")) {
+                clear()
+            }
+            else if (event == "Cancer diagnosis") {
+                state <<- "Cancer"
+                everCancer <<- TRUE
+                if (runif(1) < 0.5)
+                    scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+                scheduleAt(now() + 10, "Recovery")
+            }
+            else if (event == "Recovery") {
+                state <<- "Healthy"
+                scheduleAt(now() + rexp(1,10), "Cancer diagnosis")
+            }
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
+
+## cancer screening
+testRsimulation4 <- function(n=1) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(state = "character", report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            state <<- "Healthy"
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer onset")
+            scheduleAt(50,"Screening")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(state = state,
+                                                begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event \%in\% c("Death due to other causes", "Cancer death")) {
+                clear()
+            }
+            else if (event == "Cancer onset") {
+                state <<- event
+                dx <- now() + rweibull(1,2,10)
+                scheduleAt(dx, "Clinical cancer diagnosis")
+                scheduleAt(dx + rweibull(1,1,10), "Cancer death")
+                scheduleAt(now() + rweibull(1,1,10), "Metastatic cancer")
+            }
+            else if (event == "Metastatic cancer") {
+                state <<- event
+                remove(function(event) event %in% c("Clinical cancer diagnosis","Cancer death")) # competing events
+                scheduleAt(now() + rweibull(1,2,5), "Cancer death")
+            }
+            else if (event == "Clinical cancer diagnosis") {
+                state <<- event
+                remove(function(event) event == "Metastatic cancer")
+            }
+            else if (event == "Screening") {
+                switch(state,
+                       "Cancer onset" = {
+                           state <<- "Screen-detected cancer diagnosis"
+                           remove(function(event) event %in% c("Clinical cancer diagnosis","Metastatic cancer"))
+                       },
+                       "Metastatic cancer" = {}, # ignore
+                       "Clincal cancer diagnosis" = {}, # ignore
+                       "Healthy" = {
+                           if (now()<=68) scheduleAt(now()+2, "Screening")
+                       })
+            }
+            else stop(event)
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
+
+## ticking bomb - toy example
+testRsimulation5 <- function(n=1) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            scheduleAt(rexp(1,1), "tick")
+            if (runif(1)<0.1)
+                scheduleAt(rexp(1,1), "explosion")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event == "explosion")
+                clear()
+            else {
+                clear() # queue
+                if (event == "tick") scheduleAt(currentTime+rexp(1,1), "tock")
+                else scheduleAt(currentTime+rexp(1,1), "tick")
+                if (runif(1)<0.1)
+                    scheduleAt(currentTime+rexp(1,1), "explosion")
+            }
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
 }
 }
-\seealso{class-EventQueue}
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+%\keyword{ ~kwd1 }
+%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

@@ -466,7 +466,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   List tables = parms["tables"];
   int n = as<int>(parms["n"]);
   int firstId = as<int>(parms["firstId"]);
-  interp_prob_grade7 = NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
+  NumericInterpolate interp_prob_grade7 = 
+    NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
   nLifeHistories = as<int>(parms["nLifeHistories"]);
   screen = as<int>(parms["screen"]);
   screeningCompliance = as<double>(parms["screeningCompliance"]);

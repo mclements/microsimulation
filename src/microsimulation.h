@@ -88,7 +88,7 @@ using std::greater;
 using ssim::Time;
 using ssim::Sim;
 
-// should we use the ssim or msim namespace?
+// should we use the ssim or a new "msim" namespace?
 
 #define WithRNG(rng,expr) (rng->set(), expr)
 
@@ -127,7 +127,7 @@ public:
   virtual void handleMessage(const cMessage * msg) = 0;
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
-    // cf. static_cast
+    // cf. static_cast?
     if ((msg = dynamic_cast<const cMessage *>(e)) != 0) { 
       handleMessage(msg);
       previousEventTime = Sim::clock();

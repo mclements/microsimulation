@@ -226,4 +226,36 @@ extern "C" {
   
 } // extern "C"
 
-}
+} // namespace person_r
+
+namespace {
+
+  class VerySimple : public cProcess {
+  public:
+    void init() {
+      scheduleAt(10.0, "a message");
+      scheduleAt(11.0, "another message");
+    };
+    virtual void handleMessage(const cMessage* msg) {};
+  };
+  
+extern "C" {
+
+  RcppExport SEXP callSpeedTest() {
+    VerySimple simple;
+    for (int i = 0; i < 1000000; i++) {
+      simple = VerySimple();      
+      Sim::create_process(&simple);
+      Sim::run_simulation();
+      Sim::clear();
+    }
+    return Rcpp::wrap(1);
+    
+  } // callSpeedTest()
+  
+} // extern "C"
+
+} // anonymous namespace
+    
+
+

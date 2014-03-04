@@ -235,7 +235,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
             class="fhcrc")
 }
 
-print.fhcrc <- function(obj,...)
+print.fhcrc <- function(x,...)
     cat(sprintf("FHCRC prostate cancer model with %i individuals under scenario '%s'\n",
                 obj$n, obj$screen),
         ...)
@@ -274,8 +274,8 @@ EventQueue <-
                   times <<- numeric()
                   events <<- list()
                 },
-                remove = function(predicate) {
-                  i <- sapply(events, predicate)
+                remove = function(predicate, ...) {
+                  i <- sapply(events, predicate, ...)
                   stopifnot(is.logical(i))
                   i[is.na(i)] <- TRUE
                   times <<- times[!i]
@@ -288,13 +288,21 @@ BaseDiscreteEventSimulation <-
               fields = list(currentTime = "numeric",
                 previousEventTime = "numeric"),
               methods = list(
-                scheduleAt = function(time, event) insert(time, event),
+                  scheduleAt = function(time, event) {
+                      attr(event,"time") <- time
+                      attr(event,"sendingTime") <- currentTime
+                      insert(time, event)
+                  },
                 init = function() stop("VIRTUAL!"), 
                 handleMessage = function(event) stop("VIRTUAL!"),
                 final = function() {},
                 now = function() currentTime,
-                run = function() {
-                  previousEventTime <<- 0.0
+                reset = function(startTime = 0.0) {
+                    clear()
+                    previousEventTime <<- currentTime <<- startTime
+                },
+                run = function(startTime = 0.0) {
+                  reset(startTime)
                   init()
                   while(!empty()) {
                     event <- pop()
@@ -304,6 +312,195 @@ BaseDiscreteEventSimulation <-
                   }
                   final()
                 }))
+
+testRsimulation1 <- function() {
+    ## A simple example
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation")
+    Simulation$methods(
+        init = function() {
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+        },
+        handleMessage = function(event) {
+            if (event %in% c("Death due to other causes", "Cancer death")) {
+                clear()
+                print(event)
+            }
+            else if (event == "Cancer diagnosis") {
+                if (runif(1) < 0.5)
+                    scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+                print(event)
+            }
+        })
+    Simulation$new()$run()
+}
+
+## An extension with individual life histories
+testRsimulation2 <- function(n=100) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(state = "character", report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            state <<- "Healthy"
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(state = state,
+                                                begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event %in% c("Death due to other causes", "Cancer death")) {
+                clear()
+            }
+            else if (event == "Cancer diagnosis") {
+                state <<- "Cancer"
+                if (runif(1) < 0.5)
+                    scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+            }
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
+
+## reversible illness-death model
+testRsimulation3 <- function(n=100) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(state = "character", everCancer = "logical", report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            state <<- "Healthy"
+            everCancer <<- FALSE
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer diagnosis")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(state = state,
+                                                everCancer = everCancer,
+                                                begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event %in% c("Death due to other causes", "Cancer death")) {
+                clear()
+            }
+            else if (event == "Cancer diagnosis") {
+                state <<- "Cancer"
+                everCancer <<- TRUE
+                if (runif(1) < 0.5)
+                    scheduleAt(now() + rweibull(1,2,10), "Cancer death")
+                scheduleAt(now() + 10, "Recovery")
+            }
+            else if (event == "Recovery") {
+                state <<- "Healthy"
+                scheduleAt(now() + rexp(1,10), "Cancer diagnosis")
+            }
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
+
+## cancer screening
+testRsimulation4 <- function(n=1) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(state = "character", report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            state <<- "Healthy"
+            scheduleAt(rweibull(1,8,85), "Death due to other causes")
+            scheduleAt(rweibull(1,3,90), "Cancer onset")
+            scheduleAt(50,"Screening")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(state = state,
+                                                begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event %in% c("Death due to other causes", "Cancer death")) {
+                clear()
+            }
+            else if (event == "Cancer onset") {
+                state <<- event
+                dx <- now() + rweibull(1,2,10)
+                scheduleAt(dx, "Clinical cancer diagnosis")
+                scheduleAt(dx + rweibull(1,1,10), "Cancer death")
+                scheduleAt(now() + rweibull(1,1,10), "Metastatic cancer")
+            }
+            else if (event == "Metastatic cancer") {
+                state <<- event
+                remove(function(event) event %in% c("Clinical cancer diagnosis","Cancer death")) # competing events
+                scheduleAt(now() + rweibull(1,2,5), "Cancer death")
+            }
+            else if (event == "Clinical cancer diagnosis") {
+                state <<- event
+                remove(function(event) event == "Metastatic cancer")
+            }
+            else if (event == "Screening") {
+                switch(state,
+                       "Cancer onset" = {
+                           state <<- "Screen-detected cancer diagnosis"
+                           remove(function(event) event %in% c("Clinical cancer diagnosis","Metastatic cancer"))
+                       },
+                       "Metastatic cancer" = {}, # ignore
+                       "Clincal cancer diagnosis" = {}, # ignore
+                       "Healthy" = {
+                           if (now()<=68) scheduleAt(now()+2, "Screening")
+                       })
+            }
+            else stop(event)
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
+
+## ticking bomb - toy example
+testRsimulation5 <- function(n=1) {
+    Simulation <-
+        setRefClass("Simulation",
+                    contains = "BaseDiscreteEventSimulation",
+                    fields = list(report = "data.frame"))
+    Simulation$methods(
+        init = function() {
+            report <<- data.frame()
+            scheduleAt(rexp(1,1), "tick")
+            if (runif(1)<0.1)
+                scheduleAt(rexp(1,1), "explosion")
+        },
+        handleMessage = function(event) {
+            report <<- rbind(report, data.frame(begin = attr(event,"sendingTime"),
+                                                end = currentTime,
+                                                event = event,
+                                                stringsAsFactors = FALSE))
+            if (event == "explosion")
+                clear()
+            else {
+                clear() # queue
+                if (event == "tick") scheduleAt(currentTime+rexp(1,1), "tock")
+                else scheduleAt(currentTime+rexp(1,1), "tick")
+                if (runif(1)<0.1)
+                    scheduleAt(currentTime+rexp(1,1), "explosion")
+            }
+        },
+        final = function() report)
+    sim <- Simulation$new()
+    do.call("rbind", lapply(1:n, function(id) data.frame(id=id,sim$run())))
+}
 
 RNGStream <- function(nextStream = TRUE, iseed = NULL) {
   stopifnot(exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE) || !is.null(iseed))
@@ -329,10 +526,10 @@ RNGStream <- function(nextStream = TRUE, iseed = NULL) {
             class="RNGStream")
   }
 
-with.RNGStream <- function(stream,expr,...) {
-  stream$open()
+with.RNGStream <- function(data,expr,...) {
+  data$open()
   out <- eval(substitute(expr), enclos = parent.frame(), ...)
-  stream$close()
+  data$close()
   out
 }
 setOldClass("RNGStream")

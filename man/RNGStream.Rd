@@ -18,15 +18,15 @@
 \usage{
 RNGStream(nextStream = TRUE, iseed = NULL)
 
-\method{with}{RNGStream}(stream, expr, ...)
+\method{with}{RNGStream}(data, expr, ...)
 }
 \arguments{
   \item{nextStream}{Boolean to say whether to use the next stream
     [default] or the current stream.}
   \item{iseed}{specify the random number seed as an integer vector of
     length six.}
-  \item{stream}{RNGStream to use for evaluating an expression involving
-    random numbers.}
+  \item{data}{RNGStream to use for evaluating an expression involving
+    random numbers (the name reflects the signature for the generic function).}
   \item{expr}{expression to evaluate}
   \item{...}{arguments to be passed to \code{eval()}}
 }
