@@ -222,7 +222,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   names(summary$pt) <- c(states,"age","pt")
   names(summary$events) <- c(states,"event","age","n")
   summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
-  map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
+  ## map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
+  map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   parameters <- map2df(out[[1]]$parameters)
   enum(summary$events$event) <- eventT
@@ -230,13 +231,13 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
-                   psaT = psaT)
+               psaT = psaT)
   structure(list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary),
             class="fhcrc")
 }
 
-print.fhcrc <- function(x,...)
-    cat(sprintf("FHCRC prostate cancer model with %i individuals under scenario '%s'\n",
+print.fhcrc <- function(obj,...)
+    cat(sprintf("FHCRC prostate cancer model with %i individuals under scenario '%s'.\n",
                 obj$n, obj$screen),
         ...)
 

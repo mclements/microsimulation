@@ -147,7 +147,7 @@ void FhcrcPerson::init() {
   ym = ymean(tm);
   tc = (log((beta1+beta2)*R::rexp(1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(gc*thetac) + ym) - beta0 + beta2*t0) / (beta1+beta2);
-  aoc = rmu0.rand();
+  aoc = rmu0.rand(R::runif(0.0,1.0));
   ext_grade= (grade==base::Gleason_le_7) ? 
     (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
     ext::Gleason_ge_8;

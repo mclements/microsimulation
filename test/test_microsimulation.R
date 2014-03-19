@@ -2,6 +2,14 @@
 ## require(microsimulation)
 ## microsimulation:::.testPackage()
 
+## unit tests
+require(microsimulation)
+temp=callCalibrationPerson(10)
+stopifnot(temp$StateOccupancy[1:2] == c(422,354))
+temp2=callFhcrc(10)
+stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-83.37181)<1e-3)
+
+
 ## testing the user-defined random number generator
 require(microsimulation)
 ##callFhcrc(10,screen="noScreening") # FAILS
@@ -75,6 +83,9 @@ n <- 1e4
 system.time(test <- mclapply(1:10,
                              function(i) callFhcrc(n,screen="noScreening"),
                              mc.cores=1))
+system.time(test <- mclapply(1:10,
+                             function(i) callFhcrc(n,screen="noScreening"),
+                             mc.cores=4))
 ##
 test <- lapply(1:10, function(i) callFhcrc(10,screen="noScreening"))
 test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeHistories)),
@@ -88,7 +99,7 @@ test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeH
 ## baseline analysis
 options(width=110)
 require(microsimulation)
-n <- 1e7
+n <- 1e5
 compliance <- 0.75
 participation <- 1.0
 noScreening <- callFhcrc(n,screen="noScreening",mc.cores=2)
@@ -137,7 +148,7 @@ plotLexis <- function(obj) {
 }
 pdf(file="~/work/lexis-20131128.pdf",width=5,height=4)
 par(mar=c(5.1, 4.1, 4.1-2, 2.1))
-plotLexis(noScreening2)
+plotLexis(noScreening)
 dev.off()
 
 ## rate calculations

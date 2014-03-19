@@ -168,17 +168,11 @@ void CalibPerson::handleMessage(const cMessage* msg) {
 
 extern "C" {
 
-  RcppExport SEXP callCalibrationSimulation(SEXP inseed, SEXP parms) {
+  RcppExport SEXP callCalibrationSimulation(SEXP parms) {
     Rcpp::List parmsl(parms);
-    Rcpp::IntegerVector inseed2(inseed);
     int nin = Rcpp::as<int>(parmsl["n"]);
     std::vector<double> par = Rcpp::as<std::vector<double> >(parmsl["runpar"]);
 	  
-    unsigned long seed[6];
-    for (int i=0; i<6; i++) {
-      seed[i]=(unsigned long)inseed2[i];
-    }
-    RngStream_SetPackageSeed(seed);
     CalibPerson::resetPopulation();
     CalibPerson::rng["NH"] = new Rng();
     CalibPerson::rng["NH"]->set();

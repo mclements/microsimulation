@@ -59,7 +59,7 @@ namespace Rcpp {
 
   // maps defined in terms of vectors
   template <class T1, class T2>
-    SEXP wrap(const std::map<T1,T2> v);
+    SEXP wrap_map(const std::map<T1,T2> v);
 
 }
 
@@ -88,16 +88,22 @@ using std::greater;
 using ssim::Time;
 using ssim::Sim;
 
-// should we use the ssim or a new "msim" namespace?
+// should we use the ssim (or a new "msim") namespace?
 
+/**
+   @brief WithRNG is a macro for using the random number generator rng
+   and then evaluating the expression expr.
+*/
 #define WithRNG(rng,expr) (rng->set(), expr)
 
 /**
-   @brief cMessage class for OMNET++ API compatibility.
-   This provides a heavier message class than Sim::Event, with
-   short 'kind' and std::string 'name' attributes. 
-   The events by default are scheduled using cProcess::scheduleAt(),
-   and handled using cProcess::handleMessage() (as per OMNET++).
+   @brief cMessage class for OMNET++ API compatibility.  This provides
+   a heavier message class than Sim::Event, with short 'kind' and
+   std::string 'name' attributes.  The events by default are scheduled
+   using cProcess::scheduleAt(), and handled using
+   cProcess::handleMessage() (as per OMNET++).  NB:
+   cProcess::scheduleAt() uses simulation time rather than time in
+   state (which is used by Sim::self_signal_event()).
 */
 class cMessage : public ssim::Event {
 public:
@@ -151,7 +157,7 @@ public:
 
 
 /** 
-    Event predicate used to compare a message name with a given string
+    @brief cMessageNameEq is an event predicate used to compare a message name with a given string.
 */
 class cMessageNameEq : public ssim::EventPredicate {
  public:
@@ -166,7 +172,7 @@ class cMessageNameEq : public ssim::EventPredicate {
 
 
 /** 
-    Event predicate used to compare a message kind with a given short
+    @brief cMessageKindEq is an event predicate used to compare a message kind with a given short
 */
 class cMessageKindEq : public ssim::EventPredicate {
  public:
@@ -180,33 +186,33 @@ class cMessageKindEq : public ssim::EventPredicate {
 };
 
 /**
-   Function to remove messages with the given name from the queue (NB: void)
+   @brief remove_name is a function to remove messages with the given name from the queue (NB: void)
 */
 void remove_name(string name);
 
 /**
-   Function to remove messages with the given kind from the queue (NB: void)
+   @brief remove_kind is a function to remove messages with the given kind from the queue (NB: void)
 */
 void remove_kind(short kind);
 
 /**
-   simtime_t typedef for OMNET++ API compatibility
+   @brief simtime_t typedef for OMNET++ API compatibility
 */
 typedef Time simtime_t;
 
 /**
-   simTime() function for OMNET++ API compatibility
+   @brief simTime() function for OMNET++ API compatibility
 */
 Time simTime();
 
 /**
-   now() function for compatibility with C++SIM
+   @brief now() function for compatibility with C++SIM
 */
 Time now();
 
 /**
    @brief Utility class to incrementally add values to calculate the mean,
-   sum, variance and standard deviation.
+   sum, variance and standard deviation. This could be replaced by boost::accumulator.
  */
 class Means {
 public:
@@ -229,7 +235,10 @@ private:
 };
 
 /**
-   Random number generator class for piecewise constant hazards
+   @brief Rpexp is a random number generator class for piecewise constant hazards.
+   Given time lower bounds t and piecewise constant hazards h, rand() returns a random time.
+   The random number is calculated using the inversion formula.
+   Constructors provided for arrays.
  */
 class Rpexp {
 public: 
@@ -247,14 +256,24 @@ public:
       }
     }
   }
-  double rand(double from = 0.0) {
+ /* Rpexp(vector<double> hin, vector<double> tin) : h(hin), t(tin) { */
+ /*    n = h.size(); */
+ /*    H.resize(n); */
+ /*    H[0] = 0.0; */
+ /*    if (n>1) { */
+ /*      for(i=1;i<n;i++) { */
+ /* 	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1]; */
+ /*      } */
+ /*    } */
+ /*  } */
+  double rand(double u, double from = 0.0) {
     double v = 0.0, H0 = 0.0, tstar = 0.0;
     int i = 0, i0 = 0;
     if (from > 0.0) {
       i0 = (from >= t[n-1]) ? (n-1) : int(lower_bound(t.begin(), t.end(), from) - t.begin())-1;
       H0 = H[i0] + (from - t[i0])*h[i0];
     }
-    v = R::rexp(1.0) + H0;
+    v = -log(u) + H0;
     i = (v >= H[n-1]) ? (n-1) : int(lower_bound(H.begin(), H.end(), v) - H.begin())-1;
     tstar = t[i]+(v-H[i])/h[i];
     return tstar;
@@ -569,9 +588,9 @@ public:
 
     using namespace Rcpp;
 
-    return List::create(_("pt") = wrap(_pt),
-  			_("events") = wrap(_events),
-  			_("prev") = wrap(_prev));
+    return List::create(_("pt") = wrap_map(_pt),
+  			_("events") = wrap_map(_events),
+  			_("prev") = wrap_map(_prev));
   }
 
   T _min, _max;
@@ -675,23 +694,30 @@ SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
 		      _("Var5")=wrap(v5));
   }
 
-// NB : this re-defines wrap(const std::map<std::string, T>)
+// NB : the following re-defines/re-defined wrap(const std::map<std::string, T>)
 // It would be less intrusive to define this as a separate function, e.g. wrap_map
-template <class T1, class T2>
-	      SEXP wrap(const std::map<T1,T2> v) {
-	int i;
-	int n = v.size();
-	vector<T1> x(n);
-	vector<T2> y(n);
-	typename std::map<T1,T2>::const_iterator it;
-	for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
-	  x[i] = (*it).first;
-	  y[i] = (*it).second;
-	}
-	return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
-      }
 
-  }
+/* // in general, wrap_map is wrap */
+/*  template<class T> */
+/*    SEXP wrap_map(const T obj) { */
+/*    return wrap<T>(obj); */
+/*  } */
+
+ template <class T1, class T2>
+   SEXP wrap_map(const std::map<T1,T2> v) {
+   int i;
+   int n = v.size();
+   vector<T1> x(n);
+   vector<T2> y(n);
+   typename std::map<T1,T2>::const_iterator it;
+   for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+     x[i] = (*it).first;
+     y[i] = (*it).second;
+   }
+   return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
+ }
+
+ }
 
 
 namespace R {
