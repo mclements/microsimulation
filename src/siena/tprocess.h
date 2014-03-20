@@ -29,6 +29,9 @@
 #include "tprocessconf.h"
 #endif
 
+// to make OSX happy with using ucontext.h
+#define _XOPEN_SOURCE
+
 #if TPROCESS_IMPL != 0
 
 #if TPROCESS_IMPL==1

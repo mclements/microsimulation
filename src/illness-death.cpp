@@ -77,7 +77,7 @@ namespace illnessDeath {
     zsd = Rcpp::as<double>(parmsl["zsd"]);
     
     vector<double> ages(101);
-    iota(ages.begin(), ages.end(), 0.0);
+    myiota(ages.begin(), ages.end(), 0.0);
     ages.push_back(1.0e+6);
     report.clear();
     report.setPartition(ages);

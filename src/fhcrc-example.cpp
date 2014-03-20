@@ -468,10 +468,10 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // set up the parameters
   double ages0[106];
-  iota(ages0, ages0+106, 0.0);
+  myiota(ages0, ages0+106, 0.0);
   rmu0 = Rpexp(mu0, ages0, 106);
   vector<double> ages(101);
-  iota(ages.begin(), ages.end(), 0.0);
+  myiota(ages.begin(), ages.end(), 0.0);
   ages.push_back(1.0e+6);
 
   // re-set the output objects
