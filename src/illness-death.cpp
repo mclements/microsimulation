@@ -9,7 +9,6 @@ namespace illnessDeath {
   enum event_t {toOtherDeath, toCancer, toCancerDeath};
 
   EventReport<short,short,double> report;
-  cMessageKindEq toOtherDeathPred(toOtherDeath);
   double cure, zsd; // parameters - could be static class variables
   
 
@@ -56,7 +55,7 @@ namespace illnessDeath {
       
     case toCancer:
       state = Cancer;
-      Sim::remove_event(& toOtherDeathPred);
+      RemoveKind(toOtherDeath);
       if (R::runif(0.0,1.0) < 0.5) // cure fraction
 	scheduleAt(now() + R::rweibull(1.0,10.0), toCancerDeath);
       break;

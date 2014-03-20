@@ -9,16 +9,6 @@ double rweibullHR(double shape, double scale, double hr){
   return R::rweibull(shape, scale*pow(hr,1.0/shape));
 }
 
-void remove_name(string name) {
-  cMessageNameEq f = cMessageNameEq(name);
-  Sim::remove_event(&f);
-}
-
-void remove_kind(short kind) {
-  cMessageKindEq f = cMessageKindEq(kind);
-  Sim::remove_event(&f);
-}
-
 Time now() {
   return Sim::clock();
 }

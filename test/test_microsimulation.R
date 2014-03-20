@@ -7,7 +7,10 @@ require(microsimulation)
 temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
 temp2=callFhcrc(10)
-stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-83.37181)<1e-3)
+stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-72.56411)<1e-3)
+##temp2=callFhcrc(1e4)
+
+system.time(callFhcrc(1e5))
 
 
 ## testing the user-defined random number generator

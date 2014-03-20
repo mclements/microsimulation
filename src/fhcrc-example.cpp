@@ -52,15 +52,6 @@ namespace fhcrc {
   Rng * rngNh, * rngOther, * rngScreen;
   Rpexp rmu0;
 
-  // this is ugly: we could change to using functions and lambdas
-#define KindPred(kind) cMessageKindEq kind##Pred(kind)
-#define RemoveKind(kind) Sim::remove_event(& kind##Pred)
-  //cMessageKindEq toClinicalDiagnosisPred(toClinicalDiagnosis);
-  KindPred(toClinicalDiagnosis);
-  KindPred(toMetastatic);
-  KindPred(toScreen);
-
-
   /** 
       Utility to record information in a map<string vector<double> > object
   */

@@ -78,6 +78,8 @@ namespace Rcpp {
 #include <map>
 #include <functional>
 
+#include <boost/bind.hpp>
+
 //using namespace std;
 //using namespace ssim;
 using std::string;
@@ -155,45 +157,29 @@ public:
   Time previousEventTime;
 };
 
-
-/** 
-    @brief cMessageNameEq is an event predicate used to compare a message name with a given string.
-*/
-class cMessageNameEq : public ssim::EventPredicate {
- public:
- cMessageNameEq(const string s) : _s(s) {};
-  bool operator()(const ssim::Event* e)  {
+inline bool cMessageNamePred(const ssim::Event* e, const string s) {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != 0 && msg->name == _s); 
-  };
- private:
-  string _s;
-};
+    return (msg != 0 && msg->name == s); 
+  }
 
-
-/** 
-    @brief cMessageKindEq is an event predicate used to compare a message kind with a given short
-*/
-class cMessageKindEq : public ssim::EventPredicate {
- public:
- cMessageKindEq(const short k) : _k(k) {};
-  bool operator()(const ssim::Event* e)  {
+inline bool cMessageKindPred(const ssim::Event* e, const short k) {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != 0 && msg->kind == _k); 
-  };
- private:
-  short _k;
-};
+    return (msg != 0 && msg->kind == k); 
+  }
 
 /**
-   @brief remove_name is a function to remove messages with the given name from the queue (NB: void)
+   @brief RemoveKind is a function to remove messages with the given kind from the queue (NB: void)
 */
-void remove_name(string name);
+inline void RemoveKind(short kind) {
+  return Sim::remove_event(boost::bind(cMessageKindPred,_1,kind));
+}
 
 /**
-   @brief remove_kind is a function to remove messages with the given kind from the queue (NB: void)
+   @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
 */
-void remove_kind(short kind);
+inline void RemoveName(string name) {
+  return Sim::remove_event(boost::bind(cMessageNamePred,_1,name));
+}
 
 /**
    @brief simtime_t typedef for OMNET++ API compatibility
