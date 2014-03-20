@@ -604,7 +604,7 @@ public:
 
 // http://en.cppreference.com/w/cpp/algorithm/iota
 template<class ForwardIterator, class T>
-void iota(ForwardIterator first, ForwardIterator last, T value)
+void myiota(ForwardIterator first, ForwardIterator last, T value)
 {
     while(first != last) {
         *first++ = value;
