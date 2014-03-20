@@ -1,8 +1,9 @@
 #include "microsimulation.h"
 
-namespace simpleExample2 {
+namespace {
 
 using namespace std;
+  using namespace msim;
 
 enum state_t {Healthy,Cancer,Death};
 

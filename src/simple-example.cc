@@ -1,6 +1,9 @@
 #include "microsimulation.h"
 
+namespace {
+
 using namespace std;
+using namespace msim;
 
 enum state_t {Healthy,Cancer,Death};
 
@@ -92,3 +95,4 @@ RcppExport SEXP callSimplePerson(SEXP parms) {
   return Rcpp::wrap(report);
 } 
  
+} // anonymous namespace

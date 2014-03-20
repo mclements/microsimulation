@@ -1,73 +1,79 @@
+
  
-/* RngStream.h for ANSI C */
 #ifndef RNGSTREAM_H
 #define RNGSTREAM_H
  
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <string>
 
-typedef struct RngStream_InfoState * RngStream;
+class RngStream
+{
+public:
 
-struct RngStream_InfoState {
-   double Cg[6], Bg[6], Ig[6];
-   int Anti;
-   int IncPrec;
-   char *name;
+RngStream (const char *name = "");
+
+
+static bool SetPackageSeed (const unsigned long seed[6]);
+
+
+void ResetStartStream ();
+
+
+void ResetStartSubstream ();
+
+
+void ResetNextSubstream ();
+
+
+void SetAntithetic (bool a);
+
+
+void IncreasedPrecis (bool incp);
+
+
+bool SetSeed (const unsigned long seed[6]);
+
+
+void AdvanceState (long e, long c);
+
+
+void GetState (unsigned long seed[6]) const;
+
+
+void WriteState () const;
+
+
+void WriteStateFull () const;
+
+
+double RandU01 ();
+
+
+int RandInt (int i, int j);
+
+
+
+private:
+
+double Cg[6], Bg[6], Ig[6];
+
+
+bool anti, incPrec;
+
+
+std::string name;
+
+
+static double nextSeed[6];
+
+
+double U01 ();
+
+
+double U01d ();
+
+
 };
-
-
-void RngStream_SetPackageSeed (unsigned long seed[6]);
-
-
-RngStream RngStream_CreateStream (const char name[]);
-
-
-void RngStream_DeleteStream (RngStream *pg);
-
-
-void RngStream_ResetStartStream (RngStream g);
-
-
-void RngStream_ResetStartSubstream (RngStream g);
-
-
-void RngStream_ResetNextSubstream (RngStream g);
-
-
-  // double[] RngStream_nextRNGStream (RngStream g);
-
-
-void RngStream_SetAntithetic (RngStream g, int a);
-
-
-void RngStream_IncreasedPrecis (RngStream g, int incp);
-
-
-void RngStream_SetSeed (RngStream g, unsigned long seed[6]);
-
-
-void RngStream_AdvanceState (RngStream g, long e, long c);
-
-
-void RngStream_GetState (RngStream g, unsigned long seed[6]);
-
-
-void RngStream_WriteState (RngStream g);
-
-
-void RngStream_WriteStateFull (RngStream g);
-
-
-double RngStream_RandU01 (RngStream g);
-
-
-long RngStream_RandInt (RngStream g, long i, long j);
-
-#ifdef __cplusplus
-}
-#endif 
-
+ 
 #endif
  
 

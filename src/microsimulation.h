@@ -79,9 +79,10 @@ namespace Rcpp {
 #include <functional>
 
 #include <boost/bind.hpp>
+#include <boost/functional.hpp>
 
-//using namespace std;
-//using namespace ssim;
+namespace msim {
+
 using std::string;
 using std::vector;
 using std::map;
@@ -89,8 +90,6 @@ using std::pair;
 using std::greater;
 using ssim::Time;
 using ssim::Sim;
-
-// should we use the ssim (or a new "msim") namespace?
 
 /**
    @brief WithRNG is a macro for using the random number generator rng
@@ -156,6 +155,11 @@ public:
   }
   Time previousEventTime;
 };
+
+inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessage * msg)> pred) {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    return (msg != 0 && pred(msg));
+  }
 
 inline bool cMessageNamePred(const ssim::Event* e, const string s) {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
@@ -278,20 +282,25 @@ double rweibullHR(double shape, double scale, double hr);
 
 
 /** 
-    @brief C++ wrapper class for the RngStreams library. 
-    set() selects this random number stream.
-    nextSubstream() and nextSubStream() move to the next sub-stream.
-    TODO: add other methods.
+    @brief C++ wrapper class for the RngStream library. 
+    set() sets the current R random number stream to this stream.
+    This is compliant with being a Boost random number generator.
 */
-class Rng {
-  public:
-    Rng(std::string n = "");
-    ~Rng();
-    void set();
-    void nextSubstream();
-    void nextSubStream();
-    // static void unset();
-    RngStream stream;
+static int counter_id = 0;
+class Rng : public RngStream {
+ public:
+  typedef double result_type;
+  result_type operator()() { return RandU01(); }
+  result_type min() { return 0.0; }
+  result_type max() { return 1.0; }
+  Rng() : RngStream() { id = ++counter_id; }
+  ~Rng();
+  void seed(const unsigned long seed[6]) {
+    SetSeed(seed);
+  }
+  void set();
+  void nextSubstream() { ResetNextSubstream(); }
+  int id;
 };
 
 
@@ -308,7 +317,6 @@ extern "C" { // functions that will be called from R
       Used when finalising the microsimulation package in R.
   */
   void r_remove_current_stream();
-
 
   /** 
       @brief A utility function to set the user random seed for the simulation.
@@ -342,7 +350,11 @@ extern "C" { // functions that will be called from R
       @brief Simple function to calculate the integral between the start and end times
       for (1+kappa)^(-u), where kappa is the discountRate (e.g. 0.03)
   */
-double discountedInterval(double start, double end, double discountRate);
+inline double discountedInterval(double start, double end, double discountRate) {
+  if (discountRate == 0.0) return end - start;
+  //else if (start == 0.0) return (1.0 - (1.0+discountRate)^(-end)) / log(1.0+discountRate);
+  else return (pow(1.0+discountRate,-start) - pow(1.0+discountRate,-end)) / log(1.0+discountRate);
+}
 
 
 /** 
@@ -597,6 +609,8 @@ void myiota(ForwardIterator first, ForwardIterator last, T value)
         ++value;
     }
 }
+
+} // namespace msim
 
  namespace Rcpp {
 

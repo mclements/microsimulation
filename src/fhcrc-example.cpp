@@ -4,6 +4,7 @@ namespace fhcrc {
 
   using namespace std;
   using namespace Rcpp;
+  using namespace msim;
 
   // declarations
 

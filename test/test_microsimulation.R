@@ -11,6 +11,8 @@ stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-72.56411)<1e-3)
 ##temp2=callFhcrc(1e4)
 
 system.time(callFhcrc(1e5))
+system.time(callFhcrc(1e5,mc.cores=4))
+system.time(callFhcrc(1e6,mc.cores=4))
 
 
 ## testing the user-defined random number generator

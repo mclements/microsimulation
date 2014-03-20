@@ -28,9 +28,10 @@
 
 #include "microsimulation.h"
 
-namespace person_r {
+namespace {
 
-using namespace std;
+  using namespace std;
+  using namespace msim;
 
 //! enum for type of Gleason score
 enum gleason_t {nogleason,gleasonLt7,gleason7,gleasonGt7};
@@ -200,7 +201,7 @@ extern "C" {
       seed[i]=(unsigned long)inseed2[i];
     }
     //r_create_current_stream();
-    RngStream_SetPackageSeed(seed);
+    RngStream::SetPackageSeed(seed);
     Person::resetPopulation();
     Person::rng["NH"] = new Rng();
     Person::rng["S"] = new Rng();

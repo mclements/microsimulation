@@ -3,6 +3,7 @@
 namespace illnessDeath {
 
   using namespace std;
+  using namespace msim;
 
   enum state_t {Healthy,Cancer};
   
