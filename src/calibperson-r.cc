@@ -32,7 +32,7 @@
 #include "microsimulation.h"
 #include <Rcpp.h>
 
-using namespace msim;
+using namespace ssim;
 using namespace std;
 
 //! enum of type of disease stage

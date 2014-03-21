@@ -5,7 +5,7 @@
 
 #include "microsimulation.h"
 
-namespace msim {
+namespace ssim {
 
   double rweibullHR(double shape, double scale, double hr){
     return R::rweibull(shape, scale*pow(hr,1.0/shape));
@@ -89,7 +89,7 @@ namespace msim {
     
   } // extern "C"
   
-} // namespace msim
+} // namespace ssim
   
 namespace R {
   double rnormPos(double mean, double sd) {

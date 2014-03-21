@@ -77,19 +77,18 @@ namespace Rcpp {
 #include <algorithm>
 #include <map>
 #include <functional>
+#include <set>
 
 #include <boost/bind.hpp>
 #include <boost/functional.hpp>
 
-namespace msim {
+namespace ssim {
 
 using std::string;
 using std::vector;
 using std::map;
 using std::pair;
 using std::greater;
-using ssim::Time;
-using ssim::Sim;
 
 /**
    @brief WithRNG is a macro for using the random number generator rng
@@ -358,11 +357,11 @@ inline double discountedInterval(double start, double end, double discountRate) 
 
 
 /** 
-    Function to transpose a vector of vectors.
+    @brief Function to transpose a vector of vectors.
     This assumes that all inner vectors have the same size and
     allocates space for the complete result in advance.
     From  http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors
-*/
+ */
 template <class T>
 std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) {
     std::vector<std::vector<T> > result(data[0].size(),
@@ -374,172 +373,16 @@ std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) 
     return result;
 }
 
-// old EventReport which uses vector<Tstate> to record state rather than Tstate itself
-template< class Tstate, class Tevent, class T >
-class EventReportOld {
-
-typedef vector<Tstate> state_t;
-
-public:
-  void setPartition(const vector<T> partition) {
-    _partition = partition;
-    _max = * max_element(_partition.begin(), _partition.end());
-  }
-  void clear() {
-    _pt.clear();
-    _events.clear();
-    _prev.clear();
-    _partition.clear();
-  }
-
-  void add(const Tstate state1,
-  	   const Tevent event, const T lhs, const T rhs) {
-    state_t state;
-    state.push_back(state1);
-    add(state,event,lhs,rhs);
-  }
-  void add(const Tstate state1, const Tstate state2,
-  	   const Tevent event, const T lhs, const T rhs) {
-    state_t state;
-    state.push_back(state1);
-    state.push_back(state2);
-    add(state,event,lhs,rhs);
-  }
-  void add(const Tstate state1, const Tstate state2, const Tstate state3,
-  	   const Tevent event, const T lhs, const T rhs) {
-    state_t state;
-    state.push_back(state1);
-    state.push_back(state2);
-    state.push_back(state3);
-    add(state,event,lhs,rhs);
-  }
-  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
-  	   const Tevent event, const T lhs, const T rhs) {
-    state_t state;
-    state.push_back(state1);
-    state.push_back(state2);
-    state.push_back(state3);
-    state.push_back(state4);
-    add(state,event,lhs,rhs);
-  }
-  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
-  	   const Tstate state5,
-  	   const Tevent event, const T lhs, const T rhs) {
-    state_t state;
-    state.push_back(state1);
-    state.push_back(state2);
-    state.push_back(state3);
-    state.push_back(state4);
-    state.push_back(state5);
-    add(state,event,lhs,rhs);
-  }
-  void add(const Tstate state1, const Tstate state2, const Tstate state3, const Tstate state4,
-  	   const Tstate state5, const Tstate state6,
-  	   const Tevent event, const T lhs, const T rhs) {
-    state_t state;
-    state.push_back(state1);
-    state.push_back(state2);
-    state.push_back(state3);
-    state.push_back(state4);
-    state.push_back(state5);
-    state.push_back(state6);
-    add(state,event,lhs,rhs);
-  }
-
-  void add(const state_t state, const Tevent event, const T lhs, const T rhs) {
-    typename vector< T >::iterator lo, it;
-    T itmax;
-    lo = lower_bound (_partition.begin(), _partition.end(), lhs);
-    if (lhs<*lo) lo -= 1;
-    itmax = rhs<_max ? rhs : _max; // truncates if outside of partition!
-    for (it=lo; (*it)<itmax; ++it) {
-      _pt[state][*it] += (*(it+1)<rhs ? (*(it+1)) : rhs) - ((*it)<lhs ? lhs : (*it));
-      if (lhs<=(*it) && (*it)<rhs) 
-	_prev[state][*it] += 1;
-    }
-    if (rhs<_max)
-      _events[state][event][*(it-1)] += 1;
-  }
-
-  SEXP out() {
-
-    using namespace Rcpp;
-
-    vector<T> ptAge, ptPt;
-    vector<vector< Tstate > > ptState;
-    typename map<T,T>::iterator it;
-    typename map<state_t, map<T,T> >::iterator it2;
-    for (it2=_pt.begin(); it2 != _pt.end(); ++it2) {
-      for (it=(*it2).second.begin(); it != (*it2).second.end(); ++it) {
-	ptState.push_back((*it2).first);
-	ptAge.push_back((*it).first);
-	ptPt.push_back((*it).second);
-      }
-    }
-    ptState = transpose<Tstate>(ptState);
-    
-    vector<T> evAge;
-    vector<state_t> evState;
-    vector<Tevent> evEvent;
-    vector<int> evCount;
-    typename map<T,int>::iterator itdi1;
-    typename map<Tevent, map<T,int> >::iterator itdi2;
-    typename map<state_t, map<Tevent, map<T,int> > >::iterator itdi3;
-    for (itdi3=_events.begin(); itdi3 != _events.end(); ++itdi3) {
-      for (itdi2=(*itdi3).second.begin(); itdi2 != (*itdi3).second.end(); ++itdi2) {
-	for (itdi1=(*itdi2).second.begin(); itdi1 != (*itdi2).second.end(); ++itdi1) {
-	  evState.push_back((*itdi3).first);
-	  evEvent.push_back((*itdi2).first);
-	  evAge.push_back((*itdi1).first);
-	  evCount.push_back((*itdi1).second);
-	}
-      }
-    }
-    evState = transpose<Tstate>(evState);
-    
-    typename map<state_t, map<T,int> >::iterator itdi4;
-    vector<state_t> prState;
-    vector<T> prAge;
-    vector<int> prCount;
-    for (itdi4=_prev.begin(); itdi4 != _prev.end(); ++itdi4) {
-      for (itdi1=(*itdi4).second.begin(); itdi1 != (*itdi4).second.end(); ++itdi1) {
-	prState.push_back((*itdi4).first);
-	prAge.push_back((*itdi1).first);
-	prCount.push_back((*itdi1).second);
-      }
-    }
-    prState = transpose<Tstate>(prState);
-    
-    return List::create(Named("pt") = 
-			List::create(Named("state") = ptState,
-				     Named("age") = ptAge,
-				     Named("pt") = ptPt),
-			Named("events") = 
-			List::create(Named("state") = evState,
-				     Named("event") = evEvent,
-				     Named("age") = evAge,
-				     Named("n") = evCount),
-			Named("prev") = 
-			List::create(Named("state") = prState,
-				     Named("age") = prAge,
-				     Named("n") = prCount));
-  }
-  
-  T _max;
-  vector<T> _partition;
-  map<state_t, map<T, int> > _prev;
-  map<state_t, map< T, T > > _pt;
-  map<state_t, map<Tevent, map< T, int > > > _events;
-};
-
-
+/**
+   @brief EventReport class for collecting statistics on person-time, prevalence and numbers of events.
+ */
 template< class Tstate, class Tevent, class T >
 class EventReport {
 public:
-  void setPartition(const vector<T> partition) {
-    _partition = partition;
-    _min = * min_element(_partition.begin(), _partition.end());
-    _max = * max_element(_partition.begin(), _partition.end());
+  typedef std::set<T, std::greater<T> > Partition;
+  typedef typename Partition::iterator Iterator;
+  void setPartition(const vector<T> v) {
+    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
   void clear() {
     _pt.clear();
@@ -548,37 +391,22 @@ public:
     _partition.clear();
   }
   void add(const Tstate state, const Tevent event, const T lhs, const T rhs) {
-    typename vector<T>::iterator lo, it;
-    T _lhs(lhs);
-    if (lhs < _min) 
-      _lhs = _min; // truncate for values below _min (cf. throwing an error)
-    if (_lhs>=_max && rhs>=_max) { // first case
-      _pt[std::make_pair(state,_max)] += rhs - _lhs;
-      if (_lhs==_max && rhs==_max)
-	++_prev[std::make_pair(state,_max)]; // corner case
-      ++_events[boost::make_tuple(state,event,_max)];
-    }
-    else if (_lhs<_max && rhs>=_max) { // second case
-      lo = lower_bound (_partition.begin(), _partition.end(), _lhs);
-      if (_lhs < *lo) --lo; 
-      for (it=lo; (*it) < _max; ++it) {
-	_pt[std::make_pair(state,*it)] += ((*(it+1))<rhs ? (*(it+1)) : rhs) - ((*it)<_lhs ? _lhs : (*it));
-	if (_lhs<=(*it) && (*it)<rhs) // cadlag
-	  ++_prev[std::make_pair(state,*it)];
+    Iterator lo, hi, it, last;
+    lo = _partition.lower_bound(lhs);
+    hi = _partition.lower_bound(rhs); 
+    last = _partition.begin(); // because it's ordered by greater<T>
+    ++_events[boost::make_tuple(state,event,*hi)];
+    bool iterating;
+    for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<T>
+      if (lhs<=(*it) && (*it)<rhs) // cadlag
+    	++_prev[std::make_pair(state,*it)];
+      if (it == last) {
+	_pt[std::make_pair(state,*it)] += rhs - std::max<T>(lhs,*it);
       }
-      _pt[std::make_pair(state,_max)] += rhs - _max;
-      ++_prev[std::make_pair(state,_max)];
-      ++_events[boost::make_tuple(state,event,_max)];
-    }
-    else { // third case: _lhs<_max && rhs<_max
-      lo = lower_bound (_partition.begin(), _partition.end(), _lhs);
-      if (_lhs < *lo) --lo; 
-      for (it=lo; (*it) < rhs; ++it) {
-	_pt[std::make_pair(state,*it)] += ((*(it+1))<rhs ? (*(it+1)) : rhs) - ((*it)<_lhs ? _lhs : (*it));
-	if (_lhs<=(*it) && (*it)<rhs) // cadlag
-	  ++_prev[std::make_pair(state,*it)];
+      else {
+	T next_value = *(--it); it++; // decrement/increment for greater<T>
+	_pt[std::make_pair(state,*it)] += std::min<T>(rhs,next_value) - std::max<T>(lhs,*it);
       }
-      ++_events[boost::make_tuple(state,event,*(it-1))];
     }
   }
 
@@ -591,8 +419,7 @@ public:
   			_("prev") = wrap_map(_prev));
   }
 
-  T _min, _max;
-  vector<T> _partition;
+  Partition _partition;
   map<pair<Tstate,T>, int > _prev;
   map<pair<Tstate,T>, T > _pt;
   map<boost::tuple<Tstate,Tevent,T>, int > _events;
@@ -610,7 +437,7 @@ void myiota(ForwardIterator first, ForwardIterator last, T value)
     }
 }
 
-} // namespace msim
+} // namespace ssim
 
  namespace Rcpp {
 
@@ -694,15 +521,6 @@ SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
 		      _("Var5")=wrap(v5));
   }
 
-// NB : the following re-defines/re-defined wrap(const std::map<std::string, T>)
-// It would be less intrusive to define this as a separate function, e.g. wrap_map
-
-/* // in general, wrap_map is wrap */
-/*  template<class T> */
-/*    SEXP wrap_map(const T obj) { */
-/*    return wrap<T>(obj); */
-/*  } */
-
  template <class T1, class T2>
    SEXP wrap_map(const std::map<T1,T2> v) {
    int i;
@@ -714,7 +532,10 @@ SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
      x[i] = (*it).first;
      y[i] = (*it).second;
    }
-   return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
+   List out =  wrap(x);
+   out.push_back(wrap(y),"Value");
+   return out;
+   //return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
  }
 
  }

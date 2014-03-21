@@ -1,23 +1,34 @@
-/***********************************************************************\
+/**
+ * @file    RngStream.cpp for multiple streams of Random Numbers
+ * @author  Pierre L'Ecuyer, University of Montreal
+ * Original date: 14 August 2001
+ * Modified by Mark Clements <mark.clements@ki.se> 2014-03-22 for the microsimulation package.
  *
- * File:           RngStream.cpp for multiple streams of Random Numbers
- * Language:       C++ (ISO 1998)
- * Copyright:      Pierre L'Ecuyer, University of Montreal
- * Notice:         This code can be used freely for personal, academic,
- *                 or non-commercial purposes. For commercial purposes, 
- *                 please contact P. L'Ecuyer at: lecuyer@iro.umontreal.ca
- * Date:           14 August 2001
+ * @section LICENSE
  *
-\***********************************************************************/
-
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details at
+ * http://www.gnu.org/copyleft/gpl.html
+*/
 
 #include <cstdlib>
 #include <iostream>
 #include "RngStream.h"
+
+namespace ssim {
+
+namespace 
+{
+
 using namespace std;
 
-namespace
-{
 const double m1   =       4294967087.0;
 const double m2   =       4294944443.0;
 const double norm =       1.0 / (m1 + 1.0);
@@ -422,15 +433,15 @@ void RngStream::GetState (unsigned long seed[6]) const
 //-------------------------------------------------------------------------
 void RngStream::WriteState () const
 {
-    cout << "The current state of the Rngstream";
+  std::cout << "The current state of the Rngstream";
     if (name.size() > 0)
-        cout << " " << name;
-    cout << ":\n   Cg = { ";
+        std::cout << " " << name;
+    std::cout << ":\n   Cg = { ";
 
     for (int i = 0; i < 5; i++) {
-        cout << static_cast<unsigned long> (Cg [i]) << ", ";
+        std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
     }
-    cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
+    std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
 }
 
 
@@ -439,29 +450,29 @@ void RngStream::WriteStateFull () const
 {
     int i;
 
-    cout << "The RngStream";
+    std::cout << "The RngStream";
     if (name.size() > 0)
         cout << " " << name;
-    cout << ":\n   anti = " << (anti ? "true" : "false") << "\n";
-    cout << "   incPrec = " << (incPrec ? "true" : "false") << "\n";
+    std::cout << ":\n   anti = " << (anti ? "true" : "false") << "\n";
+    std::cout << "   incPrec = " << (incPrec ? "true" : "false") << "\n";
 
-    cout << "   Ig = { ";
+    std::cout << "   Ig = { ";
     for (i = 0; i < 5; i++) {
-        cout << static_cast<unsigned long> (Ig [i]) << ", ";
+        std::cout << static_cast<unsigned long> (Ig [i]) << ", ";
     }
-    cout << static_cast<unsigned long> (Ig [5]) << " }\n";
+    std::cout << static_cast<unsigned long> (Ig [5]) << " }\n";
 
-    cout << "   Bg = { ";
+    std::cout << "   Bg = { ";
     for (i = 0; i < 5; i++) {
-        cout << static_cast<unsigned long> (Bg [i]) << ", ";
+        std::cout << static_cast<unsigned long> (Bg [i]) << ", ";
     }
-    cout << static_cast<unsigned long> (Bg [5]) << " }\n";
+    std::cout << static_cast<unsigned long> (Bg [5]) << " }\n";
 
-    cout << "   Cg = { ";
+    std::cout << "   Cg = { ";
     for (i = 0; i < 5; i++) {
-        cout << static_cast<unsigned long> (Cg [i]) << ", ";
+        std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
     }
-    cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
+    std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
 }
 
 
@@ -497,4 +508,6 @@ double RngStream::RandU01 ()
 int RngStream::RandInt (int low, int high)
 {
     return low + static_cast<int> ((high - low + 1.0) * RandU01 ());
-};
+}
+
+} // namespace ssim;

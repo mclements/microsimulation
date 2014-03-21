@@ -1,8 +1,9 @@
 #include "microsimulation.h"
 
-namespace fhcrcReimplementation { // can we use an anonymous namespace?
+namespace {
 
   using namespace std;
+  using namespace ssim;
 
   // declarations (NB: any changes here should also be incorporated into R code)
   
@@ -466,4 +467,4 @@ RcppExport SEXP callFhcrcReimplementation(SEXP parms) {
 			    );
 } 
 
-} // namespace fhcrc
+} // anonymous namespace 

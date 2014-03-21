@@ -1,10 +1,10 @@
 #include "microsimulation.h"
 
-namespace fhcrc {
+namespace {
 
   using namespace std;
   using namespace Rcpp;
-  using namespace msim;
+  using namespace ssim;
 
   // declarations
 
@@ -28,7 +28,6 @@ namespace fhcrc {
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
-  //EventReportOld<short,short,double> report;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
@@ -250,10 +249,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double psa = y(now()-35.0);
   //double year = now() + cohort;
 
-  // record information (three states, event type, start time, end time)
-  //report.add(state, dx, psa>=3.0 ? 1 : 0, short(cohort), msg->kind, previousEventTime, now());
+  // record information
   report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
-  //report.add(make_pair(state, make_pair(dx, make_pair(psa>=3.0, cohort))), msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);
@@ -500,10 +497,11 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  return List::create(_("summary") = report.out(),
-  			    _("lifeHistories") = wrap(lifeHistories),
-  			    _("parameters") = wrap(parameters)
-  			    );
+  return List::create(
+		      _("summary") = report.out(),
+		      _("lifeHistories") = wrap(lifeHistories),
+		      _("parameters") = wrap(parameters)
+		      );
 } 
 
-} // namespace fhcrc
+} // anonymous namespace

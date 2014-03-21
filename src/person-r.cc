@@ -31,7 +31,7 @@
 namespace {
 
   using namespace std;
-  using namespace msim;
+  using namespace ssim;
 
 //! enum for type of Gleason score
 enum gleason_t {nogleason,gleasonLt7,gleason7,gleasonGt7};
