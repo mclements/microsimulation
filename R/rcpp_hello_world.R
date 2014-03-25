@@ -53,6 +53,11 @@ RNGstate <- function() {
   reset <- function() {
     if (!is.null(oldseed)) 
       assign(".Random.seed", oldseed, envir = .GlobalEnv)
+    else {
+        ## clean up if we created a .Random.seed
+        if (exists(".Random.seed" ,envir = .GlobalEnv, inherits = FALSE))
+            rm(.Random.seed, envir = .GlobalEnv, inherits = FALSE)
+    }
   }
   list(oldseed = oldseed, reset = reset)
 }
@@ -81,6 +86,7 @@ callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
 callSimplePerson <- function(n=10) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("Mersenne-Twister")
+  set.seed(12345)
   stateT <- c("Healthy","Cancer","Death")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath", "toCheck")
   out <- .Call("callSimplePerson",
@@ -95,6 +101,7 @@ callSimplePerson <- function(n=10) {
 callSimplePerson2 <- function(n=10) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("Mersenne-Twister")
+  set.seed(12345)
   stateT <- c("Healthy","Cancer","Death")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
   out <- .Call("callSimplePerson2",
@@ -109,16 +116,18 @@ callSimplePerson2 <- function(n=10) {
 callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("Mersenne-Twister")
+  set.seed(12345)
   stateT <- c("Healthy","Cancer")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
   out <- .Call("callIllnessDeath",
                parms=list(n=as.integer(n),cure=as.double(cure),zsd=as.double(zsd)),
                PACKAGE="microsimulation")
-  reader <- function(obj)
-    cbind(data.frame(state=enum(obj$state[[1]],stateT)),
-          data.frame(obj[-1]))
+  reader <- function(obj) 
+      cbind(data.frame(state=enum(obj[[1]],stateT)),
+          age=obj[[2]],
+          data.frame(obj[-(1:2)]))
   out <- lapply(out,reader)
-  out$events <- transform(out$events,event=enum(event,eventT))
+  out$events <- with(out$events, data.frame(state=state,age=age,event=Value,Value=Var3))
   out
 }
 
@@ -174,6 +183,12 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                          1:mc.cores, currentSeed, accumulate=TRUE)[-1]
   ns <- cumsum(sapply(chunks,length))
   ns <- c(0,ns[-length(ns)])
+  ## Minor changes to fhcrcData
+  fhcrcData$prtx$Age <- as.double(fhcrcData$prtx$Age)
+  fhcrcData$prtx$DxY <- as.double(fhcrcData$prtx$DxY)
+  fhcrcData$pradt$Age <- as.double(fhcrcData$pradt$Age)
+  fhcrcData$pradt$DxY <- as.double(fhcrcData$pradt$DxY)
+  fhcrcData$survival_dist$Time <- as.double(fhcrcData$survival_dist$Time)
   ## now run the chunks separately
   out <- parallel::mclapply(1:mc.cores,
                 function(i) {

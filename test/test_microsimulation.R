@@ -8,10 +8,13 @@ temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
 temp2=callFhcrc(10)
 stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-72.56411)<1e-3)
+temp3 <- callIllnessDeath(10)
+stopifnot(abs(with(temp3,sum(pt$Value)/10)-64.96217)<1e-3)
 
 system.time(callFhcrc(1e5))
 system.time(callFhcrc(1e5,mc.cores=4))
 system.time(callFhcrc(1e6,mc.cores=4))
+
 
 
 ## testing the user-defined random number generator

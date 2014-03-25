@@ -38,6 +38,11 @@ namespace {
     mubeta1=0.04463, sebeta1=0.0430,
     mubeta2[2]={0.0397,0.1678},sebeta2[2]={0.0913,0.3968};
 
+  typedef Table<boost::tuple<double,double,int>,double> TablePrtx;
+  typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
+  typedef Table<boost::tuple<int,double>,double> TableSurvivalDist;
+  TablePrtx prtxCM, prtxRP, prtxDT;
+  TablePradt pradt;
   NumericInterpolate interp_prob_grade7;
 
   // initialise input parameters (see R::callFhcrc for actual defaults)
@@ -457,6 +462,15 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   int firstId = as<int>(parms["firstId"]);
   NumericInterpolate interp_prob_grade7 = 
     NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
+  TablePrtx prtxCM = TablePrtx(as<DataFrame>(tables["prtx"]),
+			       "Age","DxY","G","CM");
+  TablePrtx prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
+			       "Age","DxY","G","RP");
+  TablePrtx prtxCT = TablePrtx(as<DataFrame>(tables["prtx"]),
+			       "Age","DxY","G","RT");
+  TablePradt pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
+  TableSurvivalDist survival_dist = 
+    TableSurvivalDist(as<DataFrame>(tables["survival_dist"]),"Grade","Time","Survival");
   nLifeHistories = as<int>(parms["nLifeHistories"]);
   screen = as<int>(parms["screen"]);
   screeningCompliance = as<double>(parms["screeningCompliance"]);
