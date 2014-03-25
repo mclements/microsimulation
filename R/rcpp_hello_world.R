@@ -61,7 +61,8 @@ RNGstate <- function() {
   }
   list(oldseed = oldseed, reset = reset)
 }
-  
+    
+
 callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
   state <- RNGstate(); on.exit(state$reset())
   RNGkind("user")
@@ -111,11 +112,18 @@ callSimplePerson2 <- function(n=10) {
       cbind(data.frame(state=enum(obj[[1]],stateT)),
           data.frame(obj[-1]))
   out <- lapply(out,reader)
-  out$events <- with(out$events, data.frame(state=state,event=enum(Var2,eventT),age=Var3,number=Value))
-  out$pt <- with(out$pt, data.frame(state=state,age=Var2,pt=Value))
-  out$prev <- with(out$prev, data.frame(state=state,age=Var2,number=Value))
+  out$events <- with(out$events, data.frame(state=state,event=enum(event,eventT),age=age,number=number))
+  out$pt <- with(out$pt, data.frame(state=state,age=age,pt=pt))
+  out$prev <- with(out$prev, data.frame(state=state,age=age,number=number))
   out
 }
+
+
+## readEventReport <- function(obj) {
+##     pt <- obj$pt
+##     n <- ncol(pt)
+##     names(pt)[(n-1):n] <- c("age","pt")
+## }
 
 callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
   state <- RNGstate(); on.exit(state$reset())
@@ -130,9 +138,9 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
       cbind(data.frame(state=enum(obj[[1]],stateT)),
           data.frame(obj[-1]))
   out <- lapply(out,reader)
-  out$events <- with(out$events, data.frame(state=state,event=enum(Var2,eventT),age=Var3,number=Value))
-  out$pt <- with(out$pt, data.frame(state=state,age=Var2,pt=Value))
-  out$prev <- with(out$prev, data.frame(state=state,age=Var2,number=Value))
+  out$events <- with(out$events, data.frame(state=state,event=enum(event,eventT),age=age,number=number))
+  out$pt <- with(out$pt, data.frame(state=state,age=age,pt=pt))
+  out$prev <- with(out$prev, data.frame(state=state,age=age,number=number))
   out
 }
 

@@ -37,6 +37,7 @@
 #include <vector>
 #include <utility>
 #include <map>
+#include <string>
 
 namespace Rcpp {
 
@@ -61,7 +62,15 @@ namespace Rcpp {
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v);
 
-}
+ template <class T1a, class T1b, class T2>
+   SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
+		 std::string name1, std::string name2);
+
+ template <class T1a, class T1b, class T1c, class T2>
+   SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+		 std::string name1, std::string name2, std::string name3);
+
+} // namespace Rcpp
 
 #include <Rcpp.h>
 #include <R.h>
@@ -414,9 +423,9 @@ public:
 
     using namespace Rcpp;
 
-    return List::create(_("pt") = wrap_map(_pt),
-  			_("events") = wrap_map(_events),
-  			_("prev") = wrap_map(_prev));
+    return List::create(_("pt") = wrap_map(_pt,"age","pt"),
+  			_("events") = wrap_map(_events,"event","age","number"),
+  			_("prev") = wrap_map(_prev,"age","number"));
   }
 
   Partition _partition;
@@ -426,119 +435,160 @@ public:
 
 };
 
-
-// http://en.cppreference.com/w/cpp/algorithm/iota
-template<class ForwardIterator, class T>
-void myiota(ForwardIterator first, ForwardIterator last, T value)
-{
-    while(first != last) {
-        *first++ = value;
-        ++value;
-    }
-}
-
 } // namespace ssim
 
- namespace Rcpp {
-
-   template <class T1, class T2>
-     SEXP wrap(const vector<pair<T1,T2> > v) {
-   vector<T1> v1;
-   vector<T2> v2;
-   typename vector<pair<T1,T2> >::const_iterator it;
-   for (it=v.begin(); it<v.end(); ++it) {
-     v1.push_back(it->first);
-     v2.push_back(it->second);
-   }
+namespace Rcpp {
+  
+  template <class T1, class T2>
+    SEXP wrap(const vector<pair<T1,T2> > v) {
+    vector<T1> v1;
+    vector<T2> v2;
+    typename vector<pair<T1,T2> >::const_iterator it;
+    for (it=v.begin(); it<v.end(); ++it) {
+      v1.push_back(it->first);
+      v2.push_back(it->second);
+    }
    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2));
- }
-
- template <class T1, class T2>
-   SEXP wrap(const vector<boost::tuple<T1,T2> > v) {
-  int i, n=v.size();
-  vector<T1> v1(n);
-  vector<T2> v2(n);
-  typename vector<boost::tuple<T1,T2> >::const_iterator it;
-  for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-    v1[i] = boost::get<0>(*it);
-    v2[i] = boost::get<1>(*it);
   }
-  return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2));
-}
-
-template <class T1, class T2, class T3>
-SEXP wrap(const vector<boost::tuple<T1,T2,T3> > v) {
-  int i, n=v.size();
-  vector<T1> v1(n);
-  vector<T2> v2(n);
-  vector<T3> v3(n);
-  typename vector<boost::tuple<T1,T2,T3> >::const_iterator it;
-  for (it=v.begin(), i=0; it<v.end(); ++it, ++i) { 
-    v1[i] = boost::get<0>(*it);
-    v2[i] = boost::get<1>(*it);
-    v3[i] = boost::get<2>(*it);
+  
+  template <class T1, class T2>
+    SEXP wrap(const vector<boost::tuple<T1,T2> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    typename vector<boost::tuple<T1,T2> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+      v1[i] = boost::get<0>(*it);
+      v2[i] = boost::get<1>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2));
   }
-  return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),_("Var3")=wrap(v3));
-}
-
-
-template <class T1, class T2, class T3, class T4>
-SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4> > v) {
-  int i, n=v.size();
-  vector<T1> v1(n);
-  vector<T2> v2(n);
-  vector<T3> v3(n);
-  vector<T4> v4(n);
-  typename vector<boost::tuple<T1,T2,T3,T4> >::const_iterator it;
-  for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+  
+  template <class T1, class T2, class T3>
+    SEXP wrap(const vector<boost::tuple<T1,T2,T3> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    typename vector<boost::tuple<T1,T2,T3> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) { 
+      v1[i] = boost::get<0>(*it);
+      v2[i] = boost::get<1>(*it);
+      v3[i] = boost::get<2>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),_("Var3")=wrap(v3));
+  }
+  
+  
+  template <class T1, class T2, class T3, class T4>
+    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    typename vector<boost::tuple<T1,T2,T3,T4> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
       v1[i] = boost::get<0>(*it);
       v2[i] = boost::get<1>(*it);
       v3[i] = boost::get<2>(*it);
       v4[i] = boost::get<3>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4));
   }
-  return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
-		      _("Var3")=wrap(v3),_("Var4")=wrap(v4));
-  }
-
-template <class T1, class T2, class T3, class T4, class T5>
-SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
-  int i, n=v.size();
-  vector<T1> v1(n);
-  vector<T2> v2(n);
-  vector<T3> v3(n);
-  vector<T4> v4(n);
-  vector<T5> v5(n);
-  typename vector<boost::tuple<T1,T2,T3,T4,T5> >::const_iterator it;
-  for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+  
+  template <class T1, class T2, class T3, class T4, class T5>
+    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    vector<T5> v5(n);
+    typename vector<boost::tuple<T1,T2,T3,T4,T5> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
       v1[i] = boost::get<0>(*it);
       v2[i] = boost::get<1>(*it);
       v3[i] = boost::get<2>(*it);
       v4[i] = boost::get<3>(*it);
       v5[i] = boost::get<4>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
+			_("Var5")=wrap(v5));
   }
-  return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
-		      _("Var3")=wrap(v3),_("Var4")=wrap(v4),
-		      _("Var5")=wrap(v5));
+  
+  template <class T1, class T2>
+    SEXP wrap_map(const std::map<T1,T2> v) {
+    int i;
+    int n = v.size();
+    vector<T1> x(n);
+    vector<T2> y(n);
+    typename std::map<T1,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      x[i] = (*it).first;
+      y[i] = (*it).second;
+    }
+    List out =  wrap(x);
+    out.push_back(wrap(y),"Value");
+    return out;
+    //return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
   }
-
- template <class T1, class T2>
-   SEXP wrap_map(const std::map<T1,T2> v) {
-   int i;
-   int n = v.size();
-   vector<T1> x(n);
-   vector<T2> y(n);
-   typename std::map<T1,T2>::const_iterator it;
-   for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
-     x[i] = (*it).first;
-     y[i] = (*it).second;
+  
+  // Special cases for wrap_map:
+  //
+  // map<pair<Tstate,T>, int > _prev;
+  // map<pair<Tstate,T>, T > _pt;
+  // map<boost::tuple<Tstate,Tevent,T>, int > _events;
+  
+  template <class T1a, class T1b, class T1c, class T2>
+    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+		  std::string name1, std::string name2, std::string name3) {
+    typedef boost::tuple<T1a,T1b,T1c> Tuple;
+    int i;
+    int n = v.size();
+    vector<T1a> xa(n);
+    vector<T1b> xb(n);
+    vector<T1c> xc(n);
+    vector<T2> y(n);
+    typename std::map<Tuple,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      xa[i] = get<0>((*it).first);
+      xb[i] = get<1>((*it).first);
+      xc[i] = get<2>((*it).first);
+      y[i] = (*it).second;
+    }
+    List out = Rcpp::wrap(xa);
+    out.push_back(wrap(xb),name1);
+    out.push_back(wrap(xc),name2);
+    out.push_back(wrap(y),name3);
+    return out;
+  }
+  
+  
+  template <class T1a, class T1b, class T2>
+    SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
+		  std::string name1 = "age", std::string name2 = "value") {
+    typedef std::pair<T1a,T1b> Pair;
+    int i;
+    int n = v.size();
+    vector<T1a> xa(n);
+    vector<T1b> xb(n);
+    vector<T2> y(n);
+    typename std::map<Pair,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      xa[i] = (*it).first.first;
+      xb[i] = (*it).first.second;
+      y[i] = (*it).second;
+    }
+    List out = Rcpp::wrap(xa);
+    out.push_back(wrap(xb),name1);
+    out.push_back(wrap(y),name2);
+    return out;
    }
-   List out =  wrap(x);
-   out.push_back(wrap(y),"Value");
-   return out;
-   //return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
- }
-
- }
+  
+} // Rcpp namespace
 
 
 namespace R {

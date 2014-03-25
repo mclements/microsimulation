@@ -74,7 +74,7 @@ class NumericInterpolate {
 };
 
 template<class T>
-set_lower_bound(set<T,greater<T> > aset, T value) {
+T set_lower_bound(set<T,greater<T> > aset, T value) {
   return *aset.lower_bound(value);
 }
 

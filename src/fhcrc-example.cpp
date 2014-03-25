@@ -1,5 +1,7 @@
 #include "microsimulation.h"
 
+#include <boost/algorithm/cxx11/iota.hpp>
+
 namespace {
 
   using namespace std;
@@ -480,10 +482,10 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // set up the parameters
   double ages0[106];
-  myiota(ages0, ages0+106, 0.0);
+  boost::algorithm::iota(ages0, ages0+106, 0.0);
   rmu0 = Rpexp(mu0, ages0, 106);
   vector<double> ages(101);
-  myiota(ages.begin(), ages.end(), 0.0);
+  boost::algorithm::iota(ages.begin(), ages.end(), 0.0);
   ages.push_back(1.0e+6);
 
   // re-set the output objects
