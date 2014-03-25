@@ -107,9 +107,13 @@ callSimplePerson2 <- function(n=10) {
   out <- .Call("callSimplePerson2",
                parms=list(n=as.integer(n)),
                PACKAGE="microsimulation")
-  reader <- function(obj) cbind(data.frame(state=enum(obj$state[[1]],stateT)),data.frame(obj[-1]))
+  reader <- function(obj) 
+      cbind(data.frame(state=enum(obj[[1]],stateT)),
+          data.frame(obj[-1]))
   out <- lapply(out,reader)
-  enum(out$events$event) <- eventT
+  out$events <- with(out$events, data.frame(state=state,event=enum(Var2,eventT),age=Var3,number=Value))
+  out$pt <- with(out$pt, data.frame(state=state,age=Var2,pt=Value))
+  out$prev <- with(out$prev, data.frame(state=state,age=Var2,number=Value))
   out
 }
 
@@ -124,10 +128,11 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
                PACKAGE="microsimulation")
   reader <- function(obj) 
       cbind(data.frame(state=enum(obj[[1]],stateT)),
-          age=obj[[2]],
-          data.frame(obj[-(1:2)]))
+          data.frame(obj[-1]))
   out <- lapply(out,reader)
-  out$events <- with(out$events, data.frame(state=state,age=age,event=Value,Value=Var3))
+  out$events <- with(out$events, data.frame(state=state,event=enum(Var2,eventT),age=Var3,number=Value))
+  out$pt <- with(out$pt, data.frame(state=state,age=Var2,pt=Value))
+  out$prev <- with(out$prev, data.frame(state=state,age=Var2,number=Value))
   out
 }
 
