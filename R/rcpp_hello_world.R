@@ -35,13 +35,13 @@ user.Random.seed <- function() {
                          PACKAGE="microsimulation")$seed)))
 }
 
-enum <- function(obj, labels) {
+enum <- function(obj, labels, start=0) {
   if (is.logical(obj)) obj <- obj+0
-  factor(obj, levels=0:(length(labels)-1), labels=labels)
+  structure(factor(obj, levels=start + (0:(length(labels)-1)), labels=labels),start=start)
 }
 
 "enum<-" <- function(obj, value) {
-  enum(if(is.factor(obj)) unclass(obj)-1 else obj, value)
+  enum(if(is.factor(obj)) unclass(obj)-1+attr(obj,"start") else obj, value)
 }
 
 RNGstate <- function() {
@@ -167,8 +167,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
               "toCancerDeath","toOtherDeath","toScreen","toBiopsy","toScreenDiagnosis",
-              "toOrganised")
+              "toOrganised","toTreatment","toCM","toRP","toRT","toADT")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
+  treatmentT <- c("CM","RP","RT")
   psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
   ## check the input arguments
   stopifnot(screen %in% screenT)
@@ -199,9 +200,18 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ## Minor changes to fhcrcData
   fhcrcData$prtx$Age <- as.double(fhcrcData$prtx$Age)
   fhcrcData$prtx$DxY <- as.double(fhcrcData$prtx$DxY)
+  fhcrcData$prtx$G <- fhcrcData$prtx$G - 1L
+  fhcrcData$pradt$Grade <- fhcrcData$pradt$Grade - 1L
   fhcrcData$pradt$Age <- as.double(fhcrcData$pradt$Age)
   fhcrcData$pradt$DxY <- as.double(fhcrcData$pradt$DxY)
-  fhcrcData$survival_dist$Time <- as.double(fhcrcData$survival_dist$Time)
+  fhcrcData$survival_local <-
+      with(fhcrcData$survival_local,
+           data.frame(Age=as.double(AgeLow),Grade=Grade,Time=as.double(Time),
+                      Survival=Survival))
+  fhcrcData$survival_dist <-
+      with(fhcrcData$survival_dist,
+           data.frame(Grade=Grade,Time=as.double(Time),
+                      Survival=Survival))
   ## now run the chunks separately
   out <- parallel::mclapply(1:mc.cores,
                 function(i) {
@@ -260,12 +270,13 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   enum(lifeHistories$event) <- eventT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                psaT = psaT)
-  structure(list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary),
-            class="fhcrc")
+  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary)
+  class(out) <- "fhcrc"
+  out
 }
 
 print.fhcrc <- function(obj,...)
-    cat(sprintf("FHCRC prostate cancer model with %i individuals under scenario '%s'.\n",
+    cat(sprintf("FHCRC prostate cancer model with %i individual(s) under scenario '%s'.\n",
                 obj$n, obj$screen),
         ...)
 

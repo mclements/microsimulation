@@ -7,9 +7,19 @@ require(microsimulation)
 temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
 temp2=callFhcrc(10)
-stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-72.56411)<1e-3)
+stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-82.74719)<1e-3)
 temp3 <- callIllnessDeath(10)
 stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
+
+
+temp=callCalibrationPerson(10)
+stopifnot(temp$StateOccupancy[1:2] == c(422,354))
+temp3 <- callIllnessDeath(10)
+stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
+
+temp2=callFhcrc(10)
+temp2=callFhcrc(10)
+stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-82.74719)<1e-3)
 
 ## More unit tests required
 
@@ -108,35 +118,21 @@ test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeH
 ## baseline analysis
 options(width=110)
 require(microsimulation)
-n <- 1e5
+n <- 1e6
+n.cores <- 4
 compliance <- 0.75
 participation <- 1.0
-noScreening <- callFhcrc(n,screen="noScreening",mc.cores=2)
+noScreening <- callFhcrc(n,screen="noScreening",mc.cores=n.cores)
 ## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
-uptake <- callFhcrc(n,screen="screenUptake",mc.cores=2,
+uptake <- callFhcrc(n,screen="screenUptake",mc.cores=n.cores,
                     studyParticipation=participation,
                     screeningCompliance=compliance)
-goteborg <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=2,
+goteborg <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=n.cores,
                       studyParticipation=participation,
                       screeningCompliance=compliance)
-riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=2,
+riskStrat <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=n.cores,
                        studyParticipation=participation,
                        screeningCompliance=compliance)
-
-n <- 1e3
-compliance <- 0.75
-participation <- 1.0
-noScreening2 <- callFhcrc(n,screen="noScreening",mc.cores=1,nLifeHistories=n)
-## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
-uptake2 <- callFhcrc(n,screen="screenUptake",mc.cores=1,
-                    studyParticipation=participation,
-                    screeningCompliance=compliance,nLifeHistories=n)
-goteborg2 <- callFhcrc(n,screen="stockholm3_goteborg",mc.cores=1,
-                      studyParticipation=participation,
-                      screeningCompliance=compliance,nLifeHistories=n)
-riskStrat2 <- callFhcrc(n,screen="stockholm3_risk_stratified",mc.cores=1,
-                       studyParticipation=participation,
-                       screeningCompliance=compliance,nLifeHistories=n)
 
 ## Lexis diagrams
 plotLexis <- function(obj) {
@@ -247,7 +243,7 @@ pdf(file="~/work/prevalence-comparison.pdf",width=6,height=5)
 plotPrev("dx!='NotDiagnosed'",main="PC diagnosis",legend.x=2010,legend.y=0.04)
 dev.off()
 pdf(file="~/work/mortality-comparison.pdf",width=6,height=5)
-plotEvents("^toCancerDeath$",legend.x="bottomleft",main="PC mortality (*NOT CALIBRATED*)")
+plotEvents("^toCancerDeath$",legend.x="bottomleft",main="PC mortality")
 dev.off()
 ##dev.off()
 

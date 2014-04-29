@@ -32,6 +32,8 @@
 #include "microsimulation.h"
 #include <Rcpp.h>
 
+namespace {
+
 using namespace ssim;
 using namespace std;
 
@@ -43,6 +45,9 @@ enum event_t {toPrecursor, toPreClinical, toClinical, toDeath, Count};
 
 //! names of the stages
 string stage_names[5] = {"DiseaseFree","Precursor","PreClinical","Clinical","Death"};
+
+//! declare the random number generator
+  Rng * rng;
 
 //! Class to simulate a person
 class CalibPerson : public cProcess 
@@ -56,7 +61,6 @@ public:
 	
   // static member(s)
   static std::map<std::string, std::vector<double> > report;
-  static std::map<std::string, Rng *> rng;
   
   static void resetPopulation ();
   
@@ -81,13 +85,11 @@ void CalibPerson::resetPopulation() {
 
 // initialise static member(s)
 std::map<std::string, std::vector<double> > CalibPerson::report;
-std::map<std::string, Rng *> CalibPerson::rng;
 
 /** 
  Initialise a simulation run for an individual
 */
 void CalibPerson::init() {
-  rng["NH"]->set();
   if (R::runif(0,1)<p2){
     diseasepot = true;}
   else {
@@ -174,21 +176,20 @@ extern "C" {
     std::vector<double> par = Rcpp::as<std::vector<double> >(parmsl["runpar"]);
 	  
     CalibPerson::resetPopulation();
-    CalibPerson::rng["NH"] = new Rng();
-    CalibPerson::rng["NH"]->set();
+    rng = new Rng();
+    rng->set();
     
     CalibPerson::report.insert(make_pair("TimeAtRisk", std::vector<double>()));
     
     CalibPerson person = CalibPerson(&par[0],0);
     for (int i = 0; i < nin; i++) {
-      CalibPerson::rng["NH"]->nextSubstream();
+      rng->nextSubstream();
       Sim::create_process(&person);
       Sim::run_simulation();
       Sim::clear();
     }
 
-    CalibPerson::rng.clear();
-    delete CalibPerson::rng["NH"];
+    delete rng;
     
     return Rcpp::wrap(CalibPerson::report);
     
@@ -196,5 +197,4 @@ extern "C" {
   
 } 
 
-
-
+}

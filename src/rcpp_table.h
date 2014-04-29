@@ -46,23 +46,30 @@ class NumericInterpolate {
  public:
   NumericVector x, y, slope;
   int n;
-  NumericInterpolate()  {
-  }
+ NumericInterpolate() : n(0) {}
   NumericInterpolate(DataFrame df, int i0=0, int i1=1) { 
     // calculate the slope between points
     x = df(i0);
     y = df(i1);
     n = x.size();
+    prepare();
+  }
+  void prepare() {
     for (int i=0; i<n-1; i++) {
       slope.push_back((y[i+1]-y[i]) / (x[i+1]-x[i]));
     }
   }
+  void push_back(pair<double,double> xy) {
+    x.push_back(xy.first);
+    y.push_back(xy.second);
+    n++;
+  }
   double approx(double xfind) {
     int i;
     if (xfind<=x[0]) return y[0];
-    else if (xfind>=x[n-1]) return y[n-1];
+    else if (xfind>=x[n-1]) return y[n-1]+slope[n-2]*(xfind-x[n-1]); // linear 
     else {
-      i = lower_bound(x.begin(), x.end(), xfind) - x.begin();
+      i = lower_bound(x.begin(), x.end(), xfind) - 1 - x.begin();
       return y[i]+slope[i]*(xfind-x[i]);
     }
   }
@@ -71,7 +78,26 @@ class NumericInterpolate {
     int i = lower_bound(x.begin(), x.end(), xfind) - x.begin();
     return y[--i];
   }
+  double invert(double yfind) {
+    int i;
+    if (yfind<=y[0]) return x[0];
+    else if (yfind>=y[n-1]) return x[n-1]+(yfind-y[n-1])/slope[n-2];
+    else {
+      i = lower_bound(y.begin(), y.end(), yfind) - 1 - y.begin();
+      return x[i]+(yfind-y[i])/slope[i];
+    }
+  }
+  double invert_decreasing(double yfind) {
+    int i;
+    if (yfind>=y[0]) return x[0];
+    else if (yfind<y[n-1]) return x[n-1]+(yfind-y[n-1])/slope[n-2];
+    else {
+      i = lower_bound(y.begin(), y.end(), yfind, greater<double>()) - 1 - y.begin();
+      return x[i]+(yfind-y[i])/slope[i];
+    }
+  }
 };
+
 
 template<class T>
 T set_lower_bound(set<T,greater<T> > aset, T value) {
@@ -96,78 +122,87 @@ class DataFrameSelect {
   }
 };
 
-template<class Index0, class Outcome>
+template<class Key0, class Outcome>
   class Table {
  public:
-  typedef Index0 Index;
-  typedef set<Index, greater<Index> > Axis;
-  void insert(Index index, Outcome outcome) {
-    axis.insert(index);
-    data[index] = outcome;
+  typedef Key0 key_type;
+  typedef pair<key_type,Outcome> value_type;
+  typedef set<key_type, greater<key_type> > Axis;
+  typedef Outcome mapped_type;
+  void insert(const key_type& key, const Outcome& outcome) {
+    axis.insert(key);
+    data[key] = outcome;
   }
-  virtual Outcome operator()(Index index) {
-    return data[*axis.lower_bound(index)];
+  void push_back(const value_type& value) {
+    axis.insert(value.first);
+    data[value.first].push_back(value.second);
+  }
+  virtual Outcome operator()(key_type key) {
+    return data[*axis.lower_bound(key)];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1) { 
-    DataFrameSelect<Index0> df0(df,s0);
+    DataFrameSelect<Key0> df0(df,s0);
     DataFrameSelect<Outcome> df1(df,s1);
     for (int i=0; i<df0.size(); i++) {
-      insert(Index(df0[i]), df1[i]);
+      insert(key_type(df0[i]), df1[i]);
     }
   }
  private:
   Axis axis;
-  map<Index,Outcome> data;
+  map<key_type,Outcome> data;
 };
 
-template<class Index0, class Index1, class Outcome>
-  class Table<pair<Index0,Index1>,Outcome> {
+template<class Key0, class Key1, class Outcome>
+  class Table<pair<Key0,Key1>,Outcome> {
  public:
-  typedef boost::tuple<Index0,Index1> Index;
+  typedef boost::tuple<Key0,Key1> key_type;
+  typedef Outcome mapped_type;
+  typedef map<key_type,mapped_type> data_type;
   typedef boost::tuple<
-    set<Index0, greater<Index0> >,
-    set<Index1, greater<Index1> > 
+    set<Key0, greater<Key0> >,
+    set<Key1, greater<Key1> > 
     > Axis;
-  void insert(Index index, Outcome outcome) {
-    get<0>(axis).insert(get<0>(index));
-    get<1>(axis).insert(get<1>(index));
-    data[index] = outcome;
+  void insert(key_type key, Outcome outcome) {
+    get<0>(axis).insert(get<0>(key));
+    get<1>(axis).insert(get<1>(key));
+    data[key] = outcome;
   }
-  virtual Outcome operator()(Index index) {
-    return data[Index(*get<0>(axis).lower_bound(get<0>(index)),
-		      *get<1>(axis).lower_bound(get<1>(index)))];
+  virtual Outcome operator()(key_type key) {
+    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
+		      *get<1>(axis).lower_bound(get<1>(key)))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2) { 
-    DataFrameSelect<Index0> df0(df,s0);
-    DataFrameSelect<Index1> df1(df,s1);
+    DataFrameSelect<Key0> df0(df,s0);
+    DataFrameSelect<Key1> df1(df,s1);
     DataFrameSelect<Outcome> df2(df,s2);
     for (int i=0; i<df0.size(); i++) {
-      insert(Index(df0[i],df1[i]), df2[i]);
+      insert(key_type(df0[i],df1[i]), df2[i]);
     }
   }
  private:
+  map<key_type,mapped_type> data;
   Axis axis;
-  map<Index,Outcome> data;
 };
 
 template<class I0, class I1, class Outcome>
   class Table<boost::tuple<I0,I1>,Outcome> {
  public:
-  typedef boost::tuple<I0,I1> Index;
+  typedef boost::tuple<I0,I1> key_type;
+  typedef Outcome mapped_type;
   typedef boost::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> > 
     > Axis;
-  void insert(Index index, Outcome outcome) {
-    get<0>(axis).insert(get<0>(index));
-    get<1>(axis).insert(get<1>(index));
-    data[index] = outcome;
+  void insert(key_type key, Outcome outcome) {
+    get<0>(axis).insert(get<0>(key));
+    get<1>(axis).insert(get<1>(key));
+    data[key] = outcome;
   }
-  virtual Outcome operator()(Index index) {
-    return data[Index(*get<0>(axis).lower_bound(get<0>(index)),
-		      *get<1>(axis).lower_bound(get<1>(index)))];
+  virtual Outcome operator()(key_type key) {
+    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
+			 *get<1>(axis).lower_bound(get<1>(key)))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2) { 
@@ -175,30 +210,31 @@ template<class I0, class I1, class Outcome>
     DataFrameSelect<I1> df1(df,s1);
     DataFrameSelect<Outcome> df2(df,s2);
     for (int i=0; i<df0.size(); i++) {
-      insert(Index(df0[i],df1[i]), df2[i]);
+      insert(key_type(df0[i],df1[i]), df2[i]);
     }
   }
  private:
   Axis axis;
-  map<Index,Outcome> data;
+  map<key_type,Outcome> data;
 };
 
 
 template<class I0, class I1, class I2, class Outcome>
   class Table<boost::tuple<I0,I1,I2>,Outcome> {
  public:
-  typedef boost::tuple<I0,I1,I2> Index;
-  void insert(Index index, Outcome outcome) {
-    axis0.insert(get<0>(index));
-    axis1.insert(get<1>(index));
-    axis2.insert(get<2>(index));
-    data[index] = outcome;
+  typedef boost::tuple<I0,I1,I2> key_type;
+  typedef Outcome mapped_type;
+  void insert(key_type key, Outcome outcome) {
+    axis0.insert(get<0>(key));
+    axis1.insert(get<1>(key));
+    axis2.insert(get<2>(key));
+    data[key] = outcome;
   }
-  virtual Outcome operator()(Index index) {
-    return data[Index(*axis0.lower_bound(get<0>(index)),
-		      *axis1.lower_bound(get<1>(index)),
-		      *axis2.lower_bound(get<2>(index))
-		      )];
+  virtual Outcome operator()(key_type key) {
+    return data[key_type(*axis0.lower_bound(get<0>(key)),
+			 *axis1.lower_bound(get<1>(key)),
+			 *axis2.lower_bound(get<2>(key))
+			 )];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2, string s3) { 
@@ -207,38 +243,39 @@ template<class I0, class I1, class I2, class Outcome>
     DataFrameSelect<I2> df2(df,s2);
     DataFrameSelect<Outcome> df3(df,s3);
     for (int i=0; i<df0.size(); i++) {
-      insert(Index(df0[i],df1[i],df2[i]), df3[i]);
+      insert(key_type(df0[i],df1[i],df2[i]), df3[i]);
     }
   }
+  map<key_type,Outcome> data;
  private:
   set<I0, greater<I0> > axis0;
   set<I1, greater<I1> > axis1;
   set<I2, greater<I2> > axis2;
-  map<Index,Outcome> data;
 };
 
 template<class I0, class I1, class I2, class I3, class Outcome>
   class Table<boost::tuple<I0,I1,I2,I3>,Outcome> {
  public:
-  typedef boost::tuple<I0,I1,I2,I3> Index;
+  typedef boost::tuple<I0,I1,I2,I3> key_type;
+  typedef Outcome mapped_type;
   typedef boost::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> >,
     set<I2, greater<I2> >,
     set<I3, greater<I3> >
     > Axis;
-  void insert(Index index, Outcome outcome) {
-    get<0>(axis).insert(get<0>(index));
-    get<1>(axis).insert(get<1>(index));
-    get<2>(axis).insert(get<2>(index));
-    get<3>(axis).insert(get<3>(index));
-    data[index] = outcome;
+  void insert(key_type key, Outcome outcome) {
+    get<0>(axis).insert(get<0>(key));
+    get<1>(axis).insert(get<1>(key));
+    get<2>(axis).insert(get<2>(key));
+    get<3>(axis).insert(get<3>(key));
+    data[key] = outcome;
   }
-  virtual Outcome operator()(Index index) {
-    return data[Index(*get<0>(axis).lower_bound(get<0>(index)),
-		      *get<1>(axis).lower_bound(get<1>(index)),
-		      *get<2>(axis).lower_bound(get<2>(index)),
-		      *get<3>(axis).lower_bound(get<3>(index))
+  virtual Outcome operator()(key_type key) {
+    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
+		      *get<1>(axis).lower_bound(get<1>(key)),
+		      *get<2>(axis).lower_bound(get<2>(key)),
+		      *get<3>(axis).lower_bound(get<3>(key))
 		      )];
   }
   Table() {}
@@ -249,19 +286,20 @@ template<class I0, class I1, class I2, class I3, class Outcome>
     DataFrameSelect<I3> df3(df,s3);
     DataFrameSelect<Outcome> df4(df,s4);
     for (int i=0; i<df0.size(); i++) {
-      insert(Index(df0[i],df1[i],df2[i],df3[i]), df4[i]);
+      insert(key_type(df0[i],df1[i],df2[i],df3[i]), df4[i]);
     }
   }
  private:
   Axis axis;
-  map<Index,Outcome> data;
+  map<key_type,Outcome> data;
 };
 
 
 template<class I0, class I1, class I2, class I3, class I4, class Outcome>
   class Table<boost::tuple<I0,I1,I2,I3,I4>,Outcome> {
  public:
-  typedef boost::tuple<I0,I1,I2,I3,I4> Index;
+  typedef boost::tuple<I0,I1,I2,I3,I4> key_type;
+  typedef Outcome mapped_type;
   typedef boost::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> >,
@@ -269,20 +307,20 @@ template<class I0, class I1, class I2, class I3, class I4, class Outcome>
     set<I3, greater<I3> >,
     set<I4, greater<I4> >
     > Axis;
-  void insert(Index index, Outcome outcome) {
-    get<0>(axis).insert(get<0>(index));
-    get<1>(axis).insert(get<1>(index));
-    get<2>(axis).insert(get<2>(index));
-    get<3>(axis).insert(get<3>(index));
-    get<4>(axis).insert(get<4>(index));
-    data[index] = outcome;
+  void insert(key_type key, Outcome outcome) {
+    get<0>(axis).insert(get<0>(key));
+    get<1>(axis).insert(get<1>(key));
+    get<2>(axis).insert(get<2>(key));
+    get<3>(axis).insert(get<3>(key));
+    get<4>(axis).insert(get<4>(key));
+    data[key] = outcome;
   }
-  virtual Outcome operator()(Index index) {
-    return data[Index(*get<0>(axis).lower_bound(get<0>(index)),
-		      *get<1>(axis).lower_bound(get<1>(index)),
-		      *get<2>(axis).lower_bound(get<2>(index)),
-		      *get<3>(axis).lower_bound(get<3>(index)),
-		      *get<4>(axis).lower_bound(get<4>(index))
+  virtual Outcome operator()(key_type key) {
+    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
+		      *get<1>(axis).lower_bound(get<1>(key)),
+		      *get<2>(axis).lower_bound(get<2>(key)),
+		      *get<3>(axis).lower_bound(get<3>(key)),
+		      *get<4>(axis).lower_bound(get<4>(key))
 		      )];
   }
   Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4, string s5) { 
@@ -293,12 +331,12 @@ template<class I0, class I1, class I2, class I3, class I4, class Outcome>
     DataFrameSelect<I4> df4(df,s4);
     DataFrameSelect<Outcome> df5(df,s5);
     for (int i=0; i<df0.size(); i++) {
-      insert(Index(df0[i],df1[i],df2[i],df3[i],df4[i]), df5[i]);
+      insert(key_type(df0[i],df1[i],df2[i],df3[i],df4[i]), df5[i]);
     }
   }
  private:
   Axis axis;
-  map<Index,Outcome> data;
+  map<key_type,Outcome> data;
 };
 
 #endif /* RCPP_TABLE_H */

@@ -22,9 +22,12 @@ namespace {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen, 
-		toBiopsy,toScreenDiagnosis,toOrganised};
+		toBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT};
 
-  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
+  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
+		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
+
+  enum treatment_t {no_treatment, CM, RP, RT};
 
   typedef boost::tuple<short,short,short,bool,double> FullState;
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
@@ -33,6 +36,8 @@ namespace {
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
+  bool debug = true;
+
   double tau2 = 0.0829,
     g0=0.0005, gm=0.0004, gc=0.0015, 
     thetac=19.1334,
@@ -40,12 +45,19 @@ namespace {
     mubeta1=0.04463, sebeta1=0.0430,
     mubeta2[2]={0.0397,0.1678},sebeta2[2]={0.0913,0.3968};
 
-  typedef Table<boost::tuple<double,double,int>,double> TablePrtx;
+  double c_txlt_interaction = 1.0,
+    c_baseline_specific = 1.0;
+
+  typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
   typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
-  typedef Table<boost::tuple<int,double>,double> TableSurvivalDist;
-  TablePrtx prtxCM, prtxRP, prtxDT;
+  typedef map<int,NumericInterpolate> H_dist_t;
+  typedef map<pair<double,int>,NumericInterpolate> H_local_t;
+  TablePrtx prtxCM, prtxRP;
   TablePradt pradt;
   NumericInterpolate interp_prob_grade7;
+  H_dist_t H_dist;
+  H_local_t H_local;
+  set<double,greater<double> > H_local_age_set;
 
   // initialise input parameters (see R::callFhcrc for actual defaults)
   double screeningCompliance = 0.75;
@@ -56,7 +68,7 @@ namespace {
   // new parameters (we need to merge the old and new implementations)
   double c_low_grade_slope=-0.006;
 
-  Rng * rngNh, * rngOther, * rngScreen;
+  Rng * rngNh, * rngOther, * rngScreen, * rngTreatment;
   Rpexp rmu0;
 
   /** 
@@ -64,6 +76,11 @@ namespace {
   */
   void record(map<string, vector<double> > & obj, string variable, double value) {
     obj[variable].push_back(value);
+  }
+
+  template<class T>
+  T bounds(T x, T a, T b) {
+    return (x<a)?a:((x>b)?b:x);
   }
   
   // all cause mortality rates by single year of age from age 0 could be a parameter input
@@ -93,6 +110,9 @@ namespace {
     diagnosis_t dx;
     base::grade_t grade;
     ext::grade_t ext_grade;
+    treatment_t tx;
+    bool adt; 
+    double txhaz;
     int id;
     double cohort;
     bool everPSA, previousNegativeBiopsy, organised;
@@ -133,7 +153,7 @@ void FhcrcPerson::init() {
   // change state variables
   state = Healthy;
   dx = NotDiagnosed;
-  everPSA = previousNegativeBiopsy = organised = false;
+  everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
   t0 = sqrt(2*R::rexp(1.0)/g0);
   y0 = ymean(t0);
@@ -149,6 +169,8 @@ void FhcrcPerson::init() {
   ext_grade= (grade==base::Gleason_le_7) ? 
     (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
     ext::Gleason_ge_8;
+  tx = no_treatment;
+  txhaz = -1.0;
   // schedule natural history events
   scheduleAt(t0+35.0,toLocalised);
   scheduleAt(aoc,toOtherDeath);
@@ -254,7 +276,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // declarations
   double psa = y(now()-35.0);
-  //double year = now() + cohort;
+  double age = now();
+  double year = now() + cohort;
 
   // record information
   report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
@@ -278,6 +301,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath: 
+    Sim::stop_simulation();
+    break;
+
   case toOtherDeath: 
     Sim::stop_simulation();
     break;
@@ -301,19 +327,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
     scheduleAt(now(), toBiopsy);
     scheduleAt(now(), toBiopsy);
-    switch(state) {
-    case Localised:
-      if (R::runif(0.0,1.0) < 0.5) // 50% not cured
-	scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
-      break;
-    case Metastatic:
-      if (R::runif(0.0,1.0) < 0.75) // 75% not cured
-	scheduleAt(now() + R::rweibull(2.0,3.0), toCancerDeath);
-      break;
-    default:
-      REprintf("State not matched\n");
-      break;
-    }
+    scheduleAt(now(), toTreatment);
+    // switch(state) {
+    // case Localised:
+    //   if (R::runif(0.0,1.0) < 0.5) // 50% not cured
+    // 	scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
+    //   break;
+    // case Metastatic:
+    //   if (R::runif(0.0,1.0) < 0.75) // 75% not cured
+    // 	scheduleAt(now() + R::rweibull(2.0,3.0), toCancerDeath);
+    //   break;
+    // default:
+    //   REprintf("State not matched\n");
+    //   break;
+    // }
     break;
 
   case toOrganised:
@@ -373,19 +400,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     RemoveKind(toMetastatic); // competing events
     RemoveKind(toClinicalDiagnosis);
     RemoveKind(toScreen);
-    switch(state) {
-    case Localised:
-      if (R::runif(0.0,1.0) < 0.45) // assume slightly better stage-specific cure: 55% cf. 50%
-	scheduleAt(tc + 35.0 + R::rweibull(2.0,10.0), toCancerDeath);
-      break;
-    case Metastatic:
-      if (R::runif(0.0,1.0) < 0.70) // assume slightly better stage-specific cure: 30% cf. 25%
-	scheduleAt(tmc + 35.0 + R::rweibull(2.0,3.0), toCancerDeath);
-      break;
-    default:
-      REprintf("State not matched\n");
-      break;
-    }
+    scheduleAt(now(), toTreatment);
+    // switch(state) {
+    // case Localised:
+    //   if (R::runif(0.0,1.0) < 0.45) // assume slightly better stage-specific cure: 55% cf. 50%
+    // 	scheduleAt(tc + 35.0 + R::rweibull(2.0,10.0), toCancerDeath);
+    //   break;
+    // case Metastatic:
+    //   if (R::runif(0.0,1.0) < 0.70) // assume slightly better stage-specific cure: 30% cf. 25%
+    // 	scheduleAt(tmc + 35.0 + R::rweibull(2.0,3.0), toCancerDeath);
+    //   break;
+    // default:
+    //   REprintf("State not matched\n");
+    //   break;
+    // }
     break;
 
     // assumes that biopsies are 100% accurate
@@ -411,6 +439,68 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       } break;
     } break;
 
+  case toTreatment: {
+    rngTreatment->set();
+    TablePrtx::key_type key = 
+      TablePrtx::key_type(bounds<double>(now(),50.0,79.0),
+    			  bounds<double>(year,1973.0,2004.0),
+    			  int(grade));
+    double pCM = prtxCM(key);
+    double pRP = prtxRP(key);
+    double u = R::runif(0.0,1.0);
+    tx = (u<pCM)?CM:((u<pCM+pRP)?RP:RT);
+    if (debug) Rprintf("Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%d, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",now(),year,state,grade,tx,u,pCM,pRP);
+    if (tx == CM)
+      scheduleAt(now(), toCM);
+    if (tx == RP)
+      scheduleAt(now(), toRP);
+    if (tx == RT)
+      scheduleAt(now(), toRT);
+    // check for ADT
+    double pADT = 
+      pradt(TablePradt::key_type(tx,
+				 bounds<double>(now(),50,79),
+				 bounds<double>(year,1973,2004),
+				 grade));
+    u = R::runif(0.0,1.0);
+    if (u < pADT)  {
+      adt = true;
+      scheduleAt(now(), toADT);
+    }
+    if (debug) Rprintf("adt=%d, u=%8.6f, pADT=%8.6f\n",adt,u,pADT);
+    // calculate survival
+    txhaz = (state == Localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
+    double sxbenefit = 1;
+    u = R::runif(0.0,1.0);
+    u = pow(u,1/c_baseline_specific); // global improvement to baseline survival
+    double lead_time = (tc+35.0) - now();
+    double txbenefit = exp(log(txhaz)+log(c_txlt_interaction)*lead_time);
+    if (debug) Rprintf("lead_time=%f, txbenefit=%f, u=%f, ustar=%f\n",lead_time,txbenefit,u,pow(u,1/(txbenefit*sxbenefit)));
+    u = pow(u,1/(txbenefit*sxbenefit));
+    // TODO: calculate survival
+    double age_cancer_death;
+    if (state == Localised)
+      age_cancer_death = now() + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(now(),50.0,80.0)),grade)].invert(-log(u));
+    if (state == Metastatic)
+      age_cancer_death = now() + H_dist[grade].invert(-log(u));
+    scheduleAt(age_cancer_death, toCancerDeath);
+    if (debug) Rprintf("SurvivalTime=%f, u=%f\n",age_cancer_death -now(), u);
+    // reset the stream
+    rngNh->set();
+  } break;
+
+  case toRP:
+    break;
+
+  case toRT:
+    break;
+
+  case toCM:
+    break; 
+
+  case toADT:
+    break;
+
   default:
     REprintf("No valid kind of event: %i\n",msg->kind);
     break;
@@ -419,33 +509,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
 } // handleMessage()
 
-RcppExport SEXP testrexp() {
-  return wrap(R::rexp(100.0));
-}
-
-  RcppExport SEXP testLongList(SEXP in_n) {
-    int nrow = as<int>(in_n);
-    List obj;
-    for (int i=0; i<nrow; ++i) {
-      obj.push_back(DataFrame::create(1,2.0,"3"));
-    }
-    return obj;
-  }
-
-  RcppExport SEXP testVectorTuple2DataFrame(SEXP in_n, SEXP in_names) {
-    // read in the arguments
-    int nrow = as<int>(in_n);
-    // generate some data
-    vector<boost::tuple<int,int,double> > v(nrow);
-    for (int i=0; i<nrow; ++i) {
-      v[i] = boost::make_tuple(i,i,i*i*1.0);
-    }
-    // wrap
-    DataFrame out = wrap(v);
-    out.attr("names") = CharacterVector(in_names);
-    return out;
-  }
-    
 
 RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
@@ -455,6 +518,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   rngNh = new Rng();
   rngOther = new Rng();
   rngScreen = new Rng();
+  rngTreatment = new Rng();
   rngNh->set();
 
   // read in the parameters
@@ -462,17 +526,54 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   List tables = parms["tables"];
   int n = as<int>(parms["n"]);
   int firstId = as<int>(parms["firstId"]);
-  NumericInterpolate interp_prob_grade7 = 
+  interp_prob_grade7 = 
     NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
-  TablePrtx prtxCM = TablePrtx(as<DataFrame>(tables["prtx"]),
-			       "Age","DxY","G","CM");
-  TablePrtx prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
+  prtxCM = TablePrtx(as<DataFrame>(tables["prtx"]),
+			       "Age","DxY","G","CM"); // NB: Grade is now {0,1} coded cf {1,2}
+  prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
 			       "Age","DxY","G","RP");
-  TablePrtx prtxCT = TablePrtx(as<DataFrame>(tables["prtx"]),
-			       "Age","DxY","G","RT");
-  TablePradt pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
-  TableSurvivalDist survival_dist = 
-    TableSurvivalDist(as<DataFrame>(tables["survival_dist"]),"Grade","Time","Survival");
+  pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
+
+  DataFrame df_survival_dist = as<DataFrame>(tables["survival_dist"]); // Grade,Time,Survival
+  DataFrame df_survival_local = as<DataFrame>(tables["survival_local"]); // Age,Grade,Time,Survival
+  // extract the columns from the survival_dist data-frame
+  IntegerVector sd_grades = df_survival_dist["Grade"];
+  NumericVector 
+    sd_times = df_survival_dist["Time"],
+    sd_survivals = df_survival_dist["Survival"];
+  typedef pair<double,double> dpair;
+  for (int i=0; i<sd_grades.size(); ++i) 
+    H_dist[sd_grades[i]].push_back(dpair(sd_times[i],-log(sd_survivals[i])));
+  for (H_dist_t::iterator it_sd = H_dist.begin(); it_sd != H_dist.end(); it_sd++) 
+    it_sd->second.prepare();
+  // now we can use: H_dist[grade].invert(-log(u))
+
+  // extract the columns from the data-frame
+  IntegerVector sl_grades = df_survival_local["Grade"];
+  NumericVector 
+    sl_ages = df_survival_local["Age"],
+    sl_times = df_survival_local["Time"],
+    sl_survivals = df_survival_local["Survival"];
+  // push to the map values and set of ages
+  for (int i=0; i<sl_grades.size(); ++i) {
+    H_local_age_set.insert(sl_ages[i]);
+    H_local[H_local_t::key_type(sl_ages[i],sl_grades[i])].push_back
+      (dpair(sl_times[i],-log(sl_survivals[i])));
+  }
+  // prepare the map values for lookup
+  for (H_local_t::iterator it_sl = H_local.begin(); 
+       it_sl != H_local.end(); 
+       it_sl++) 
+    it_sl->second.prepare();
+  // now we can use: H_local[H_local_t::key_type(*H_local_age_set.lower_bound(age),grade)].invert(-log(u))
+
+  if (debug) {
+    Rprintf("SurvTime: %f\n",exp(-H_local[H_local_t::key_type(65.0,0)].approx(63.934032)));
+    Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
+    Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
+    Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
+  }
+
   nLifeHistories = as<int>(parms["nLifeHistories"]);
   screen = as<int>(parms["screen"]);
   screeningCompliance = as<double>(parms["screeningCompliance"]);
@@ -504,12 +605,14 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     rngNh->nextSubstream();
     rngOther->nextSubstream();
     rngScreen->nextSubstream();
+    rngTreatment->nextSubstream();
   }
 
   // tidy up
   delete rngNh;
   delete rngOther;
   delete rngScreen;
+  delete rngTreatment;
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
