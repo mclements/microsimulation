@@ -39,7 +39,7 @@
 #include <boost/random/detail/config.hpp>
 #include <boost/random/detail/const_mod.hpp>
 #include <boost/random/detail/seed.hpp>
-#include <boost/random/detail/seed_impl.hpp>
+//#include <boost/random/detail/seed_impl.hpp>
 #include <boost/detail/workaround.hpp>
 #include <string>
 #include <cstdlib>
@@ -52,6 +52,8 @@
 namespace boost {
   namespace random {
     
+    using ssim::RngStream;
+
     class rngstream : public RngStream
     {
     public:

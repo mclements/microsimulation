@@ -7,7 +7,7 @@ require(microsimulation)
 temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
 temp2=callFhcrc(10)
-stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-82.74719)<1e-3)
+stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-83.40081)<1e-3)
 temp3 <- callIllnessDeath(10)
 stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
 

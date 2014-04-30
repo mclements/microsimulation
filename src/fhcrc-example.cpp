@@ -482,7 +482,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (state == Localised)
       age_cancer_death = tm + 35.0 + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(now(),50.0,80.0)),grade)].invert(-log(u));
     if (state == Metastatic)
-      age_cancer_death = tmc + 35.0x + H_dist[grade].invert(-log(u));
+      age_cancer_death = tmc + 35.0 + H_dist[grade].invert(-log(u));
     scheduleAt(age_cancer_death, toCancerDeath);
     if (debug) Rprintf("SurvivalTime=%f, u=%f\n",age_cancer_death -now(), u);
     // reset the stream
