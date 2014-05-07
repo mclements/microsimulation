@@ -60,10 +60,10 @@ void AdvanceState (long e, long c);
 void GetState (unsigned long seed[6]) const;
 
 
-void WriteState () const;
+/* void WriteState () const; */
 
 
-void WriteStateFull () const;
+/* void WriteStateFull () const; */
 
 
 double RandU01 ();

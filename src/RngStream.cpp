@@ -19,7 +19,8 @@
 */
 
 #include <cstdlib>
-#include <iostream>
+//#include <iostream>
+#include <R.h>
 #include "RngStream.h"
 
 namespace ssim {
@@ -214,31 +215,31 @@ int CheckSeed (const unsigned long seed[6])
 
     for (i = 0; i < 3; ++i) {
         if (seed[i] >= m1) {
-            cerr << "****************************************\n"
-                 << "ERROR: Seed[" << i << "] >= 4294967087, Seed is not set."
-                 << "\n****************************************\n\n";
+	  REprintf("****************************************\n");
+          REprintf("ERROR: Seed[%i] >= 4294967087, Seed is not set.",i);
+          REprintf("\n****************************************\n\n");
             return (-1);
         }
     }
     for (i = 3; i < 6; ++i) {
         if (seed[i] >= m2) {
-            cerr << "*****************************************\n"
-                 << "ERROR: Seed[" << i << "] >= 4294944443, Seed is not set."
-                 << "\n*****************************************\n\n";
-            return (-1);
+	  REprintf("*****************************************\n");
+	  REprintf("ERROR: Seed[%i] >= 4294944443, Seed is not set.",i);
+	  REprintf("\n*****************************************\n\n");
+	  return (-1);
         }
     }
     if (seed[0] == 0 && seed[1] == 0 && seed[2] == 0) {
-         cerr << "****************************\n"
-              << "ERROR: First 3 seeds = 0.\n"
-              << "****************************\n\n";
-         return (-1);
+      REprintf("****************************\n");
+      REprintf("ERROR: First 3 seeds = 0.\n");
+      REprintf("****************************\n\n");
+      return (-1);
     }
     if (seed[3] == 0 && seed[4] == 0 && seed[5] == 0) {
-         cerr << "****************************\n"
-              << "ERROR: Last 3 seeds = 0.\n"
-              << "****************************\n\n";
-         return (-1);
+      REprintf("****************************\n");
+      REprintf("ERROR: Last 3 seeds = 0.\n");
+      REprintf("****************************\n\n");
+      return (-1);
     }
 
     return 0;
@@ -431,49 +432,49 @@ void RngStream::GetState (unsigned long seed[6]) const
 
 
 //-------------------------------------------------------------------------
-void RngStream::WriteState () const
-{
-  std::cout << "The current state of the Rngstream";
-    if (name.size() > 0)
-        std::cout << " " << name;
-    std::cout << ":\n   Cg = { ";
+// void RngStream::WriteState () const
+// {
+//   std::cout << "The current state of the Rngstream";
+//     if (name.size() > 0)
+//         std::cout << " " << name;
+//     std::cout << ":\n   Cg = { ";
 
-    for (int i = 0; i < 5; i++) {
-        std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
-    }
-    std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
-}
+//     for (int i = 0; i < 5; i++) {
+//         std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
+//     }
+//     std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
+// }
 
 
 //-------------------------------------------------------------------------
-void RngStream::WriteStateFull () const
-{
-    int i;
+// void RngStream::WriteStateFull () const
+// {
+//     int i;
 
-    std::cout << "The RngStream";
-    if (name.size() > 0)
-        cout << " " << name;
-    std::cout << ":\n   anti = " << (anti ? "true" : "false") << "\n";
-    std::cout << "   incPrec = " << (incPrec ? "true" : "false") << "\n";
+//     std::cout << "The RngStream";
+//     if (name.size() > 0)
+//         cout << " " << name;
+//     std::cout << ":\n   anti = " << (anti ? "true" : "false") << "\n";
+//     std::cout << "   incPrec = " << (incPrec ? "true" : "false") << "\n";
 
-    std::cout << "   Ig = { ";
-    for (i = 0; i < 5; i++) {
-        std::cout << static_cast<unsigned long> (Ig [i]) << ", ";
-    }
-    std::cout << static_cast<unsigned long> (Ig [5]) << " }\n";
+//     std::cout << "   Ig = { ";
+//     for (i = 0; i < 5; i++) {
+//         std::cout << static_cast<unsigned long> (Ig [i]) << ", ";
+//     }
+//     std::cout << static_cast<unsigned long> (Ig [5]) << " }\n";
 
-    std::cout << "   Bg = { ";
-    for (i = 0; i < 5; i++) {
-        std::cout << static_cast<unsigned long> (Bg [i]) << ", ";
-    }
-    std::cout << static_cast<unsigned long> (Bg [5]) << " }\n";
+//     std::cout << "   Bg = { ";
+//     for (i = 0; i < 5; i++) {
+//         std::cout << static_cast<unsigned long> (Bg [i]) << ", ";
+//     }
+//     std::cout << static_cast<unsigned long> (Bg [5]) << " }\n";
 
-    std::cout << "   Cg = { ";
-    for (i = 0; i < 5; i++) {
-        std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
-    }
-    std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
-}
+//     std::cout << "   Cg = { ";
+//     for (i = 0; i < 5; i++) {
+//         std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
+//     }
+//     std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
+// }
 
 
 //-------------------------------------------------------------------------

@@ -6,54 +6,56 @@
 require(microsimulation)
 temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
-temp2=callFhcrc(10)
-stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-83.40081)<1e-3)
+temp2=callFhcrc(1000)
+stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-79.92847)<1e-3)
 temp3 <- callIllnessDeath(10)
 stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
-
 
 temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
 temp3 <- callIllnessDeath(10)
 stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
 
-temp2=callFhcrc(10)
-temp2=callFhcrc(10)
-stopifnot(abs(with(temp2,sum(summary$pt$pt)/n)-82.74719)<1e-3)
+
+## all(c(callFhcrc(5)$lifeHistories == callFhcrc(5)$lifeHistories,
+##       callFhcrc(5)$parameters == callFhcrc(5)$parameters,
+##       callFhcrc(5)$summary$pt == callFhcrc(5)$summary$pt,
+##       callFhcrc(5)$summary$prev == callFhcrc(5)$summary$prev))
+## all(callFhcrc(10)$lifeHistories == callFhcrc(10)$lifeHistories) # fails
+## all(callFhcrc(1e4)$parameters == callFhcrc(1e4)$parameters) # okay
+
+
+
+
+## testing the user-defined random number generator
+init.seed <- as.integer(c(407,rep(12345,6)))
+RNGkind("user")
+set.user.Random.seed(init.seed)
+testA <- runif(2)
+next.user.Random.substream()
+testB <- runif(2)
+set.user.Random.seed(parallel::nextRNGStream(init.seed))
+newSeed <- user.Random.seed()
+testC <- runif(2)
+set.user.Random.seed(parallel::nextRNGStream(newSeed))
+testD <- runif(2)
+##
+RNGkind("L'Ecuyer-CMRG")
+init.seed <- as.integer(c(407,rep(12345,6)))
+.Random.seed <- init.seed
+all(testA == runif(2))
+.Random.seed <- parallel::nextRNGSubStream(init.seed)
+all(testB == runif(2))
+newSeed <- .Random.seed <- parallel::nextRNGStream(init.seed)
+all(testC == runif(2))
+.Random.seed <- parallel::nextRNGStream(newSeed)
+all(testD == runif(2))
 
 ## More unit tests required
 
 system.time(callFhcrc(1e5))
 system.time(callFhcrc(1e5,mc.cores=4))
 system.time(callFhcrc(1e6,mc.cores=4))
-
-
-
-## testing the user-defined random number generator
-require(microsimulation)
-##callFhcrc(10,screen="noScreening") # FAILS
-init.seed <- as.integer(c(407,rep(12345,6)))
-RNGkind("user")
-set.user.Random.seed(init.seed)
-runif(2)
-next.user.Random.substream()
-runif(2)
-set.user.Random.seed(parallel::nextRNGStream(init.seed))
-newSeed <- user.Random.seed()
-runif(2)
-set.user.Random.seed(parallel::nextRNGStream(newSeed))
-runif(2)
-##
-RNGkind("L'Ecuyer-CMRG")
-init.seed <- as.integer(c(407,rep(12345,6)))
-.Random.seed <- init.seed
-runif(2)
-.Random.seed <- parallel::nextRNGSubStream(init.seed)
-runif(2)
-newSeed <- .Random.seed <- parallel::nextRNGStream(init.seed)
-runif(2)
-.Random.seed <- parallel::nextRNGStream(newSeed)
-runif(2)
 
 ## Reading in the data from FHCRC
 fhcrcData <- lapply(dir("~/src/fhcrc/data")[-10],
@@ -118,7 +120,7 @@ test2 <- list(lifeHistories=do.call("rbind", lapply(test,function(obj) obj$lifeH
 ## baseline analysis
 options(width=110)
 require(microsimulation)
-n <- 1e6
+n <- 1e7
 n.cores <- 4
 compliance <- 0.75
 participation <- 1.0
@@ -301,7 +303,7 @@ describe(sum(subset(riskStrat$summary$events,year>=2013 & year<=lastYear & grepl
 
 
 ## In summary, compared with the modified Göteborg protocol over eight years of follow-up, the risk-stratified protocol is expected to have 30% fewer PSA tests (approximately 15,000 fewer), 10% fewer biopsies (~2000 fewer), 3% fewer prostate cancer diagnoses for Gleason 6 cancers (~40 fewer) and 2% fewer cancer diagnoses for Gleason 7+ cancers (~15 fewer cases).
-
+##
 ## These results are very similar to those obtained by Gulati et al (2013?).
   
 
@@ -348,24 +350,93 @@ polygon(c(1990,2030,2030,1990),
 options(width=110)
 require(microsimulation)
 n <- 1e6
-temp <- callFhcrc(n,screen="noScreening")
-temp2 <- callFhcrc(n,screen="twoYearlyScreen50to70")
-temp4 <- callFhcrc(n,screen="fourYearlyScreen50to70")
-temp50 <- callFhcrc(n,screen="screen50")
-temp60 <- callFhcrc(n,screen="screen60")
-temp70 <- callFhcrc(n,screen="screen70")
+n.cores <- 4
+temp <- callFhcrc(n,screen="noScreening",mc.cores=n.cores)
+temp4 <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=n.cores)
+temp2 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=n.cores)
+temp50 <- callFhcrc(n,screen="screen50",mc.cores=n.cores)
+temp60 <- callFhcrc(n,screen="screen60",mc.cores=n.cores)
+temp70 <- callFhcrc(n,screen="screen70",mc.cores=n.cores)
+uptake <- callFhcrc(n,screen="screenUptake",mc.cores=n.cores)
+## "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified"
+
+## incremental life-expectancy calculations
+LE <- function(obj) sum(obj$summary$pt$pt)/obj$n
+IE <- function(obj,objref=temp) LE(obj)-LE(objref)
+LE(temp)
+IE(temp2)
+IE(temp4)
+IE(temp50)
+IE(temp60)
+IE(temp70)
+
+require(data.table)
+prev <- data.table(temp2$summary$prev,key="age")
+totals <- prev[,sum(count),by="age"]
+strat <- prev[,sum(count),by="age,state"]
+m <- transform(merge(totals,strat,all=TRUE),prev=V1.y/V1.x)
+plot(prev~age+state,m)
+
+
+require(sqldf)
+eventRatesOld <- function(obj,pattern="Diagnosis") {
+  ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
+  pt <- obj$summary$pt
+  events <- obj$summary$events
+  sqldf("select year, age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select year, age, sum(pt) as pt from pt group by year, age) as t1 natural left outer join (select year, age, sum(n) as n from events natural join ev group by year, age) as t2")
+}
+dx <- eventRatesOld(uptake)
+require(mgcv)
+dx$pred <- 1000*predict(gam(n~s(age,year,k=50),data=dx,offset=log(pt),family=poisson),type="response")
+library("RColorBrewer"); library("lattice");
+brewer.div <- colorRampPalette(brewer.pal(9, "Spectral"), interpolate = "spline")
+pdf("~/work/levelplot-pc-incidence.pdf")
+levelplot(pred~age*year,dx,subset=(age>=30), col.regions = brewer.div(100), aspect = "iso",
+  xlab="Age (years)", ylab="Calendar period", ylim=c(1980,2050))
+dev.off()
+with(list(res=600),
+       jpeg(file="~/work/levelplot-pc-incidence.jpg",height=5*res,width=5*res,res=res,
+            quality=100))
+levelplot(pred~age*year,dx,subset=(age>=30), col.regions = brewer.div(100), aspect = "iso",
+  xlab="Age (years)", ylab="Calendar period", ylim=c(1980,2050))
+dev.off()
+
+
+
+## State occupancy: prevalence in different states
+prevRatios <- function(obj,predicate) {
+  ## ev <- data.frame(event=grep(pattern,levels(obj$summary$prev$event),value=TRUE))
+    stopifnot(require(sqldf))
+  prev <- obj$summary$prev
+  sqldf(sprintf("select year, sum(n) as n, sum(y) as y, sum(p*wt) as prev from (select cohort+age as year, age, t1.n as n, coalesce(t2.y,0.0) as y, 1.0*coalesce(t2.y,0.0)/t1.n*1.0 as p from (select cohort, age, sum(count) as n from prev group by cohort, age) as t1 natural left outer join (select cohort, age, sum(count) as y from prev where %s group by cohort, age) as t2) as main natural join w where year>=1990 and year<2030 group by year", predicate))
+}
+##plotPrev("dx!='NotDiagnosed'",main="PC diagnosis",legend.x=2010,legend.y=0.04)
 
 ## rate calculations
-require(sqldf)
+## do this using data.table
+require(data.table)
 eventRates <- function(obj,pattern="Diagnosis") {
+  events <- data.table(obj$summary$events,key="event")
+  ev <- grep(pattern,levels(events$event),value=TRUE)
+  pt <- data.table(obj$summary$pt,key="age")
+  with(merge(pt[,sum(pt),by=age],events[J(ev),sum(n),by=age], all=TRUE),
+       transform(data.table(age=age,pt=V1.x,n=ifelse(is.na(V1.y),0.0,V1.y))[-1,],
+                 rate=n/pt))
+}
+## the old way: using SQL
+require(sqldf)
+eventRatesOld <- function(obj,pattern="Diagnosis") {
   ev <- data.frame(event=grep(pattern,levels(obj$summary$events$event),value=TRUE))
   pt <- obj$summary$pt
   events <- obj$summary$events
   sqldf("select age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select age, sum(pt) as pt from pt group by age) as t1 natural left outer join (select age, sum(n) as n from events natural join ev group by age) as t2")
 }
 
+## all(abs(eventRates(temp)-data.table(eventRatesOld(temp)))<1e-8)
+## system.time(eventRatesOld(temp))
+## system.time(eventRates(temp))
 
-png("/media/sf_C_DRIVE/usr/tmp/tmp/screening-comparison-20130222.png",height=2,width=4,res=1200,units="in",pointsize=3)
+png("~/work/screening-comparison-20130222.png",height=2,width=4,res=1200,units="in",pointsize=3)
 ##x11(width=8,height=5)
 ##layout(matrix(1:2,nrow=1,byrow=TRUE))
 par(mfrow=c(1,2),
@@ -378,7 +449,7 @@ par(mfrow=c(1,2),
 )
 with(eventRates(temp), plot(age, rate, type="l",
                             xlab="Age (years)", ylab="Prostate cancer incidence rate",
-                            main="None verus two-yearly screening"))
+                            main="None versus two-yearly screening"))
 with(eventRates(temp2), lines(age, rate, col="red"))
 legend("topleft", legend=c("No screening","Two-yearly\nscreening"), lty=1, col=c("black","red"), bty="n",
        cex=2)
@@ -394,7 +465,7 @@ dev.off()
 pdf("~/work/screening-comparison-20130222.pdf")
 layout(matrix(1:4,nrow=2,byrow=TRUE))
 with(eventRates(temp), plot(age, rate, type="l",
-                            xlab="Age (years)", ylab="Rate", main="None verus two-yearly screening"))
+                            xlab="Age (years)", ylab="Rate", main="None versus two-yearly screening"))
 with(eventRates(temp2), lines(age, rate, col="red"))
 legend("topleft", legend=c("No screening","Two-yearly screening"), lty=1, col=c("black","red"), bty="n")
 ##
@@ -417,7 +488,7 @@ dev.off()
 pdf("~/work/screening-comparison-20130222.pdf")
 layout(matrix(1:4,nrow=2,byrow=TRUE))
 with(eventRates(temp), plot(age, rate, type="l",
-                            xlab="Age (years)", ylab="Rate", main="None verus two-yearly screening"))
+                            xlab="Age (years)", ylab="Rate", main="None versus two-yearly screening"))
 with(eventRates(temp2), lines(age, rate, col="red"))
 legend("topleft", legend=c("No screening","Two-yearly screening"), lty=1, col=c("black","red"), bty="n")
 ##

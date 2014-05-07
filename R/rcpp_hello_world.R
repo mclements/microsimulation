@@ -193,7 +193,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
       obj <- FUN(obj,...)
     obj
   }
-  initialSeeds <- Reduce(function(seed,i) powerFun(seed,parallel::nextRNGStream,3),
+  initialSeeds <- Reduce(function(seed,i) powerFun(seed,parallel::nextRNGStream,10),
                          1:mc.cores, currentSeed, accumulate=TRUE)[-1]
   ns <- cumsum(sapply(chunks,length))
   ns <- c(0,ns[-length(ns)])

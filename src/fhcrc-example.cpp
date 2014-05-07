@@ -185,12 +185,12 @@ void FhcrcPerson::init() {
       scheduleAt(R::runif(50.0,70.0),toScreen);
       break;
     case twoYearlyScreen50to70:
-      for (double start = 50.0; start<=70.0; start = start + 2.0) {
+      for (double start = 50.0; start<=70.0; start += 2.0) {
 	scheduleAt(start, toScreen);
       }
       break;
-    case fourYearlyScreen50to70:
-      for (double start = 50.0; start<=70.0; start = start + 4.0) {
+    case fourYearlyScreen50to70: // 50,54,58,62,66,70
+      for (double start = 50.0; start<=70.0; start += 4.0) {
 	scheduleAt(start, toScreen);
       }
       break;
@@ -378,14 +378,15 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	case screenUptake:
 	case stockholm3_goteborg:
 	case stockholm3_risk_stratified:
-	  double tm;
+	  double age_screen;
 	  if (psa<3)
-	    tm = now() + R::rweibull(1.16,4.79);
+	    age_screen = now() + R::rweibull(1.16,4.79);
 	  else if (psa<4)
-	    tm = now() + R::rweibull(0.913,2.94);
+	    age_screen = now() + R::rweibull(0.913,2.94);
 	  else
-	    tm = now() + R::rweibull(0.335,0.188);
-	  scheduleAt(tm, toScreen);
+	    age_screen = now() + R::rweibull(0.335,0.188);
+	  // what if age_screen >= 70.0?
+	  scheduleAt(age_screen, toScreen);
 	  break;
 	default:
 	  // do not schedule any other screens
@@ -468,6 +469,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       scheduleAt(now(), toADT);
     }
     if (debug) Rprintf("adt=%d, u=%8.6f, pADT=%8.6f\n",adt,u,pADT);
+    // reset the stream
+    rngNh->set();
     // calculate survival
     txhaz = (state == Localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
     double sxbenefit = 1;
@@ -480,13 +483,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     // TODO: calculate survival
     double age_cancer_death;
     if (state == Localised)
-      age_cancer_death = tm + 35.0 + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(now(),50.0,80.0)),grade)].invert(-log(u));
+      age_cancer_death = tc + 35.0 + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(now(),50.0,80.0)),grade)].invert(-log(u));
     if (state == Metastatic)
       age_cancer_death = tmc + 35.0 + H_dist[grade].invert(-log(u));
     scheduleAt(age_cancer_death, toCancerDeath);
     if (debug) Rprintf("SurvivalTime=%f, u=%f\n",age_cancer_death -now(), u);
-    // reset the stream
-    rngNh->set();
   } break;
 
   case toRP:
@@ -534,6 +535,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
 
+  H_dist.clear();
   DataFrame df_survival_dist = as<DataFrame>(tables["survival_dist"]); // Grade,Time,Survival
   DataFrame df_survival_local = as<DataFrame>(tables["survival_local"]); // Age,Grade,Time,Survival
   // extract the columns from the survival_dist data-frame
@@ -548,6 +550,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     it_sd->second.prepare();
   // now we can use: H_dist[grade].invert(-log(u))
 
+  H_local.clear();
   // extract the columns from the data-frame
   IntegerVector sl_grades = df_survival_local["Grade"];
   NumericVector 
