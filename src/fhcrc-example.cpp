@@ -280,6 +280,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
+  // if (id<10)
   report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
 
   if (id<nLifeHistories) { // only record up to the first n rows
@@ -582,7 +583,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   screeningCompliance = as<double>(parms["screeningCompliance"]);
   studyParticipation = as<double>(parms["studyParticipation"]);
   psaThreshold = as<double>(parms["psaThreshold"]);
-  NumericVector cohort = as<NumericVector>(parms["cohort"]);
+  NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
   // set up the parameters
   double ages0[106];

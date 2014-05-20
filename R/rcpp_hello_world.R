@@ -213,7 +213,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
   ## now run the chunks separately
-  out <- parallel::mclapply(1:mc.cores,
+  print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
                   chunk <- chunks[[i]]
                   set.user.Random.seed(initialSeeds[[i]])
@@ -228,7 +228,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                           cohort=as.double(chunk),
                           tables=fhcrcData),
                         PACKAGE="microsimulation")
-                })
+                })))
   ## Apologies: we now need to massage the chunks from C++
   ## reader <- function(obj) {
   ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
@@ -270,7 +270,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   enum(lifeHistories$event) <- eventT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                psaT = psaT)
-  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary)
+  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
+              ## prev=summary$prev, pt=summary$pt, events=summary$events)
+              summary=summary)
   class(out) <- "fhcrc"
   out
 }

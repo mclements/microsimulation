@@ -405,12 +405,14 @@ public:
     hi = _partition.lower_bound(rhs); 
     last = _partition.begin(); // because it's ordered by greater<T>
     ++_events[boost::make_tuple(state,event,*hi)];
+    // vector<T> this_pt = _pt[state]; if (this_pt.size() == 0) this_pt.resize(100);
     bool iterating;
     for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<T>
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[std::make_pair(state,*it)];
       if (it == last) {
 	_pt[std::make_pair(state,*it)] += rhs - std::max<T>(lhs,*it);
+	// this_pt[it-this_pt.begin()] += rhs - std::max<T>(lhs,*it);
       }
       else {
 	T next_value = *(--it); it++; // decrement/increment for greater<T>
@@ -430,6 +432,7 @@ public:
 
   Partition _partition;
   map<pair<Tstate,T>, int > _prev;
+  // map<Tstate, vector<T> > _pt;
   map<pair<Tstate,T>, T > _pt;
   map<boost::tuple<Tstate,Tevent,T>, int > _events;
 
