@@ -33,6 +33,7 @@ namespace {
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
+  CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
@@ -72,11 +73,15 @@ namespace {
   Rpexp rmu0;
 
   /** 
-      Utility to record information in a map<string vector<double> > object
+      Utilities to record information in a map<string, vector<double> > object
   */
-  void record(map<string, vector<double> > & obj, string variable, double value) {
+  void record(map<string, vector<double> > & obj, const string variable, const double value) {
     obj[variable].push_back(value);
   }
+  void revise(map<string, vector<double> > & obj, const string variable, const double value) {
+    *(--obj[variable].end()) = value;
+  }
+
 
   template<class T>
   T bounds(T x, T a, T b) {
@@ -242,6 +247,8 @@ void FhcrcPerson::init() {
     record(parameters,"aoc",aoc);
     record(parameters,"cohort",cohort);
     record(parameters,"ext_grade",ext_grade);
+    record(parameters,"age_psa",-1.0);
+    record(parameters,"pca_death",0.0);
   }
 }
 
@@ -302,10 +309,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath: 
+    record(parameters,"age_d",now());
+    revise(parameters,"pca_death",1.0);
     Sim::stop_simulation();
     break;
 
   case toOtherDeath: 
+    record(parameters,"age_d",now());
     Sim::stop_simulation();
     break;
 
@@ -351,7 +361,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toScreen: 
-    everPSA = true;
+    if (!everPSA) {
+      revise(parameters,"age_psa",now());
+      everPSA = true;
+    } 
+    costs.add("PSA",now(),200);
     if (psa>=psaThreshold) {
       scheduleAt(now(), toBiopsy); // immediate biopsy
     } else { // re-screening schedules
@@ -595,10 +609,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // re-set the output objects
   report.clear();
+  costs.clear();
   parameters.clear();
   lifeHistories.clear();
 
   report.setPartition(ages);
+  costs.setPartition(ages);
 
   // main loop
   for (int i = 0; i < n; i++) {
@@ -620,7 +636,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  return List::create(
+  return List::create(_("costs") = costs.out(),
 		      _("summary") = report.out(),
 		      _("lifeHistories") = wrap(lifeHistories),
 		      _("parameters") = wrap(parameters)

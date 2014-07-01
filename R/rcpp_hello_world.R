@@ -264,6 +264,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   parameters <- map2df(out[[1]]$parameters)
+  costs <- do.call("rbind",lapply(out,function(obj) map2df(obj$costs)))
+  names(costs) <- c("item","age","costs")
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
@@ -272,10 +274,13 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
               ## prev=summary$prev, pt=summary$pt, events=summary$events)
-              summary=summary)
+              summary=summary,costs=costs)
   class(out) <- "fhcrc"
   out
 }
+
+## R --slave -e "options(width=200); require(microsimulation); callFhcrc(100,nLifeHistories=1e5,screen=\"screen50\")[[\"parameters\"]]"
+
 
 print.fhcrc <- function(obj,...)
     cat(sprintf("FHCRC prostate cancer model with %i individual(s) under scenario '%s'.\n",
