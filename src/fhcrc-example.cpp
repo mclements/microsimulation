@@ -1,5 +1,5 @@
 #include "microsimulation.h"
-
+#include <map>
 #include <boost/algorithm/cxx11/iota.hpp>
 
 namespace {
@@ -22,7 +22,7 @@ namespace {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen, 
-		toBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT};
+		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT};
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
 		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
@@ -58,6 +58,26 @@ namespace {
   H_dist_t H_dist;
   H_local_t H_local;
   set<double,greater<double> > H_local_age_set;
+
+  // initialise costs (this should be changed to a table input as soon as I figure out how /Andreas)
+  int InvitationCost = 15;
+  int FormalPSACost = 41;
+  int FormalPSABiomarkerCost = 641;
+  int BiopsyCost = 8082;
+  int OpportunisticPSACost = 1774;
+  int ProstatectomyCost = 95000;
+  int RadiationTherapyCost = 135000;
+  int ActiveSurveillanceCost = 140000;
+  int MetastaticCancerCost = 769574;
+  int DeathCost = 0;
+
+  // std::map<char,std::string> mymap;
+  
+  // map mymap['a']="an element";
+  // map mymap['b']="another element";
+  // map mymap['c']=mymap['b'];
+
+  double QALYs = 0;
 
   // initialise input parameters (see R::callFhcrc for actual defaults)
   double screeningCompliance = 0.75;
@@ -106,6 +126,7 @@ namespace {
   public:
     double beta0, beta1, beta2;
     double t0, y0, tm, tc, tmc;
+    int EventCost;//, previousEventCost;
     state_t state;
     diagnosis_t dx;
     base::grade_t grade;
@@ -169,6 +190,7 @@ void FhcrcPerson::init() {
   ext_grade= (grade==base::Gleason_le_7) ? 
     (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
     ext::Gleason_ge_8;
+  EventCost = 0;
   tx = no_treatment;
   txhaz = -1.0;
   // schedule natural history events
@@ -245,30 +267,6 @@ void FhcrcPerson::init() {
   }
 }
 
-  // struct Parameters {
-  //   int id;
-  //   double beta0, beta1, beta2, t0, tm, tc, tmc, y0, ym, aoc, cohort;
-  // };
-  // typedef boost::tuple<int,double,double,double,double,double,double,double,double,double,double,double> Parameters;
-  // std::vector<Parameters> parameters;
-  // // Each time, we would do the following:
-  // parameters.push_back(Parameters(id,beta0, beta1, beta2, t0, tm, tc, tmc, y0, ym, aoc, cohort));
-
-  // List wrap_parameter(std::vector<Parameters> parameters) {
-  //   int n = parameters.size();
-  //   vector<int> ids(n);
-  //   vector<vector<double> > others(n);
-  //   Parameters row;
-  //   vector<double> doubles;
-  //   for (int i=0; i<n; i++) {
-  //     row = parameters[i];
-  //     ids[i] = row.id;
-  //     others[i] = row.beta0;
-  //     others[i].push_back(beta1); // etc
-  //   }
-  //   return List(ids,others);
-  // }
-
 /** 
     Handle self-messages received
  */
@@ -291,20 +289,24 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     record(lifeHistories,"begin", previousEventTime);
     record(lifeHistories,"end", now());
     record(lifeHistories,"psa", psa);
+    record(lifeHistories,"QALYs", now()-previousEventTime);
+    //record(lifeHistories,"event_cost", previousEventCost);//wanted to report here but it was not straight forward...
   }
-
+  
   // by default, use the natural history RNG
   rngNh->set();
 
   // handle messages by kind
 
   switch(msg->kind) {
-
-  case toCancerDeath: 
+  
+  case toCancerDeath:
+    EventCost += DeathCost; // cost for death, should this be zero???
     Sim::stop_simulation();
     break;
 
-  case toOtherDeath: 
+  case toOtherDeath:
+    EventCost += DeathCost; // cost for death, should this be zero???
     Sim::stop_simulation();
     break;
 
@@ -315,6 +317,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
   
   case toMetastatic:
+    EventCost += MetastaticCancerCost; // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
@@ -324,9 +327,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     dx = ClinicalDiagnosis;
     RemoveKind(toMetastatic); // competing events
     RemoveKind(toScreen);
-    scheduleAt(now(), toBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
-    scheduleAt(now(), toBiopsy);
-    scheduleAt(now(), toBiopsy);
+    scheduleAt(now(), toClinicalDiagnosticBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
+    scheduleAt(now(), toClinicalDiagnosticBiopsy);
+    scheduleAt(now(), toClinicalDiagnosticBiopsy);
     scheduleAt(now(), toTreatment);
     // switch(state) {
     // case Localised:
@@ -349,10 +352,16 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toScreen); // now start organised screening
     break;
 
-  case toScreen: 
+  case toScreen:
+    EventCost += InvitationCost; // cost for PSA invitation, we are missing the invitation cost for the 25% not complying
+    if (organised) 
+      EventCost += FormalPSACost; // cost for formal PSA test, some of our formal screening scenarios don't seem to be set to organised
+    else
+      EventCost += OpportunisticPSACost; //cost for opportunistic PSA test
+    
     everPSA = true;
     if (psa>=psaThreshold) {
-      scheduleAt(now(), toBiopsy); // immediate biopsy
+      scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } else { // re-screening schedules
       rngScreen->set();
       if (organised) {
@@ -360,13 +369,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	case stockholm3_goteborg:
 	  if (psa<1.0)
 	    scheduleAt(now() + 4.0, toScreen);
-	  else 
+	  else
 	    scheduleAt(now() + 2.0, toScreen);
 	  break;
 	case stockholm3_risk_stratified:
+	  EventCost += FormalPSABiomarkerCost; //cost for biomarker panel
 	  if (psa<1.0)
 	    scheduleAt(now() + 8.0, toScreen);
-	  else 
+	    else
 	    scheduleAt(now() + 4.0, toScreen);
 	  break;
 	default:
@@ -417,27 +427,27 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     // }
     break;
 
-    // assumes that biopsies are 100% accurate
-  case toBiopsy:
-    switch(dx) {
-    case(ScreenDiagnosis):
-    case(ClinicalDiagnosis):
-      // already diagnosed
-      break;
-    case(NotDiagnosed): 
+  // assumes that biopsies are 100% accurate
+
+  // record additional biopsies for clinical diagnoses
+  case toClinicalDiagnosticBiopsy:
+    EventCost += BiopsyCost; // cost for diagnostic biopsies
+    break;
+
+  case toScreenInitiatedBiopsy:
+    EventCost += BiopsyCost; // cost for screening initiated biopsies
       switch(state) {
       case Healthy:
 	previousNegativeBiopsy = true;
-	scheduleAt(now() + 1.0, toScreen);
-	break;
+      	if (now() < 70.0) scheduleAt(now() + 1.0, toScreen);
+      	break;
       case Localised:
       case Metastatic:
 	scheduleAt(now(), toScreenDiagnosis);
 	break;
       default:
-	REprintf("State not matched\n");
-	break;
-      } break;
+      	REprintf("State not matched\n");
+    	break;
     } break;
 
   case toTreatment: {
@@ -491,15 +501,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   } break;
 
   case toRP:
+    EventCost += ProstatectomyCost; // cost for radical prostatectomy
     break;
 
   case toRT:
+    EventCost += RadiationTherapyCost; // cost for radiation therapy
     break;
 
   case toCM:
+    EventCost += ActiveSurveillanceCost; // cost for contiouos monitoring
     break; 
 
   case toADT:
+    //EventCost += ?; //What to do whit this? Pataky: $3600
     break;
 
   default:
@@ -507,6 +521,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
     
   } // switch
+
+  if (id<nLifeHistories) { // only record up to the first n rows  
+    record(lifeHistories,"event_cost", EventCost);
+  }
+  EventCost=0; // Resetting for the new state (need an addiatave approach since one state can have multiple costs)
 
 } // handleMessage()
 
@@ -610,7 +629,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     rngScreen->nextSubstream();
     rngTreatment->nextSubstream();
   }
-
+  /*Rprintf("Adding someting in C++ ...");*/
+  
   // tidy up
   delete rngNh;
   delete rngOther;
@@ -624,6 +644,6 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 		      _("lifeHistories") = wrap(lifeHistories),
 		      _("parameters") = wrap(parameters)
 		      );
-} 
+}
 
 } // anonymous namespace
