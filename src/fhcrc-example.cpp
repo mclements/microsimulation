@@ -1,5 +1,5 @@
 #include "microsimulation.h"
-#include <map>
+
 #include <boost/algorithm/cxx11/iota.hpp>
 
 namespace {
@@ -33,6 +33,7 @@ namespace {
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
+  CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
@@ -92,11 +93,15 @@ namespace {
   Rpexp rmu0;
 
   /** 
-      Utility to record information in a map<string vector<double> > object
+      Utilities to record information in a map<string, vector<double> > object
   */
-  void record(map<string, vector<double> > & obj, string variable, double value) {
+  void record(map<string, vector<double> > & obj, const string variable, const double value) {
     obj[variable].push_back(value);
   }
+  void revise(map<string, vector<double> > & obj, const string variable, const double value) {
+    *(--obj[variable].end()) = value;
+  }
+
 
   template<class T>
   T bounds(T x, T a, T b) {
@@ -264,6 +269,8 @@ void FhcrcPerson::init() {
     record(parameters,"aoc",aoc);
     record(parameters,"cohort",cohort);
     record(parameters,"ext_grade",ext_grade);
+    record(parameters,"age_psa",-1.0);
+    record(parameters,"pca_death",0.0);
   }
 }
 
@@ -289,24 +296,24 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     record(lifeHistories,"begin", previousEventTime);
     record(lifeHistories,"end", now());
     record(lifeHistories,"psa", psa);
-    record(lifeHistories,"QALYs", now()-previousEventTime);
-    //record(lifeHistories,"event_cost", previousEventCost);//wanted to report here but it was not straight forward...
   }
-  
   // by default, use the natural history RNG
   rngNh->set();
 
   // handle messages by kind
 
   switch(msg->kind) {
-  
+
   case toCancerDeath:
-    EventCost += DeathCost; // cost for death, should this be zero???
+	EventCost += DeathCost; // cost for death, should this be zero??? 
+    record(parameters,"age_d",now());
+    revise(parameters,"pca_death",1.0);
     Sim::stop_simulation();
     break;
 
   case toOtherDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
+	record(parameters,"age_d",now());
     Sim::stop_simulation();
     break;
 
@@ -355,11 +362,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toScreen:
     EventCost += InvitationCost; // cost for PSA invitation, we are missing the invitation cost for the 25% not complying
     if (organised) 
-      EventCost += FormalPSACost; // cost for formal PSA test, some of our formal screening scenarios don't seem to be set to organised
+      costs.add("PSA",now(),FormalPSACost); // cost for formal PSA test, some of our formal screening scenarios don't seem to be set to organised
     else
-      EventCost += OpportunisticPSACost; //cost for opportunistic PSA test
+      costs.add("PSA",now(),OpportunisticPSACost); //cost for opportunistic PSA test
     
-    everPSA = true;
+    if (!everPSA) {
+      revise(parameters,"age_psa",now());
+      everPSA = true;
+    } 
     if (psa>=psaThreshold) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } else { // re-screening schedules
@@ -376,7 +386,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  EventCost += FormalPSABiomarkerCost; //cost for biomarker panel
 	  if (psa<1.0)
 	    scheduleAt(now() + 8.0, toScreen);
-	    else
+	  else 
 	    scheduleAt(now() + 4.0, toScreen);
 	  break;
 	default:
@@ -522,11 +532,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     
   } // switch
 
-  if (id<nLifeHistories) { // only record up to the first n rows  
-    record(lifeHistories,"event_cost", EventCost);
-  }
-  EventCost=0; // Resetting for the new state (need an addiatave approach since one state can have multiple costs)
-
 } // handleMessage()
 
 
@@ -601,7 +606,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   screeningCompliance = as<double>(parms["screeningCompliance"]);
   studyParticipation = as<double>(parms["studyParticipation"]);
   psaThreshold = as<double>(parms["psaThreshold"]);
-  NumericVector cohort = as<NumericVector>(parms["cohort"]);
+  NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
   // set up the parameters
   double ages0[106];
@@ -613,10 +618,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // re-set the output objects
   report.clear();
+  costs.clear();
   parameters.clear();
   lifeHistories.clear();
 
   report.setPartition(ages);
+  costs.setPartition(ages);
 
   // main loop
   for (int i = 0; i < n; i++) {
@@ -629,8 +636,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     rngScreen->nextSubstream();
     rngTreatment->nextSubstream();
   }
-  /*Rprintf("Adding someting in C++ ...");*/
-  
+
   // tidy up
   delete rngNh;
   delete rngOther;
@@ -639,7 +645,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  return List::create(
+  return List::create(_("costs") = costs.out(),
 		      _("summary") = report.out(),
 		      _("lifeHistories") = wrap(lifeHistories),
 		      _("parameters") = wrap(parameters)

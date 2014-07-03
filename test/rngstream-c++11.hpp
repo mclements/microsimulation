@@ -18,12 +18,12 @@ public:
   /**
    * Returns the smallest value that the generator can produce
    */
-  static constexpr result_type min () { return 0; }
+  static constexpr result_type min () { return 0ul; }
   /**
    * Returns the largest value that the generator can produce
    */
   static constexpr result_type max ()
-  { return 4294967088; } // m1+1
+  { return 4294967088ul; } // m1+1
   
   /** Seeds the generator with the default seed. */
   rngstream() : RngStream("") { }
@@ -38,7 +38,7 @@ public:
   friend std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& os, const rngstream& r)
   { 
-    unsigned long seed[6];
+    result_type seed[6];
     r.GetState (seed);
     for (int i = 0; i<5; i++)
       os << seed[i] << ' ';
@@ -51,7 +51,7 @@ public:
   friend std::basic_istream<CharT,Traits>&
   operator>>(std::basic_istream<CharT,Traits>& is, rngstream& r)
   { 
-    unsigned long seed[6];
+    result_type seed[6];
     for (int i = 0; i<6; i++)
       is >> seed[i]; 
     r.SetSeed(seed);
@@ -64,7 +64,7 @@ public:
    */
   friend bool operator==(const rngstream& x, const rngstream& y)
   { 
-    unsigned long seedx[6], seedy[6];
+    result_type seedx[6], seedy[6];
     x.GetState (seedx);
     y.GetState (seedy);
     for (int i = 0; i<6; i++)

@@ -34,10 +34,43 @@
 #include <RcppCommon.h>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+#include <boost/unordered_map.hpp>
 #include <vector>
 #include <utility>
 #include <map>
 #include <string>
+
+// http://stackoverflow.com/questions/3611951/building-an-unordered-map-with-tuples-as-keys
+namespace boost { 
+  namespace tuples { // fixed cf. the source URL
+    namespace detail {
+      template <class Tuple, size_t Index = length<Tuple>::value - 1>
+	struct HashValueImpl
+	{
+	  static void apply(size_t& seed, Tuple const& tuple)
+	  {
+	    HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
+	    boost::hash_combine(seed, tuple.get<Index>());
+	  }
+	};
+      template <class Tuple>
+      struct HashValueImpl<Tuple,0>
+      {
+	static void apply(size_t& seed, Tuple const& tuple)
+	{
+	  boost::hash_combine(seed, tuple.get<0>());
+	}
+      };
+    } // namespace detail
+    template <class Tuple>
+    size_t hash_value(Tuple const& tuple)
+    {
+      size_t seed = 0;
+      detail::HashValueImpl<Tuple>::apply(seed, tuple);
+      return seed;
+    }
+  }
+}
 
 namespace Rcpp {
 
@@ -62,14 +95,26 @@ namespace Rcpp {
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v);
 
- template <class T1a, class T1b, class T2>
-   SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
-		 std::string name1, std::string name2);
+  template <class T1a, class T1b, class T2>
+    SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
+		  std::string name1, std::string name2);
+  
+  template <class T1a, class T1b, class T1c, class T2>
+    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+		  std::string name1, std::string name2, std::string name3);
 
- template <class T1a, class T1b, class T1c, class T2>
-   SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v, 
-		 std::string name1, std::string name2, std::string name3);
+  // unordered_maps defined in terms of vectors
+  template <class T1, class T2>
+    SEXP wrap_map(const boost::unordered_map<T1,T2> v);
 
+  template <class T1a, class T1b, class T2>
+    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v, 
+		  std::string name1, std::string name2);
+  
+  template <class T1a, class T1b, class T1c, class T2>
+    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+		  std::string name1, std::string name2, std::string name3);
+  
 } // namespace Rcpp
 
 #include <Rcpp.h>
@@ -84,7 +129,7 @@ namespace Rcpp {
 
 #include <string>
 #include <algorithm>
-#include <map>
+//#include <map>
 #include <functional>
 #include <set>
 
@@ -385,12 +430,13 @@ std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) 
 /**
    @brief EventReport class for collecting statistics on person-time, prevalence and numbers of events.
  */
-template< class Tstate, class Tevent, class T >
+ template< class State, class Event, class Time = double, class Utility = double>
 class EventReport {
 public:
-  typedef std::set<T, std::greater<T> > Partition;
+  typedef std::set<Time, std::greater<Time> > Partition;
   typedef typename Partition::iterator Iterator;
-  void setPartition(const vector<T> v) {
+  typedef std::pair<State,Time> Pair;
+  void setPartition(const vector<Time> v) {
     copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
   void clear() {
@@ -399,22 +445,24 @@ public:
     _prev.clear();
     _partition.clear();
   }
-  void add(const Tstate state, const Tevent event, const T lhs, const T rhs) {
+  void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
     Iterator lo, hi, it, last;
     lo = _partition.lower_bound(lhs);
     hi = _partition.lower_bound(rhs); 
-    last = _partition.begin(); // because it's ordered by greater<T>
+    last = _partition.begin(); // because it is ordered by greater<Time>
     ++_events[boost::make_tuple(state,event,*hi)];
+    // vector<Time> this_pt = _pt[state]; if (this_pt.size() == 0) this_pt.resize(100);
     bool iterating;
-    for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<T>
+    for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
       if (lhs<=(*it) && (*it)<rhs) // cadlag
-    	++_prev[std::make_pair(state,*it)];
+    	++_prev[Pair(state,*it)];
       if (it == last) {
-	_pt[std::make_pair(state,*it)] += rhs - std::max<T>(lhs,*it);
+	_pt[Pair(state,*it)] += utility*(rhs - std::max<Time>(lhs,*it));
+	// this_pt[it-this_pt.begin()] += rhs - std::max<Time>(lhs,*it);
       }
       else {
-	T next_value = *(--it); it++; // decrement/increment for greater<T>
-	_pt[std::make_pair(state,*it)] += std::min<T>(rhs,next_value) - std::max<T>(lhs,*it);
+	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
+	_pt[Pair(state,*it)] += utility*(std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it));
       }
     }
   }
@@ -429,11 +477,40 @@ public:
   }
 
   Partition _partition;
-  map<pair<Tstate,T>, int > _prev;
-  map<pair<Tstate,T>, T > _pt;
-  map<boost::tuple<Tstate,Tevent,T>, int > _events;
+  boost::unordered_map<pair<State,Time>, int > _prev;
+  boost::unordered_map<pair<State,Time>, Time > _pt;
+  boost::unordered_map<boost::tuple<State,Event,Time>, int > _events;
 
 };
+
+
+/**
+   @brief CostReport class for collecting statistics on costs.
+ */
+ template< class State, class Time = double, class Cost = long>
+   class CostReport {
+ public:
+   typedef std::set<Time, std::greater<Time> > Partition;
+   typedef std::pair<State,Time> Pair;
+   void setPartition(const vector<Time> v) {
+     copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
+   }
+   void clear() {
+     _table.clear();
+     _partition.clear();
+   }
+   void add(const State state, const Time time, const Cost cost) {
+     Time time_lhs = * _partition.lower_bound(time); 
+     _table[Pair(state,time_lhs)] += cost;
+   }
+   SEXP out() {
+     using namespace Rcpp;
+     return wrap_map(_table,"age","cost");
+   }
+   Partition _partition;
+   boost::unordered_map<pair<State,Time>, Cost > _table;
+ };
+
 
 } // namespace ssim
 
@@ -587,6 +664,71 @@ namespace Rcpp {
     out.push_back(wrap(y),name2);
     return out;
    }
+
+
+  template <class T1, class T2>
+    SEXP wrap_map(const boost::unordered_map<T1,T2> v) {
+    int i;
+    int n = v.size();
+    vector<T1> x(n);
+    vector<T2> y(n);
+    typename boost::unordered_map<T1,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      x[i] = (*it).first;
+      y[i] = (*it).second;
+    }
+    List out =  wrap(x);
+    out.push_back(wrap(y),"Value");
+    return out;
+    //return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
+  }
+  
+  template <class T1a, class T1b, class T1c, class T2>
+    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+		  std::string name1, std::string name2, std::string name3) {
+    typedef boost::tuple<T1a,T1b,T1c> Tuple;
+    int i;
+    int n = v.size();
+    vector<T1a> xa(n);
+    vector<T1b> xb(n);
+    vector<T1c> xc(n);
+    vector<T2> y(n);
+    typename boost::unordered_map<Tuple,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      xa[i] = get<0>((*it).first);
+      xb[i] = get<1>((*it).first);
+      xc[i] = get<2>((*it).first);
+      y[i] = (*it).second;
+    }
+    List out = Rcpp::wrap(xa);
+    out.push_back(wrap(xb),name1);
+    out.push_back(wrap(xc),name2);
+    out.push_back(wrap(y),name3);
+    return out;
+  }
+  
+  
+  template <class T1a, class T1b, class T2>
+    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v, 
+		  std::string name1 = "age", std::string name2 = "value") {
+    typedef std::pair<T1a,T1b> Pair;
+    int i;
+    int n = v.size();
+    vector<T1a> xa(n);
+    vector<T1b> xb(n);
+    vector<T2> y(n);
+    typename boost::unordered_map<Pair,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      xa[i] = (*it).first.first;
+      xb[i] = (*it).first.second;
+      y[i] = (*it).second;
+    }
+    List out = Rcpp::wrap(xa);
+    out.push_back(wrap(xb),name1);
+    out.push_back(wrap(y),name2);
+    return out;
+   }
+
   
 } // Rcpp namespace
 

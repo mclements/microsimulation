@@ -214,7 +214,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
   ## now run the chunks separately
-  out <- parallel::mclapply(1:mc.cores,
+  print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
                   chunk <- chunks[[i]]
                   set.user.Random.seed(initialSeeds[[i]])
@@ -229,7 +229,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                           cohort=as.double(chunk),
                           tables=fhcrcData),
                         PACKAGE="microsimulation")
-                })
+                })))
   ## Apologies: we now need to massage the chunks from C++
   ## reader <- function(obj) {
   ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
@@ -242,6 +242,10 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ## }
   cbindList <- function(obj) # recursive
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
+  
+  rbindList <- function(obj) { # recursive  
+      if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
+      
   reader <- function(obj) {
     obj <- cbindList(obj)
     out <- cbind(data.frame(state=enum(obj[[1]],stateT),
@@ -265,16 +269,26 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   parameters <- map2df(out[[1]]$parameters)
+  ## Identifying elements without name which also need to be rbind:ed
+  costsNameless_idx <- names(out[[1]]$costs)==""
+  costs <- cbind(rbindList(out[[1]]$costs[costNameless_idx]),cbindList(out[[1]]$costs[!costNameless_idx]))
+  names(costs) <- c("item","age","costs")
+    
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                psaT = psaT)
-  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,summary=summary)
+  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
+              ## prev=summary$prev, pt=summary$pt, events=summary$events)
+              summary=summary,costs=costs)
   class(out) <- "fhcrc"
   out
 }
+
+## R --slave -e "options(width=200); require(microsimulation); callFhcrc(100,nLifeHistories=1e5,screen=\"screen50\")[[\"parameters\"]]"
+
 
 print.fhcrc <- function(obj,...)
     cat(sprintf("FHCRC prostate cancer model with %i individual(s) under scenario '%s'.\n",
