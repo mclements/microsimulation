@@ -243,7 +243,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   cbindList <- function(obj) # recursive
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
   
-  rbindList <- function(obj) { # recursive  
+  rbindList <- function(obj) # recursive  
       if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
       
   reader <- function(obj) {
@@ -271,7 +271,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
   costsNameless_idx <- names(out[[1]]$costs)==""
-  costs <- cbind(rbindList(out[[1]]$costs[costNameless_idx]),cbindList(out[[1]]$costs[!costNameless_idx]))
+  costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
   names(costs) <- c("item","age","costs")
     
   enum(summary$events$event) <- eventT
