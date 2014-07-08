@@ -33,6 +33,7 @@ namespace {
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
+  // CostReport<string,double,long> costs;
   CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
@@ -71,14 +72,6 @@ namespace {
   int ActiveSurveillanceCost = 140000;
   int MetastaticCancerCost = 769574;
   int DeathCost = 0;
-
-  // std::map<char,std::string> mymap;
-  
-  // map mymap['a']="an element";
-  // map mymap['b']="another element";
-  // map mymap['c']=mymap['b'];
-
-  double QALYs = 0;
 
   // initialise input parameters (see R::callFhcrc for actual defaults)
   double screeningCompliance = 0.75;
@@ -131,7 +124,7 @@ namespace {
   public:
     double beta0, beta1, beta2;
     double t0, y0, tm, tc, tmc;
-    int EventCost;//, previousEventCost;
+    int EventCost;
     state_t state;
     diagnosis_t dx;
     base::grade_t grade;
@@ -148,7 +141,6 @@ namespace {
     void init();
     virtual void handleMessage(const cMessage* msg);
   };
-  
 
   /** 
       Calculate the (geometric) mean PSA value at a given time (** NB: time = age - 35 **)
@@ -166,7 +158,6 @@ namespace {
       double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(tau2)));
       return yt;
     }
-
 
 /** 
     Initialise a simulation run for an individual
@@ -305,15 +296,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-	EventCost += DeathCost; // cost for death, should this be zero??? 
+    EventCost += DeathCost; // cost for death, should this be zero???
+    costs.add("DeathCost",now(),DeathCost);
     record(parameters,"age_d",now());
+    if (id<nLifeHistories) {
     revise(parameters,"pca_death",1.0);
+    }
     Sim::stop_simulation();
     break;
 
   case toOtherDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
-	record(parameters,"age_d",now());
+    costs.add("DeathCost",now(),DeathCost);
+    record(parameters,"age_d",now());
     Sim::stop_simulation();
     break;
 
@@ -325,6 +320,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   
   case toMetastatic:
     EventCost += MetastaticCancerCost; // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
+    costs.add("MetastaticCancerCost",now(),MetastaticCancerCost);
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
@@ -361,13 +357,18 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toScreen:
     EventCost += InvitationCost; // cost for PSA invitation, we are missing the invitation cost for the 25% not complying
-    if (organised) 
-      costs.add("PSA",now(),FormalPSACost); // cost for formal PSA test, some of our formal screening scenarios don't seem to be set to organised
-    else
-      costs.add("PSA",now(),OpportunisticPSACost); //cost for opportunistic PSA test
-    
+    costs.add("InvitationCost",now(),InvitationCost);
+    if (organised) {
+	EventCost += FormalPSACost;
+	costs.add("FormalPSACost",now(),FormalPSACost); //Some formal screening scenarios don't seem to be set to organised
+    } else {
+      EventCost += OpportunisticPSACost;
+      costs.add("OpportunisticPSACost",now(),OpportunisticPSACost); //cost for opportunistic PSA test
+    }
     if (!everPSA) {
+      if (id<nLifeHistories) {
       revise(parameters,"age_psa",now());
+      }
       everPSA = true;
     } 
     if (psa>=psaThreshold) {
@@ -384,6 +385,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  break;
 	case stockholm3_risk_stratified:
 	  EventCost += FormalPSABiomarkerCost; //cost for biomarker panel
+	  costs.add("FormalPSABiomarkerCost",now(),FormalPSABiomarkerCost);
 	  if (psa<1.0)
 	    scheduleAt(now() + 8.0, toScreen);
 	  else 
@@ -442,10 +444,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
     EventCost += BiopsyCost; // cost for diagnostic biopsies
+    costs.add("BiopsyCost",now(),BiopsyCost); //cost for opportunistic PSA test
     break;
 
   case toScreenInitiatedBiopsy:
     EventCost += BiopsyCost; // cost for screening initiated biopsies
+    costs.add("BiopsyCost",now(),BiopsyCost);
       switch(state) {
       case Healthy:
 	previousNegativeBiopsy = true;
@@ -512,18 +516,22 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toRP:
     EventCost += ProstatectomyCost; // cost for radical prostatectomy
+    costs.add("ProstatectomyCost",now(),ProstatectomyCost);
     break;
 
   case toRT:
     EventCost += RadiationTherapyCost; // cost for radiation therapy
+    costs.add("RadiationTherapyCost",now(),RadiationTherapyCost);
     break;
 
   case toCM:
     EventCost += ActiveSurveillanceCost; // cost for contiouos monitoring
+    costs.add("ActiveSurveillanceCost",now(),ActiveSurveillanceCost);
     break; 
 
   case toADT:
     //EventCost += ?; //What to do whit this? Pataky: $3600
+    //costs.add("?",now(),?);
     break;
 
   default:

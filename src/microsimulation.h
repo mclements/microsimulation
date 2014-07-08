@@ -408,52 +408,52 @@ inline double discountedInterval(double start, double end, double discountRate) 
   //else if (start == 0.0) return (1.0 - (1.0+discountRate)^(-end)) / log(1.0+discountRate);
   else return (pow(1.0+discountRate,-start) - pow(1.0+discountRate,-end)) / log(1.0+discountRate);
 }
-
-
+ 
+ 
 /** 
     @brief Function to transpose a vector of vectors.
     This assumes that all inner vectors have the same size and
     allocates space for the complete result in advance.
     From  http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors
- */
-template <class T>
-std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) {
-    std::vector<std::vector<T> > result(data[0].size(),
-                                          std::vector<T>(data.size()));
+*/
+ template <class T>
+   std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) {
+   std::vector<std::vector<T> > result(data[0].size(),
+				       std::vector<T>(data.size()));
     for (typename std::vector<T>::size_type i = 0; i < data[0].size(); i++) 
-        for (typename std::vector<T>::size_type j = 0; j < data.size(); j++) {
-            result[i][j] = data[j][i];
+      for (typename std::vector<T>::size_type j = 0; j < data.size(); j++) {
+	result[i][j] = data[j][i];
         }
     return result;
-}
-
-/**
+ }
+ 
+ /**
    @brief EventReport class for collecting statistics on person-time, prevalence and numbers of events.
  */
  template< class State, class Event, class Time = double, class Utility = double>
-class EventReport {
-public:
-  typedef std::set<Time, std::greater<Time> > Partition;
-  typedef typename Partition::iterator Iterator;
-  typedef std::pair<State,Time> Pair;
-  void setPartition(const vector<Time> v) {
-    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
+   class EventReport {
+ public:
+ typedef std::set<Time, std::greater<Time> > Partition;
+ typedef typename Partition::iterator Iterator;
+ typedef std::pair<State,Time> Pair;
+ void setPartition(const vector<Time> v) {
+   copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
-  void clear() {
-    _pt.clear();
-    _events.clear();
-    _prev.clear();
-    _partition.clear();
-  }
-  void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
-    Iterator lo, hi, it, last;
-    lo = _partition.lower_bound(lhs);
-    hi = _partition.lower_bound(rhs); 
-    last = _partition.begin(); // because it is ordered by greater<Time>
-    ++_events[boost::make_tuple(state,event,*hi)];
-    // vector<Time> this_pt = _pt[state]; if (this_pt.size() == 0) this_pt.resize(100);
-    bool iterating;
-    for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
+ void clear() {
+   _pt.clear();
+   _events.clear();
+   _prev.clear();
+   _partition.clear();
+ }
+ void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
+   Iterator lo, hi, it, last;
+   lo = _partition.lower_bound(lhs);
+   hi = _partition.lower_bound(rhs); 
+   last = _partition.begin(); // because it is ordered by greater<Time>
+   ++_events[boost::make_tuple(state,event,*hi)];
+   // vector<Time> this_pt = _pt[state]; if (this_pt.size() == 0) this_pt.resize(100);
+   bool iterating;
+   for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[Pair(state,*it)];
       if (it == last) {
@@ -464,54 +464,54 @@ public:
 	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
 	_pt[Pair(state,*it)] += utility*(std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it));
       }
-    }
-  }
-
-  SEXP out() {
-
-    using namespace Rcpp;
-
+   }
+ }
+ 
+ SEXP out() {
+   
+   using namespace Rcpp;
+   
     return List::create(_("pt") = wrap_map(_pt,"age","pt"),
   			_("events") = wrap_map(_events,"event","age","number"),
   			_("prev") = wrap_map(_prev,"age","number"));
-  }
+ }
+ 
+ Partition _partition;
+ boost::unordered_map<pair<State,Time>, int > _prev;
+ boost::unordered_map<pair<State,Time>, Time > _pt;
+ boost::unordered_map<boost::tuple<State,Event,Time>, int > _events;
+ 
+ };
+ 
 
-  Partition _partition;
-  boost::unordered_map<pair<State,Time>, int > _prev;
-  boost::unordered_map<pair<State,Time>, Time > _pt;
-  boost::unordered_map<boost::tuple<State,Event,Time>, int > _events;
-
-};
-
-
-/**
-   @brief CostReport class for collecting statistics on costs.
+ /**
+    @brief CostReport class for collecting statistics on costs.
  */
  template< class State, class Time = double, class Cost = long>
    class CostReport {
  public:
-   typedef std::set<Time, std::greater<Time> > Partition;
-   typedef std::pair<State,Time> Pair;
-   void setPartition(const vector<Time> v) {
-     copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
-   }
-   void clear() {
-     _table.clear();
-     _partition.clear();
-   }
-   void add(const State state, const Time time, const Cost cost) {
-     Time time_lhs = * _partition.lower_bound(time); 
-     _table[Pair(state,time_lhs)] += cost;
-   }
-   SEXP out() {
-     using namespace Rcpp;
-     return wrap_map(_table,"age","cost");
-   }
-   Partition _partition;
+ typedef std::set<Time, std::greater<Time> > Partition;
+ typedef std::pair<State,Time> Pair;
+ void setPartition(const vector<Time> v) {
+   copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
+ }
+ void clear() {
+   _table.clear();
+   _partition.clear();
+ }
+ void add(const State state, const Time time, const Cost cost) {
+   Time time_lhs = * _partition.lower_bound(time); 
+   _table[Pair(state,time_lhs)] += cost;
+ }
+ SEXP out() {
+   using namespace Rcpp;
+   return wrap_map(_table,"age","cost");
+ }
+ Partition _partition;
    boost::unordered_map<pair<State,Time>, Cost > _table;
  };
-
-
+ 
+ 
 } // namespace ssim
 
 namespace Rcpp {
