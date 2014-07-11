@@ -62,6 +62,7 @@ namespace {
   set<double,greater<double> > H_local_age_set;
 
   // initialise costs (this should be changed to a table input as soon as I figure out how /Andreas)
+  NumericVector cost_parameters;
   int InvitationCost = 15;
   int FormalPSACost = 41;
   int FormalPSABiomarkerCost = 641;
@@ -297,10 +298,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toCancerDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
-    costs.add("DeathCost",now(),DeathCost);
-    record(parameters,"age_d",now());
+    costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
     if (id<nLifeHistories) {
-    revise(parameters,"pca_death",1.0);
+      record(parameters,"age_d",now());
+      revise(parameters,"pca_death",1.0);
     }
     Sim::stop_simulation();
     break;
@@ -308,7 +309,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toOtherDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),DeathCost);
-    record(parameters,"age_d",now());
+    if (id<nLifeHistories) {
+      record(parameters,"age_d",now());
+    }
     Sim::stop_simulation();
     break;
 
@@ -367,7 +370,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
     if (!everPSA) {
       if (id<nLifeHistories) {
-      revise(parameters,"age_psa",now());
+	revise(parameters,"age_psa",now());
       }
       everPSA = true;
     } 
@@ -616,6 +619,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   psaThreshold = as<double>(parms["psaThreshold"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
+  cost_parameters = as<NumericVector>(parms["cost_parameters"]);
   // set up the parameters
   double ages0[106];
   boost::algorithm::iota(ages0, ages0+106, 0.0);

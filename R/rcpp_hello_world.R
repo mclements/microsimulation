@@ -213,6 +213,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
       with(fhcrcData$survival_dist,
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
+  cost_parameters = c(DeathCost=10000)
   ## now run the chunks separately
   print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
@@ -227,7 +228,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                           studyParticipation=as.double(studyParticipation),
                           psaThreshold=as.double(psaThreshold),
                           cohort=as.double(chunk),
-                          tables=fhcrcData),
+                          tables=fhcrcData,
+                            cost_parameters=cost_parameters),
                         PACKAGE="microsimulation")
                 })))
   ## Apologies: we now need to massage the chunks from C++
