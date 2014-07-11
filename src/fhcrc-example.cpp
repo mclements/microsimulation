@@ -309,13 +309,16 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath: 
-    record(parameters,"age_d",now());
-    revise(parameters,"pca_death",1.0);
+    if (id<nLifeHistories) {
+      record(parameters,"age_d",now());
+      revise(parameters,"pca_death",1.0);
+    }
     Sim::stop_simulation();
     break;
 
   case toOtherDeath: 
-    record(parameters,"age_d",now());
+    if (id<nLifeHistories) 
+      record(parameters,"age_d",now());
     Sim::stop_simulation();
     break;
 
@@ -362,7 +365,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toScreen: 
     if (!everPSA) {
-      revise(parameters,"age_psa",now());
+      if (id<nLifeHistories)
+	revise(parameters,"age_psa",now());
       everPSA = true;
     } 
     costs.add("PSA",now(),200);
@@ -531,6 +535,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // declarations
   FhcrcPerson person;
 
+  ssim::RNGScope scope;
   rngNh = new Rng();
   rngOther = new Rng();
   rngScreen = new Rng();

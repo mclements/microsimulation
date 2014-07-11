@@ -1,18 +1,18 @@
 
 rcpp_hello_world <- function(){
-	.Call( "rcpp_hello_world", PACKAGE = "microsimulation" )
+    .Call( "rcpp_hello_world", PACKAGE = "microsimulation" )
 }
 
 .microsimulation.init <- function () {
-  .Call("r_create_current_stream",PACKAGE="microsimulation")
+    ## .Call("r_create_current_stream",PACKAGE="microsimulation")
   return(1)
 }
 
 .microsimulation.exit <- function () {
-  .Call("r_remove_current_stream",PACKAGE="microsimulation")
+  ## .Call("r_remove_current_stream",PACKAGE="microsimulation")
   return(1)
 }
-## http://r.789695.n4.nabble.com/How-to-construct-a-valid-seed-for-l-Ecuyer-s-method-with-given-Random-seed-td4656340.html
+## (browse-url "http://r.789695.n4.nabble.com/How-to-construct-a-valid-seed-for-l-Ecuyer-s-method-with-given-Random-seed-td4656340.html")
 unsigned <- function(seed) ifelse(seed < 0, seed + 2^32, seed)
 signed <- function(seed) ifelse(seed>2^31, seed-2^32, seed)
 
@@ -265,7 +265,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   parameters <- map2df(out[[1]]$parameters)
   costs <- do.call("rbind",lapply(out,function(obj) map2df(obj$costs)))
-  names(costs) <- c("item","age","costs")
+  ## names(costs) <- c("item","age","costs")
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
