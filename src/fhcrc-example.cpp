@@ -136,7 +136,8 @@ namespace {
     int id;
     double cohort;
     bool everPSA, previousNegativeBiopsy, organised;
-    FhcrcPerson(const int i = 0, const double coh = 1950) : id(i), cohort(coh) { };
+    FhcrcPerson(const int id = 0, const double cohort = 1950) : 
+      id(id), cohort(cohort) { };
     double ymean(double t);
     double y(double t);
     void init();
@@ -273,7 +274,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // declarations
   double psa = y(now()-35.0);
-  double age = now();
+  // double age = now();
   double year = now() + cohort;
 
   // record information
@@ -298,12 +299,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toCancerDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
-    costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
+    //costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
+    costs.add("DeathCost",now(),DeathCost);
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
       revise(parameters,"pca_death",1.0);
     }
-    Sim::stop_simulation();
+    FhcrcPerson::clear();
     break;
 
   case toOtherDeath:
@@ -312,7 +314,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
     }
-    Sim::stop_simulation();
+    FhcrcPerson::clear();
     break;
 
   case toLocalised:
@@ -508,7 +510,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (debug) Rprintf("lead_time=%f, txbenefit=%f, u=%f, ustar=%f\n",lead_time,txbenefit,u,pow(u,1/(txbenefit*sxbenefit)));
     u = pow(u,1/(txbenefit*sxbenefit));
     // TODO: calculate survival
-    double age_cancer_death;
+    double age_cancer_death = -1.0;
     if (state == Localised)
       age_cancer_death = tc + 35.0 + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(now(),50.0,80.0)),grade)].invert(-log(u));
     if (state == Metastatic)
@@ -638,7 +640,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   costs.setPartition(ages);
 
   // main loop
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     person = FhcrcPerson(i+firstId,cohort[i]);
     Sim::create_process(&person);
     Sim::run_simulation();

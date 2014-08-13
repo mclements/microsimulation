@@ -29,7 +29,7 @@
 #ifndef _tprocessconf_h
 #define _tprocessconf_h
 
-#define TPROCESS_IMPL @tprocess_impl@
+#define TPROCESS_IMPL @TPROCESS_IMPL@
 
 #if TPROCESS_IMPL==0
 #error TPRocess is not available in this configuration of SSim.

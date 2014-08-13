@@ -164,10 +164,9 @@ public:
   short kind;
   string name;
   Time sendingTime, timestamp;
+  ProcessId pid;
   // this does NOT include schedulePriority
-  cMessage(const short k = -1, const string n = "") : kind(k), name(n) {
-    sendingTime = Sim::clock();
-  }
+ cMessage(const short k = -1, const string n = "") : kind(k), name(n), sendingTime(0), timestamp(0), pid(NULL_PROCESSID) { }
   // currently no setters (keep it lightweight?)
   short getKind() { return kind; }
   string getName() { return name; }
@@ -175,15 +174,44 @@ public:
   Time getSendingTime() {return sendingTime; }
 };
 
+inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessage * msg)> pred) {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    return (msg != 0 && pred(msg));
+  }
+
+ inline bool cMessagePIdPred(const ssim::Event* e, ProcessId pid) {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    return (msg != 0 && pid == msg->pid); 
+  }
+
+ inline bool cMessageNamePred(const ssim::Event* e, const string s, ProcessId pid) {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    if (pid == NULL_PROCESSID)
+      return (msg != 0 && msg->name == s); 
+    else 
+      return (msg != 0 && pid == msg->pid && msg->name == s); 
+  }
+
+ inline bool cMessageKindPred(const ssim::Event* e, const short k, ProcessId pid) {
+    const cMessage * msg = dynamic_cast<const cMessage *>(e);
+    if (pid == NULL_PROCESSID)
+      return (msg != 0 && msg->kind == k); 
+    else 
+      return (msg != 0 && pid == msg->pid && msg->kind == k); 
+  }
+
+
 /**
    @brief cProcess class for OMNET++ API compatibility.
    This provides a default for Process::process_event() that calls
    cProcess::handleMessage(). This class also provides scheduleAt()
    methods for insert cMessages into the process event queue.
  */
-class cProcess : public ssim::Process {
+class cProcess : public ssim::ProcessWithPId {
 public:
- cProcess() : previousEventTime(0.0) { }; 
+ cProcess() : previousEventTime(0.0) { 
+    this->activate(); 
+  }; 
   virtual void handleMessage(const cMessage * msg) = 0;
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
@@ -198,6 +226,8 @@ public:
   }
   virtual void scheduleAt(Time t, cMessage * msg) { // virtual or not?
     msg->timestamp = t;
+    msg->sendingTime = Sim::clock();
+    msg->pid = pid();
     Sim::self_signal_event(msg, t - Sim::clock());  
   }
   virtual void scheduleAt(Time t, string n) {
@@ -206,37 +236,31 @@ public:
   virtual void scheduleAt(Time t, short k) {
     scheduleAt(t, new cMessage(k));  
   }
+
+  /**
+     @brief RemoveKind is a function to remove messages with the given kind from the queue (NB: void)
+  */
+  void RemoveKind(short kind) {
+    Sim::remove_event(boost::bind(cMessageKindPred,_1,kind,pid()));
+  }
+  
+  /**
+     @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
+  */
+  void RemoveName(string name) {
+    Sim::remove_event(boost::bind(cMessageNamePred,_1,name,pid()));
+  }
+  
+  /**
+     @brief clear is a function to remove messages for the given process from the queue
+  */
+  void clear() {
+    Sim::remove_event(boost::bind(cMessagePIdPred,_1,pid()));
+  }
+
   Time previousEventTime;
 };
 
-inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessage * msg)> pred) {
-    const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != 0 && pred(msg));
-  }
-
-inline bool cMessageNamePred(const ssim::Event* e, const string s) {
-    const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != 0 && msg->name == s); 
-  }
-
-inline bool cMessageKindPred(const ssim::Event* e, const short k) {
-    const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != 0 && msg->kind == k); 
-  }
-
-/**
-   @brief RemoveKind is a function to remove messages with the given kind from the queue (NB: void)
-*/
-inline void RemoveKind(short kind) {
-  return Sim::remove_event(boost::bind(cMessageKindPred,_1,kind));
-}
-
-/**
-   @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
-*/
-inline void RemoveName(string name) {
-  return Sim::remove_event(boost::bind(cMessageNamePred,_1,name));
-}
 
 /**
    @brief simtime_t typedef for OMNET++ API compatibility

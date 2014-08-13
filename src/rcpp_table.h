@@ -46,7 +46,7 @@ class NumericInterpolate {
  public:
   NumericVector x, y, slope;
   int n;
- NumericInterpolate() : n(0), x(0), y(0), slope(0) {
+ NumericInterpolate() : x(0), y(0), slope(0), n(0) {
   }
   NumericInterpolate(DataFrame df, int i0=0, int i1=1) { 
     // calculate the slope between points

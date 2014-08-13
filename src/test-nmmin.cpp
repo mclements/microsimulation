@@ -40,7 +40,7 @@ public:
   BFGS(int trace = 0, int maxit = 100, 
        double abstol = - INFINITY,
        double reltol = 1.0e-8, int report = 10) : 
-    trace(trace), maxit(maxit), abstol(abstol), reltol(reltol), report(report) { }
+    trace(trace), maxit(maxit), report(report), abstol(abstol), reltol(reltol) { }
   void optim(optimfn fn, optimgr gr, Rcpp::NumericVector init, void * ex) {
     n = init.size();
     int mask[n]; for (int i=0; i<n; ++i) mask[i] = 1;
