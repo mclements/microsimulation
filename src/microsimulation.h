@@ -218,7 +218,7 @@ public:
     // cf. static_cast?
     if ((msg = dynamic_cast<const cMessage *>(e)) != 0) { 
       handleMessage(msg);
-      previousEventTime = Sim::clock();
+      previousEventTime = sim->clock();
     } else {
       // cf. cerr, specialised for R
       REprintf("cProcess is only written to receive cMessage events\n");
@@ -226,9 +226,9 @@ public:
   }
   virtual void scheduleAt(Time t, cMessage * msg) { // virtual or not?
     msg->timestamp = t;
-    msg->sendingTime = Sim::clock();
+    msg->sendingTime = sim->clock();
     msg->pid = pid();
-    Sim::self_signal_event(msg, t - Sim::clock());  
+    sim->self_signal_event(msg, t - sim->clock());  
   }
   virtual void scheduleAt(Time t, string n) {
     scheduleAt(t, new cMessage(-1,n));  
@@ -241,22 +241,32 @@ public:
      @brief RemoveKind is a function to remove messages with the given kind from the queue (NB: void)
   */
   void RemoveKind(short kind) {
-    Sim::remove_event(boost::bind(cMessageKindPred,_1,kind,pid()));
+    sim->remove_event(boost::bind(cMessageKindPred,_1,kind,pid()));
   }
   
   /**
      @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
   */
   void RemoveName(string name) {
-    Sim::remove_event(boost::bind(cMessageNamePred,_1,name,pid()));
+    sim->remove_event(boost::bind(cMessageNamePred,_1,name,pid()));
   }
   
   /**
      @brief clear is a function to remove messages for the given process from the queue
   */
   void clear() {
-    Sim::remove_event(boost::bind(cMessagePIdPred,_1,pid()));
+    sim->remove_event(boost::bind(cMessagePIdPred,_1,pid()));
   }
+
+  /**
+     @brief simTime() function for OMNET++ API compatibility
+  */
+  Time simTime() { return sim->clock(); }
+  
+  /**
+     @brief now() function for compatibility with C++SIM
+  */
+  Time now() { return sim->clock(); }
 
   Time previousEventTime;
 };
@@ -267,15 +277,6 @@ public:
 */
 typedef Time simtime_t;
 
-/**
-   @brief simTime() function for OMNET++ API compatibility
-*/
-Time simTime();
-
-/**
-   @brief now() function for compatibility with C++SIM
-*/
-Time now();
 
 /**
    @brief Utility class to incrementally add values to calculate the mean,

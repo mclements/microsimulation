@@ -11,15 +11,6 @@ namespace ssim {
     return R::rweibull(shape, scale*pow(hr,1.0/shape));
   }
   
-  Time now() {
-    return Sim::clock();
-  }
-  
-  Time simTime() {
-    return Sim::clock();
-  }
-  
-  
   static Rng * default_stream, * current_stream;
   static double rn = 0.0;
   

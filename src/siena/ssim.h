@@ -26,6 +26,7 @@
 #define _ssim_h
 
 #include <boost/function.hpp>
+#include "../heap.h"
 
 /** \file ssim.h 
  *
@@ -49,9 +50,9 @@
  **/
 namespace ssim {
 
-/** @brief version identifier for this ssim library
- **/
-extern const char *	Version;
+// /** @brief version identifier for this ssim library
+//  **/
+// extern const char *	Version;
 
 /** @brief process identifier type
  **/
@@ -81,6 +82,52 @@ typedef double		Time;
  **/
 const Time		INIT_TIME = 0;
 
+// forward declarations
+class Sim;
+class Event;
+class Process;
+
+namespace Impl {
+
+    enum ActionType { 
+      A_Event, 
+      A_Init, 
+      A_Stop 
+    };
+    
+    struct Action {
+      Time time;
+      ActionType type;
+      ProcessId pid;
+      const Event * event;
+      
+      Action(Time t, ActionType at, ProcessId p, const Event * e = 0) throw()
+	: time(t), type(at), pid(p), event(e) {};
+      
+      bool operator < (const Action & a) const throw() {
+	return time < a.time;
+      }
+    };
+
+    typedef heap<Action>	a_table_t;
+    
+    typedef a_table_t::iterator ForwardIterator;
+    
+    struct PDescr {
+      Process * 	process;
+      bool terminated;
+      Time available_at;
+      
+      PDescr(Process * p) 
+	: process(p), terminated(false), available_at(INIT_TIME) {}
+    };
+
+    typedef std::vector<PDescr> PsTable;
+
+    class SimImpl;
+
+  }
+
 /** @brief basic event in the simulation.
  *
  *  This base class represents a piece of information or a signal
@@ -108,17 +155,17 @@ const Time		INIT_TIME = 0;
  *       TProcess::wait_for_event(Time).
  **/
 class Event {
- public:
-			Event(): refcount(0) {};
-    virtual		~Event() {};
-
- private:
-    mutable unsigned refcount;
-    friend class SimImpl;	// this is an opaque implementation class
-    friend class Sim;		// these need to be friends to manage refcount
+public:
+  Event(): refcount(0) {};
+  virtual		~Event() {};
+  
+private:
+  mutable unsigned refcount;
+  friend class Impl::SimImpl;
+  friend class Sim;
 };
 
-  typedef boost::function<bool (const Event *)> EventPredicate;
+typedef boost::function<bool (const Event *)> EventPredicate;
 
 /** @brief Virtual class (interface) representing processes running
  *  within the simulator.
@@ -126,8 +173,9 @@ class Event {
  *  A simulated process must implement this basic interface.
  **/
 class Process {
- public:
-    virtual		~Process() {};
+public:
+  virtual		~Process() {};
+  Process() : sim(0) {};
 
     /** @brief action executed when the process is initialized.
      *
@@ -203,6 +251,9 @@ class Process {
      *  scheduled before the call to Sim::stop_process.
      **/
     virtual void	stop(void) {};
+
+  Sim * sim;
+
 };
 
 /** @brief utility Process class providing a utility interface with the
@@ -303,6 +354,7 @@ public:
     virtual void handle_terminated(ProcessId p, const Event * e) throw() {}
 };
 
+
 /** @brief a generic discrete-event sequential simulator
  *
  *  This class implements a generic discrete-event sequential
@@ -339,12 +391,12 @@ public:
      *  @returns the process id of the new simulation process.
      *  @see Process::init()
      **/
-    static ProcessId	create_process(Process *) throw();
+  ProcessId	create_process(Process *) throw();
 
     /** @brief stops the execution of a given process */
-    static int		stop_process(ProcessId) throw();
+  int		stop_process(ProcessId) throw();
     /** @brief stops the execution of the current process */
-    static void		stop_process() throw();
+  void		stop_process() throw();
 
    /** @brief clears out internal data structures
     *
@@ -356,7 +408,7 @@ public:
     *  Notice however that it is the responsibility of the simulation
     *  programmer to delete process objects used in the simulation.
     **/
-    static void		clear() throw();
+  void		clear() throw();
 
     /** @brief signal an event to the current process immediately
      *
@@ -372,7 +424,7 @@ public:
      *  @see signal_event(ProcessId, const Event *)
      *       and Process::process_event(const Event *).
      **/
-    static void		self_signal_event(const Event * e) throw();
+  void		self_signal_event(const Event * e) throw();
 
     /** @brief signal an event to the current process at the given time 
      *
@@ -390,7 +442,7 @@ public:
      *  @see signal_event() 
      *       and Process::process_event(const Event *).
      **/
-    static void		self_signal_event(const Event * e, Time delay) throw();
+  void		self_signal_event(const Event * e, Time delay) throw();
 
     /** @brief signal an event to the given process immediately
      *
@@ -411,7 +463,7 @@ public:
      *  @see self_signal_event() 
      *       and Process::process_event(ProcessId, const Event *).
      **/
-    static void		signal_event(ProcessId p, const Event * e) throw();
+  void		signal_event(ProcessId p, const Event * e) throw();
 
     /** @brief signal an event to the given process at the given time 
      *
@@ -434,7 +486,7 @@ public:
      *  @see self_signal_event() 
      *       and Process::process_event(const Event *).
      **/
-    static void		signal_event(ProcessId p, const Event * e, Time d) throw();
+  void		signal_event(ProcessId p, const Event * e, Time d) throw();
 
     /** @brief advance the execution time of the current process.
      *
@@ -513,7 +565,7 @@ public:
      *  @see Sim::clock().
      *  @see SimErrorHandler
      **/
-    static void		advance_delay(Time) throw();
+  void		advance_delay(Time) throw();
     
     /** @brief returns the current process
      *
@@ -536,7 +588,7 @@ public:
      *  ssim::NULL_PROCESSID NULL_PROCESSID\endlink if called outside
      *  the simulation.
      **/
-    static ProcessId	this_process() throw();
+  ProcessId	this_process() throw();
 
     /** @brief returns the current virtual time for the current process
      *  
@@ -555,12 +607,12 @@ public:
      *  @return current virtual time for the current process.
      *  @see advance_delay(Time)
      **/
-    static Time		clock() throw();
+  Time		clock() throw();
     
     /** @brief starts execution of the simulation */
-    static void		run_simulation();
+  void		run_simulation();
     /** @brief stops execution of the simulation */
-    static void		stop_simulation() throw();
+  void		stop_simulation() throw();
 
     /** @brief stops the execution of the simulation at the given time
      *
@@ -574,7 +626,7 @@ public:
      *
      *  @see stop_simulation()
      **/
-    static void		set_stop_time(Time t = INIT_TIME) throw();
+  void		set_stop_time(Time t = INIT_TIME) throw();
 
     /** @brief  registers a handler for simulation errors.
      *
@@ -583,9 +635,30 @@ public:
      *
      *  @see SimErrorHandler
      **/
-    static void		set_error_handler(SimErrorHandler *) throw();
-    static void remove_event(EventPredicate pred) throw();
+  void		set_error_handler(SimErrorHandler *) throw();
+  void remove_event(EventPredicate pred) throw();
+
+Sim();
+
+private:
+
+  Time			stop_time;
+
+  Time			current_time;
+
+  ProcessId		current_process;
+
+  bool			running;
+
+  SimErrorHandler *	error_handler;
+
+Impl::a_table_t actions;
+
+Impl::PsTable processes;
+
+friend class Impl::SimImpl;
 };
+
 
 } // end namespace ssim
 

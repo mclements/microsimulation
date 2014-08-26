@@ -25,91 +25,62 @@
 #include <vector>
 
 #include <siena/ssim.h>
-#include "heap.h"
+//#include "heap.h"
 
-namespace ssim {
+namespace ssim { 
 
-const char * Version = VERSION;
+  namespace Impl {
 
-// these are the "private" static variables and types of the Sim class
-//
-static Time			stop_time = INIT_TIME;
-static Time			current_time = INIT_TIME;
+    class SimImpl  {
+    public:
 
-static ProcessId		current_process = NULL_PROCESSID;
-
-static bool			running = false;
-
-static SimErrorHandler *	error_handler = 0;
-
-enum ActionType { 
-    A_Event, 
-    A_Init, 
-    A_Stop 
-};
+      static void schedule(Sim * sim, Time t, ActionType i, ProcessId p, 
+		  const Event * e = 0) throw();
     
-struct Action {
-    Time time;
-    ActionType type;
-    ProcessId pid;
-    const Event * event;
+      static void schedule_now(Sim * sim, ActionType i, ProcessId p, 
+		      const Event * e = 0) throw();
 
-    Action(Time t, ActionType at, ProcessId p, const Event * e = 0) throw()
-	: time(t), type(at), pid(p), event(e) {};
-
-    bool operator < (const Action & a) const throw() {
-	return time < a.time;
-    }
 };
 
-typedef heap<Action>	a_table_t;
-
-static a_table_t actions;
-
-struct PDescr {
-    Process * 	process;
-    bool terminated;
-    Time available_at;
-
-    PDescr(Process * p) 
-	: process(p), terminated(false), available_at(INIT_TIME) {}
-};
-
-typedef std::vector<PDescr> PsTable;
-static PsTable processes;
-
-class SimImpl {
-public:
-    static void schedule(Time t, ActionType i, ProcessId p, 
-			 const Event * e = 0) throw() {
+    void SimImpl::schedule(Sim * sim, Time t, ActionType i, ProcessId p, 
+			 const Event * e) throw() {
 	if (e != 0) { 
 	    ++(e->refcount); 
 	}
-	actions.insert(Action(current_time + t, i, p, e ));
+	sim->actions.insert(Action(sim->current_time + t, i, p, e ));
     }
-    static void schedule_now(ActionType i, ProcessId p, 
-			     const Event * e = 0) throw() {
+
+    void SimImpl::schedule_now(Sim * sim, ActionType i, ProcessId p, 
+			     const Event * e) throw() {
 	if (e != 0) { 
 	    ++(e->refcount); 
 	}
-	actions.insert(Action(current_time, i, p, e ));
+	sim->actions.insert(Action(sim->current_time, i, p, e ));
     }
-};
 
-ProcessId Sim::create_process(Process * p) throw() {
-    processes.push_back(PDescr(p));
+  } // namespace Impl
+
+  Sim::Sim() : stop_time(INIT_TIME), 
+		      current_time(INIT_TIME), 
+		      current_process(NULL_PROCESSID),
+		      running(false),
+		      error_handler(0) {};
+
+  ProcessId Sim::create_process(Process * p) throw() {
+    p->sim = this;
+    processes.push_back(Impl::PDescr(p));
     ProcessId newpid = processes.size() - 1;
-    SimImpl::schedule_now(A_Init, newpid);
+    Impl::SimImpl::schedule_now(this, Impl::A_Init, newpid);
     return newpid;
 }
 
-void Sim::clear() throw() {
+  void Sim::clear() throw() {
     running = false;
     current_time = INIT_TIME;
     current_process = NULL_PROCESSID;
     processes.clear();
     if (error_handler) error_handler->clear();
-    for(a_table_t::iterator a = actions.begin(); a != actions.end(); ++a) {
+    for(Impl::a_table_t::iterator a = actions.begin(); a != actions.end(); ++a) {
 	const Event * e = (*a).event;
 	if (e != 0 && --(e->refcount) == 0) 
 	    delete(e);
@@ -117,14 +88,12 @@ void Sim::clear() throw() {
     actions.clear();
 }
 
-typedef a_table_t::iterator ForwardIterator;
-
-void Sim::remove_event(EventPredicate pred) throw() {
-  ForwardIterator first = actions.begin();
-  ForwardIterator last = actions.end();
-  ForwardIterator result = first;
+  void Sim::remove_event(EventPredicate pred) throw() {
+    Impl::ForwardIterator first = actions.begin();
+  Impl::ForwardIterator last = actions.end();
+  Impl::ForwardIterator result = first;
   while (first != last) {
-    if ((*first).type != A_Event) {
+    if ((*first).type != Impl::A_Event) {
       *result = *first;
       ++result;
     } else {
@@ -142,7 +111,7 @@ void Sim::remove_event(EventPredicate pred) throw() {
 //
 // this is the simulator main loop.
 //
-void Sim::run_simulation() {
+  void Sim::run_simulation() {
     //
     // prevents anyone from re-entering the main loop.  Note that this
     // isn't meant to be thread-safe, it works if some process calls
@@ -164,7 +133,7 @@ void Sim::run_simulation() {
 	// I should say something like this:
 	// assert(current_time <= (*a).first);
 	//
-	Action action = actions.pop_first();
+	Impl::Action action = actions.pop_first();
 	current_time = action.time;
 	if (stop_time != INIT_TIME && current_time > stop_time)
 	    break;
@@ -175,7 +144,7 @@ void Sim::run_simulation() {
 	// simulator main loop, therefore efficiency is crucial.
 	// Perhaps I should check.  This is somehow a design choice.
 	//
-	PDescr & pd = processes[current_process];
+	Impl::PDescr & pd = processes[current_process];
 
 	if (pd.terminated) {
 	    if (error_handler) 
@@ -186,13 +155,13 @@ void Sim::run_simulation() {
 		error_handler->handle_busy(current_process, action.event);
 	} else {
 	    switch (action.type) {
-	    case A_Event:
+	    case Impl::A_Event:
 		pd.process->process_event(action.event);
 		break;
-	    case A_Init: 
+	    case Impl::A_Init: 
 		pd.process->init(); 
 		break;
-	    case A_Stop: 
+	    case Impl::A_Stop: 
 		pd.process->stop();
 		//
 		// here we must use processes[current_process] instead
@@ -224,60 +193,60 @@ void Sim::run_simulation() {
     running = false;
 }
 
-void Sim::set_stop_time(Time t) throw() {
+  void Sim::set_stop_time(Time t) throw() {
     stop_time = t;
 }
 
-void Sim::stop_process() throw() {
-    SimImpl::schedule_now(A_Stop, current_process); 
+  void Sim::stop_process() throw() {
+    Impl::SimImpl::schedule_now(this, Impl::A_Stop, current_process); 
 }
 
-int Sim::stop_process(ProcessId pid) throw() {
+  int Sim::stop_process(ProcessId pid) throw() {
     if (processes[pid].terminated) return -1;
-    SimImpl::schedule_now(A_Stop, pid); 
+    Impl::SimImpl::schedule_now(this, Impl::A_Stop, pid); 
     return 0;
 }
 
-void Sim::stop_simulation() throw() {
+  void Sim::stop_simulation() throw() {
     running = false;
 }
 
-void Sim::advance_delay(Time delay) throw() {
+  void Sim::advance_delay(Time delay) throw() {
     if (!running) return;
     current_time += delay;
 }
 
-ProcessId Sim::this_process() throw() {
+  ProcessId Sim::this_process() throw() {
     return current_process;
 }
 
-Time Sim::clock() throw() {
+  Time Sim::clock() throw() {
     return current_time;
 }
 
-void Sim::self_signal_event(const Event * e) throw() {
-    SimImpl::schedule_now(A_Event, current_process, e);
+  void Sim::self_signal_event(const Event * e) throw() {
+    Impl::SimImpl::schedule_now(this, Impl::A_Event, current_process, e);
 }
 
-void Sim::self_signal_event(const Event * e, Time d) throw() {
-    SimImpl::schedule(d, A_Event, current_process, e);
+  void Sim::self_signal_event(const Event * e, Time d) throw() {
+    Impl::SimImpl::schedule(this, d, Impl::A_Event, current_process, e);
 }
 
-void Sim::signal_event(ProcessId pid, const Event * e) throw() {
-    SimImpl::schedule_now(A_Event, pid, e);
+  void Sim::signal_event(ProcessId pid, const Event * e) throw() {
+    Impl::SimImpl::schedule_now(this, Impl::A_Event, pid, e);
 }
 
-void Sim::signal_event(ProcessId pid, const Event * e, Time d) throw() {
-    SimImpl::schedule(d, A_Event, pid, e);
+  void Sim::signal_event(ProcessId pid, const Event * e, Time d) throw() {
+    Impl::SimImpl::schedule(this, d, Impl::A_Event, pid, e);
 }
 
-void Sim::set_error_handler(SimErrorHandler * eh) throw() {
+  void Sim::set_error_handler(SimErrorHandler * eh) throw() {
     error_handler = eh;
 }
 
 ProcessId ProcessWithPId::activate() throw() {
     if (process_id == NULL_PROCESSID) {
-	return process_id = Sim::create_process(this);
+	return process_id = sim->create_process(this);
     } else {
 	return NULL_PROCESSID;
     }

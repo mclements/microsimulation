@@ -136,11 +136,12 @@ namespace {
     int id;
     double cohort;
     bool everPSA, previousNegativeBiopsy, organised;
-    FhcrcPerson(const int id = 0, const double cohort = 1950) : 
-      id(id), cohort(cohort) { };
+    FhcrcPerson(const int i = 0, const double coh = 1950) : id(i), cohort(coh) { };
     double ymean(double t);
     double y(double t);
     void init();
+    // double now() { return ssim::now(sim); }
+    // void RemoveKind(short kind) { ssim::RemoveKind(sim, kind); }
     virtual void handleMessage(const cMessage* msg);
   };
 
@@ -305,7 +306,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       record(parameters,"age_d",now());
       revise(parameters,"pca_death",1.0);
     }
-    FhcrcPerson::clear();
+    sim->stop_simulation(); // Sim::stop_simulation();
     break;
 
   case toOtherDeath:
@@ -314,7 +315,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
     }
-    FhcrcPerson::clear();
+    sim->stop_simulation();
     break;
 
   case toLocalised:
@@ -639,12 +640,14 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   report.setPartition(ages);
   costs.setPartition(ages);
 
+  Sim sim;
+
   // main loop
-  for (int i = 0; i < n; ++i) {
+  for (int i = 0; i < n; i++) {
     person = FhcrcPerson(i+firstId,cohort[i]);
-    Sim::create_process(&person);
-    Sim::run_simulation();
-    Sim::clear();
+    sim.create_process(&person);
+    sim.run_simulation();
+    sim.clear();
     rngNh->nextSubstream();
     rngOther->nextSubstream();
     rngScreen->nextSubstream();
