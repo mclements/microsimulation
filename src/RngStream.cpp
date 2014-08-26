@@ -20,7 +20,7 @@
 
 #include <cstdlib>
 //#include <iostream>
-#include <R.h>
+//#include <R.h>
 #include "RngStream.h"
 
 namespace ssim {
@@ -215,30 +215,30 @@ int CheckSeed (const unsigned long seed[6])
 
     for (i = 0; i < 3; ++i) {
         if (seed[i] >= m1) {
-	  REprintf("****************************************\n");
-          REprintf("ERROR: Seed[%i] >= 4294967087, Seed is not set.",i);
-          REprintf("\n****************************************\n\n");
+	  // REprintf("****************************************\n");
+          // REprintf("ERROR: Seed[%i] >= 4294967087, Seed is not set.",i);
+          // REprintf("\n****************************************\n\n");
             return (-1);
         }
     }
     for (i = 3; i < 6; ++i) {
         if (seed[i] >= m2) {
-	  REprintf("*****************************************\n");
-	  REprintf("ERROR: Seed[%i] >= 4294944443, Seed is not set.",i);
-	  REprintf("\n*****************************************\n\n");
+	  // REprintf("*****************************************\n");
+	  // REprintf("ERROR: Seed[%i] >= 4294944443, Seed is not set.",i);
+	  // REprintf("\n*****************************************\n\n");
 	  return (-1);
         }
     }
     if (seed[0] == 0 && seed[1] == 0 && seed[2] == 0) {
-      REprintf("****************************\n");
-      REprintf("ERROR: First 3 seeds = 0.\n");
-      REprintf("****************************\n\n");
+      // REprintf("****************************\n");
+      // REprintf("ERROR: First 3 seeds = 0.\n");
+      // REprintf("****************************\n\n");
       return (-1);
     }
     if (seed[3] == 0 && seed[4] == 0 && seed[5] == 0) {
-      REprintf("****************************\n");
-      REprintf("ERROR: Last 3 seeds = 0.\n");
-      REprintf("****************************\n\n");
+      // REprintf("****************************\n");
+      // REprintf("ERROR: Last 3 seeds = 0.\n");
+      // REprintf("****************************\n\n");
       return (-1);
     }
 

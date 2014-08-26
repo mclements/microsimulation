@@ -1,9 +1,20 @@
 #include "microsimulation.h"
+#include "rngstream-boost.hpp"
+#include <boost/random/uniform_01.hpp>
 
 namespace {
 
 using namespace std;
 using namespace ssim;
+
+  boost::uniform_01<> U;
+  boost::rngstream gen;
+
+  double rweibull(boost::rngstream gen, double shape, double scale) {
+    double u = U(gen);
+    double t = scale * exp(log(-log(u))/shape);
+    return t;
+  }
 
 enum state_t {Healthy,Cancer,Death};
 
@@ -26,10 +37,10 @@ map<string, vector<double> > report;
  */
 void SimplePerson::init() {
   state = Healthy;
-  double tm = R::rweibull(8.0,85.0); 
+  double tm = rweibull(gen,8.0,85.0); 
   scheduleAt(tm,toCheck);
   scheduleAt(tm,toOtherDeath);
-  scheduleAt(R::rweibull(3.0,90.0),toCancer);
+  scheduleAt(rweibull(gen,3.0,90.0),toCancer);
 }
 
 void Reporting(string name,double value)  {
@@ -56,8 +67,8 @@ void SimplePerson::handleMessage(const cMessage* msg) {
     
   case toCancer:
     state = Cancer;
-    if (R::runif(0.0,1.0) < 0.5)
-      scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
+    if (U(gen) < 0.5)
+      scheduleAt(now() + rweibull(gen,2.0,10.0), toCancerDeath);
     break;
 
   case toCheck:
