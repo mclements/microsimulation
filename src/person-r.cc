@@ -118,11 +118,11 @@ void Person::handleMessage(const cMessage* msg) {
   rng["NH"]->set(); 
 
   if (msg->kind == toDeath) {
-    Sim::stop_simulation();
+    Person::clear();
   }
  
   else if (msg->kind == toPCDeath) {
-    Sim::stop_simulation(); 
+    Person::clear();
   }
   
   else if (msg->kind == toLocalised) {
@@ -201,6 +201,7 @@ extern "C" {
       seed[i]=(unsigned long)inseed2[i];
     }
     //r_create_current_stream();
+    Sim sim;
     RngStream::SetPackageSeed(seed);
     Person::resetPopulation();
     Person::rng["NH"] = new Rng();
@@ -212,9 +213,9 @@ extern "C" {
       Person::rng["NH"]->nextSubstream();
       Person::rng["S"]->nextSubstream();
       person = Person(i);
-      Sim::create_process(&person);
-      Sim::run_simulation();
-      Sim::clear();
+      sim.create_process(&person);
+      sim.run_simulation();
+      sim.clear();
     }
     // tidy up -- what needs to be deleted?
     delete Person::rng["NH"];
@@ -244,11 +245,12 @@ extern "C" {
 
   RcppExport SEXP callSpeedTest() {
     VerySimple simple;
+    Sim sim;
     for (int i = 0; i < 1000000; i++) {
       simple = VerySimple();      
-      Sim::create_process(&simple);
-      Sim::run_simulation();
-      Sim::clear();
+      sim.create_process(&simple);
+      sim.run_simulation();
+      sim.clear();
     }
     return Rcpp::wrap(1);
     

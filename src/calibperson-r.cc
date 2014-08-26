@@ -64,6 +64,8 @@ public:
   
   static void resetPopulation ();
   
+  CalibPerson() {}; // default constructor
+
   CalibPerson(double *par, int i=0) {
     Lam1=par[0];
     sigm1=par[1];
@@ -133,7 +135,7 @@ void CalibPerson::handleMessage(const cMessage* msg) {
       
     }
 	  
-    Sim::stop_simulation();
+    CalibPerson::clear();
   }
  	
   else if (msg->kind == toPrecursor) {
@@ -174,19 +176,22 @@ extern "C" {
     Rcpp::List parmsl(parms);
     int nin = Rcpp::as<int>(parmsl["n"]);
     std::vector<double> par = Rcpp::as<std::vector<double> >(parmsl["runpar"]);
-	  
+
+    Sim sim;
+    CalibPerson person;
+
     CalibPerson::resetPopulation();
     rng = new Rng();
     rng->set();
     
     CalibPerson::report.insert(make_pair("TimeAtRisk", std::vector<double>()));
     
-    CalibPerson person = CalibPerson(&par[0],0);
     for (int i = 0; i < nin; i++) {
+      person = CalibPerson(&par[0],0);
       rng->nextSubstream();
-      Sim::create_process(&person);
-      Sim::run_simulation();
-      Sim::clear();
+      sim.create_process(&person);
+      sim.run_simulation();
+      sim.clear();
     }
 
     delete rng;

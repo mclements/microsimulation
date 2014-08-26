@@ -306,7 +306,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       record(parameters,"age_d",now());
       revise(parameters,"pca_death",1.0);
     }
-    sim->stop_simulation(); // Sim::stop_simulation();
+    FhcrcPerson::clear();
     break;
 
   case toOtherDeath:
@@ -315,7 +315,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
     }
-    sim->stop_simulation();
+    FhcrcPerson::clear();
     break;
 
   case toLocalised:

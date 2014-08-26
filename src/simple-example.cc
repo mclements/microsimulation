@@ -51,7 +51,7 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 
   case toOtherDeath: 
   case toCancerDeath: 
-    Sim::stop_simulation();
+    SimplePerson::clear();
     break;
     
   case toCancer:
@@ -86,11 +86,12 @@ RcppExport SEXP callSimplePerson(SEXP parms) {
   Rcpp::List parmsl(parms);
   int n = Rcpp::as<int>(parmsl["n"]);
   report.clear();
+  Sim sim;
   for (int i = 0; i < n; i++) {
     person = SimplePerson(i);
-    Sim::create_process(&person);
-    Sim::run_simulation();
-    Sim::clear();
+    sim.create_process(&person);
+    sim.run_simulation();
+    sim.clear();
   }
   return Rcpp::wrap(report);
 } 

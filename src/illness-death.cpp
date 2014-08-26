@@ -52,7 +52,7 @@ namespace illnessDeath {
     case toOtherDeath: 
     case toCancerDeath: 
       // reporting already completed: stop the simulation
-      Sim::stop_simulation();
+      SimplePerson::clear();
       break;
       
     case toCancer:
@@ -84,11 +84,13 @@ namespace illnessDeath {
     report.clear();
     report.setPartition(ages);
     
+    Sim sim;
+
     for (int i = 0; i < n; i++) {
       person = SimplePerson(i);
-      Sim::create_process(&person);
-      Sim::run_simulation();
-      Sim::clear();
+      sim.create_process(&person);
+      sim.run_simulation();
+      sim.clear();
     }
     return report.out();
   } 
