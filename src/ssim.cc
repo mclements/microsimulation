@@ -72,7 +72,7 @@ namespace ssim {
     ProcessId newpid = processes.size() - 1;
     Impl::SimImpl::schedule_now(this, Impl::A_Init, newpid);
     return newpid;
-}
+  }
 
   void Sim::clear() throw() {
     running = false;
@@ -244,18 +244,19 @@ namespace ssim {
     error_handler = eh;
 }
 
-ProcessId ProcessWithPId::activate() throw() {
-    if (process_id == NULL_PROCESSID) {
-	return process_id = sim->create_process(this);
+  ProcessId Sim::create_process(ProcessWithPId * p) throw() {
+    if (p->process_id == NULL_PROCESSID) {
+      p->process_id = Sim::create_process((Process *) p);
+      return p->process_id;
     } else {
-	return NULL_PROCESSID;
+      return NULL_PROCESSID;
     }
-}
+  }
 
-ProcessWithPId::ProcessWithPId() throw(): process_id(NULL_PROCESSID) {}
+  ProcessWithPId::ProcessWithPId() throw(): process_id(NULL_PROCESSID) {}
 
-ProcessId ProcessWithPId::pid() const throw() {
+  ProcessId ProcessWithPId::pid() const throw() {
     return process_id;
-}
+  }
 
 } // namespace ssim

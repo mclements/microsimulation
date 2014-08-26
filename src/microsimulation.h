@@ -31,6 +31,8 @@
 #ifndef MICROSIMULATION_H
 #define MICROSIMULATION_H
 
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+
 #include <RcppCommon.h>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
@@ -200,7 +202,6 @@ inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessa
       return (msg != 0 && pid == msg->pid && msg->kind == k); 
   }
 
-
 /**
    @brief cProcess class for OMNET++ API compatibility.
    This provides a default for Process::process_event() that calls
@@ -209,9 +210,7 @@ inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessa
  */
 class cProcess : public ssim::ProcessWithPId {
 public:
- cProcess() : previousEventTime(0.0) { 
-    this->activate(); 
-  }; 
+ cProcess() : previousEventTime(0.0) { } 
   virtual void handleMessage(const cMessage * msg) = 0;
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
