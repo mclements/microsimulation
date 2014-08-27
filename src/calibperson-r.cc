@@ -63,6 +63,8 @@ public:
   static std::map<std::string, std::vector<double> > report;
   
   static void resetPopulation ();
+
+  CalibPerson() {} // default constructor
   
   CalibPerson(double *par, int i=0) {
     Lam1=par[0];
@@ -181,8 +183,9 @@ extern "C" {
     
     CalibPerson::report.insert(make_pair("TimeAtRisk", std::vector<double>()));
     
-    CalibPerson person = CalibPerson(&par[0],0);
+    CalibPerson person;
     for (int i = 0; i < nin; i++) {
+      person = CalibPerson(&par[0],0);
       rng->nextSubstream();
       Sim::create_process(&person);
       Sim::run_simulation();

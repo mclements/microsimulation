@@ -206,25 +206,25 @@ class Process {
 };
 
 /** @brief utility Process class providing a utility interface with the
- *  simulator.
+ *  simulator. 
  *
  *  This is a sligtly more advanced Process class that provides 
  *  automatic management of its own process id.
  **/
 class ProcessWithPId : public Process {
  public:
-    /** @brief activates this process within the simulator.
-     *
-     *  Creates a simulator process with this process object.  The
-     *  same ProcessWithPId can be activated only once.
-     *
-     *  @return the ProcessId of the created simulator process. Or
-     *  NULL_PROCESSID if this process object is not associated with a
-     *  simulation process.
-     *
-     *  @see Sim::create_process(Process*)
-     **/
-    ProcessId		activate() throw();
+    // /** @brief activates this process within the simulator.
+    //  *
+    //  *  Creates a simulator process with this process object.  The
+    //  *  same ProcessWithPId can be activated only once.
+    //  *
+    //  *  @return the ProcessId of the created simulator process. Or
+    //  *  NULL_PROCESSID if this process object is not associated with a
+    //  *  simulation process.
+    //  *
+    //  *  @see Sim::create_process(Process*)
+    //  **/
+    // ProcessId		activate() throw();
 
     /** @brief process id of this process.
      *
@@ -238,6 +238,7 @@ class ProcessWithPId : public Process {
 
  private:
     ProcessId process_id;
+    friend class Sim;
 };
 
 /** @brief an error handler for simulation errors.
@@ -340,6 +341,20 @@ public:
      *  @see Process::init()
      **/
     static ProcessId	create_process(Process *) throw();
+
+    /** @brief creates a new process
+     *
+     *  Creates a new process with the given ProcessWithPId object.  This
+     *  method schedules the execution of the \link Process::init()
+     *  init\endlink method for the given object.
+     *
+     *  This method can be used safely within the simulation as well
+     *  as outside the simulation.
+     *
+     *  @returns the process id of the new simulation process.
+     *  @see Process::init()
+     **/
+    static ProcessId	create_process(ProcessWithPId *) throw();
 
     /** @brief stops the execution of a given process */
     static int		stop_process(ProcessId) throw();

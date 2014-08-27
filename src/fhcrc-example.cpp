@@ -93,7 +93,9 @@ namespace {
     obj[variable].push_back(value);
   }
   void revise(map<string, vector<double> > & obj, const string variable, const double value) {
-    *(--obj[variable].end()) = value;
+    //*(--obj[variable].end()) = value;
+    obj[variable].pop_back();
+    obj[variable].push_back(value);
   }
 
 

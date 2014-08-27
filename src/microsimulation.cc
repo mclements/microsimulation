@@ -46,16 +46,16 @@ namespace ssim {
     }
     
     void r_set_user_random_seed(double * inseed) {
-      unsigned long seed[6];
+      double seed[6];
       for(int i=0; i<6; i++) {
-	seed[i] = (unsigned long)inseed[i];
+	seed[i] = inseed[i];
       }
       Rng::SetPackageSeed(seed);
       default_stream->SetSeed(seed);
     }
     
     void r_get_user_random_seed(double * outseed) {
-      unsigned long seed[6];
+      double seed[6];
       default_stream->GetState(seed);
       for(int i=0; i<6; i++) {
 	outseed[i] = (double)seed[i];

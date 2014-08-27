@@ -23,6 +23,7 @@
 #define RNGSTREAM_H
  
 #include <string>
+#include <stdint.h>
 
 namespace ssim {
 
@@ -33,7 +34,7 @@ public:
 RngStream (const char *name = "");
 
 
-static bool SetPackageSeed (const unsigned long seed[6]);
+static bool SetPackageSeed (const double seed[6]);
 
 
 void ResetStartStream ();
@@ -51,13 +52,13 @@ void SetAntithetic (bool a);
 void IncreasedPrecis (bool incp);
 
 
-bool SetSeed (const unsigned long seed[6]);
+bool SetSeed (const double seed[6]);
 
 
-void AdvanceState (long e, long c);
+void AdvanceState (int32_t e, int32_t c);
 
 
-void GetState (unsigned long seed[6]) const;
+void GetState (double seed[6]) const;
 
 
 /* void WriteState () const; */

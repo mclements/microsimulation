@@ -31,6 +31,8 @@
 #ifndef MICROSIMULATION_H
 #define MICROSIMULATION_H
 
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+
 #include <RcppCommon.h>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
@@ -209,9 +211,7 @@ inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessa
  */
 class cProcess : public ssim::ProcessWithPId {
 public:
- cProcess() : previousEventTime(0.0) { 
-    this->activate(); 
-  }; 
+ cProcess() : previousEventTime(0.0) { } 
   virtual void handleMessage(const cMessage * msg) = 0;
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
@@ -372,7 +372,7 @@ class Rng : public RngStream {
   result_type max() { return 1.0; }
   Rng() : RngStream() { id = ++counter_id; }
   ~Rng();
-  void seed(const unsigned long seed[6]) {
+  void seed(const double seed[6]) {
     SetSeed(seed);
   }
   void set();
