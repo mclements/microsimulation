@@ -14,6 +14,8 @@ int main() {
   std::cout << "Expected: 0.759582; observed: " << runif(gen[1]) << std::endl;
   gen[0].ResetNextSubstream();
   std::cout << "Expected: 0.079399; observed: " << runif(gen[0]) << std::endl;
+  for (int i = 0; i<1e5; ++i)
+    runif(gen[0]);
   return 0;
 }
 // g++ -I. -I/home/marcle/R/x86_64-pc-linux-gnu-library/3.1/BH/include rngstream-example.cpp
