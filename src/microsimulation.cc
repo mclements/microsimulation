@@ -15,13 +15,16 @@ namespace ssim {
   static double rn = 0.0;
   
   Rng::~Rng() {
-    if (current_stream->id == this->id)
-      current_stream = default_stream;
+    if (current_stream->id == this->id) // Is this the current stream?
+      current_stream = default_stream;  // If so, change the current stream to being the default
   }
   
   void Rng::set() {
-    current_stream = this;
+    current_stream = this; // make this the current stream
   }
+
+  Rng * Rng::get_default_stream() { return default_stream; }
+  Rng * Rng::get_current_stream() { return current_stream; }
   
   extern "C" {
     
@@ -36,21 +39,13 @@ namespace ssim {
       delete default_stream;
     }
     
-    void r_set_user_random_seed(double * inseed) {
-      unsigned long seed[6];
-      for(int i=0; i<6; i++) {
-	seed[i] = (unsigned long)inseed[i];
-      }
-      Rng::SetPackageSeed(seed);
+    void r_set_user_random_seed(double * seed) {
+      Rng::SetPackageSeed(seed); // sets the package seed and default stream's seed with the same value 
       default_stream->SetSeed(seed);
     }
     
-    void r_get_user_random_seed(double * outseed) {
-      unsigned long seed[6];
+    void r_get_user_random_seed(double * seed) {
       default_stream->GetState(seed);
-      for(int i=0; i<6; i++) {
-	outseed[i] = (double)seed[i];
-      }
     }
     
     void r_next_rng_substream() {

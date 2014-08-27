@@ -196,9 +196,9 @@ extern "C" {
     Rcpp::List parmsl(parms);
     Rcpp::IntegerVector inseed2(inseed);
     int nin = Rcpp::as<int>(parmsl["n"]);
-    unsigned long seed[6];
+    double seed[6];
     for (int i=0; i<6; i++) {
-      seed[i]=(unsigned long)inseed2[i];
+      seed[i]=inseed2[i];
     }
     //r_create_current_stream();
     Sim sim;

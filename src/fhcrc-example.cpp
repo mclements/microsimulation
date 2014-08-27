@@ -1,6 +1,11 @@
 #include "microsimulation.h"
 
 #include <boost/algorithm/cxx11/iota.hpp>
+#include "rngstream-boost.hpp"
+#include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/weibull_distribution.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/exponential_distribution.hpp>
 
 namespace {
 
@@ -29,11 +34,24 @@ namespace {
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
+  typedef boost::random::weibull_distribution<> Weibull;
+  typedef boost::random::normal_distribution<> Normal;
+  typedef boost::random::exponential_distribution<> Exponential;
+  typedef boost::random::uniform_real_distribution<> Uniform;
+  Uniform runif;
+  Weibull rweibull;
+  Normal rnorm;
+  Exponential rexp;
+  double rnormPos(boost::rngstream gen, Normal::param_type param) {
+    double x;
+    while ((x=rnorm(gen,param))<0.0) { }
+    return x;
+  }
+
   typedef boost::tuple<short,short,short,bool,double> FullState;
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
-  // CostReport<string,double,long> costs;
   CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
@@ -83,7 +101,7 @@ namespace {
   // new parameters (we need to merge the old and new implementations)
   double c_low_grade_slope=-0.006;
 
-  Rng * rngNh, * rngOther, * rngScreen, * rngTreatment;
+  boost::rngstream genNh, genOther, genScreen, genTreatment;
   Rpexp rmu0;
 
   /** 
@@ -158,7 +176,7 @@ namespace {
       Calculate the *measured* PSA value at a given time (** NB: time = age - 35 **)
   */
   double FhcrcPerson::y(double t) {
-      double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(tau2)));
+    double yt = FhcrcPerson::ymean(t)*exp(rnorm(genNh,Normal::param_type(0.0, sqrt(tau2))));
       return yt;
     }
 
@@ -174,20 +192,19 @@ void FhcrcPerson::init() {
   state = Healthy;
   dx = NotDiagnosed;
   everPSA = previousNegativeBiopsy = organised = adt = false;
-  rngNh->set();
-  t0 = sqrt(2*R::rexp(1.0)/g0);
+  t0 = sqrt(2*rexp(genNh)/g0);
   y0 = ymean(t0);
-  grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
-  beta0 = R::rnorm(mubeta0,sebeta0); 
-  beta1 = R::rnormPos(mubeta1,sebeta1); 
-  beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]); 
-  tm = (log((beta1+beta2)*R::rexp(1.0)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
+  grade = (runif(genNh)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
+  beta0 = rnorm(genNh,Normal::param_type(mubeta0,sebeta0)); 
+  beta1 = rnormPos(genNh,Normal::param_type(mubeta1,sebeta1)); 
+  beta2 = rnormPos(genNh,Normal::param_type(mubeta2[grade],sebeta2[grade])); 
+  tm = (log((beta1+beta2)*rexp(genNh)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
-  tc = (log((beta1+beta2)*R::rexp(1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
-  tmc = (log((beta1+beta2)*R::rexp(1.0)/(gc*thetac) + ym) - beta0 + beta2*t0) / (beta1+beta2);
-  aoc = rmu0.rand(R::runif(0.0,1.0));
+  tc = (log((beta1+beta2)*rexp(genNh,1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
+  tmc = (log((beta1+beta2)*rexp(genNh)/(gc*thetac) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+  aoc = rmu0.rand(runif(genNh));
   ext_grade= (grade==base::Gleason_le_7) ? 
-    (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
+    (runif(genNh)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
     ext::Gleason_ge_8;
   EventCost = 0;
   tx = no_treatment;
@@ -197,13 +214,12 @@ void FhcrcPerson::init() {
   scheduleAt(aoc,toOtherDeath);
 
   // schedule screening events
-  rngScreen->set();
-  if (R::runif(0.0,1.0)<screeningCompliance) {
+  if (runif(genScreen)<screeningCompliance) {
     switch(screen) {
     case noScreening:
       break; // no screening
     case randomScreen50to70:
-      scheduleAt(R::runif(50.0,70.0),toScreen);
+      scheduleAt(runif(genScreen,Uniform::param_type(50.0,70.0)),toScreen);
       break;
     case twoYearlyScreen50to70:
       for (double start = 50.0; start<=70.0; start += 2.0) {
@@ -229,9 +245,9 @@ void FhcrcPerson::init() {
     case screenUptake: {
       // screening participation increases with time
       if (1995.0 - cohort < 50.0) 
-	scheduleAt(50.0 + R::rweibull(2.0,10.0), toScreen);
+	scheduleAt(50.0 + rweibull(genScreen,Weibull::param_type(2.0,10.0)), toScreen);
       else
-	scheduleAt(1995.0 - cohort + R::rweibull(2.0,10.0), toScreen);
+	scheduleAt(1995.0 - cohort + rweibull(genScreen,Weibull::param_type(2.0,10.0)), toScreen);
       // for re-screening patterns: see handleMessage()
     } break;
     default:
@@ -239,13 +255,11 @@ void FhcrcPerson::init() {
       break;
     }
   }
-  if (R::runif(0.0,1.0)<studyParticipation &&
+  if (runif(genNh)<studyParticipation &&
       ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
       (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
-    scheduleAt(R::runif(2013.0,2015.0) - cohort, toOrganised);
+    scheduleAt(runif(genScreen,Uniform::param_type(2013.0,2015.0)) - cohort, toOrganised);
   }
-
-  rngNh->set();
 
   // record some parameters
   // faster: initialise the length of the vectors and use an index
@@ -291,8 +305,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     record(lifeHistories,"end", now());
     record(lifeHistories,"psa", psa);
   }
-  // by default, use the natural history RNG
-  rngNh->set();
 
   // handle messages by kind
 
@@ -342,11 +354,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toTreatment);
     // switch(state) {
     // case Localised:
-    //   if (R::runif(0.0,1.0) < 0.5) // 50% not cured
+    //   if (runif(genNh) < 0.5) // 50% not cured
     // 	scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
     //   break;
     // case Metastatic:
-    //   if (R::runif(0.0,1.0) < 0.75) // 75% not cured
+    //   if (runif(genNh) < 0.75) // 75% not cured
     // 	scheduleAt(now() + R::rweibull(2.0,3.0), toCancerDeath);
     //   break;
     // default:
@@ -380,7 +392,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (psa>=psaThreshold) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } else { // re-screening schedules
-      rngScreen->set();
       if (organised) {
 	switch (screen) {
 	case stockholm3_goteborg:
@@ -408,11 +419,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	case stockholm3_risk_stratified:
 	  double age_screen;
 	  if (psa<3)
-	    age_screen = now() + R::rweibull(1.16,4.79);
+	    age_screen = now() + rweibull(genScreen,Weibull::param_type(1.16,4.79));
 	  else if (psa<4)
-	    age_screen = now() + R::rweibull(0.913,2.94);
+	    age_screen = now() + rweibull(genScreen,Weibull::param_type(0.913,2.94));
 	  else
-	    age_screen = now() + R::rweibull(0.335,0.188);
+	    age_screen = now() + rweibull(genScreen,Weibull::param_type(0.335,0.188));
 	  // what if age_screen >= 70.0?
 	  scheduleAt(age_screen, toScreen);
 	  break;
@@ -420,7 +431,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  // do not schedule any other screens
 	  break;
 	}
-      rngNh->set();
     }
     break;
     
@@ -432,11 +442,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toTreatment);
     // switch(state) {
     // case Localised:
-    //   if (R::runif(0.0,1.0) < 0.45) // assume slightly better stage-specific cure: 55% cf. 50%
+    //   if (runif(genNh) < 0.45) // assume slightly better stage-specific cure: 55% cf. 50%
     // 	scheduleAt(tc + 35.0 + R::rweibull(2.0,10.0), toCancerDeath);
     //   break;
     // case Metastatic:
-    //   if (R::runif(0.0,1.0) < 0.70) // assume slightly better stage-specific cure: 30% cf. 25%
+    //   if (runif(genNh) < 0.70) // assume slightly better stage-specific cure: 30% cf. 25%
     // 	scheduleAt(tmc + 35.0 + R::rweibull(2.0,3.0), toCancerDeath);
     //   break;
     // default:
@@ -471,14 +481,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     } break;
 
   case toTreatment: {
-    rngTreatment->set();
     TablePrtx::key_type key = 
       TablePrtx::key_type(bounds<double>(now(),50.0,79.0),
     			  bounds<double>(year,1973.0,2004.0),
     			  int(grade));
     double pCM = prtxCM(key);
     double pRP = prtxRP(key);
-    double u = R::runif(0.0,1.0);
+    double u = runif(genTreatment);
     tx = (u<pCM)?CM:((u<pCM+pRP)?RP:RT);
     if (debug) Rprintf("Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%d, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",now(),year,state,grade,tx,u,pCM,pRP);
     if (tx == CM)
@@ -493,18 +502,16 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 				 bounds<double>(now(),50,79),
 				 bounds<double>(year,1973,2004),
 				 grade));
-    u = R::runif(0.0,1.0);
+    u = runif(genTreatment);
     if (u < pADT)  {
       adt = true;
       scheduleAt(now(), toADT);
     }
     if (debug) Rprintf("adt=%d, u=%8.6f, pADT=%8.6f\n",adt,u,pADT);
-    // reset the stream
-    rngNh->set();
     // calculate survival
     txhaz = (state == Localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
     double sxbenefit = 1;
-    u = R::runif(0.0,1.0);
+    u = runif(genNh);
     u = pow(u,1/c_baseline_specific); // global improvement to baseline survival
     double lead_time = (tc+35.0) - now();
     double txbenefit = exp(log(txhaz)+log(c_txlt_interaction)*lead_time);
@@ -553,12 +560,6 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // declarations
   FhcrcPerson person;
-
-  rngNh = new Rng();
-  rngOther = new Rng();
-  rngScreen = new Rng();
-  rngTreatment = new Rng();
-  rngNh->set();
 
   // read in the parameters
   List parms(parmsIn);
@@ -631,6 +632,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   boost::algorithm::iota(ages.begin(), ages.end(), 0.0);
   ages.push_back(1.0e+6);
 
+  // set up the random number generators
+  double seed[6];
+  Rng::get_default_stream()->GetState(seed);
+  genNh.SetSeed(seed);
+  // TODO: change the seeds for genScreen, genTreatment, genOther
+
   // re-set the output objects
   report.clear();
   costs.clear();
@@ -648,17 +655,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     sim.create_process(&person);
     sim.run_simulation();
     sim.clear();
-    rngNh->nextSubstream();
-    rngOther->nextSubstream();
-    rngScreen->nextSubstream();
-    rngTreatment->nextSubstream();
+    genNh.ResetNextSubstream();
+    genOther.ResetNextSubstream();
+    genScreen.ResetNextSubstream();
+    genTreatment.ResetNextSubstream();
   }
 
-  // tidy up
-  delete rngNh;
-  delete rngOther;
-  delete rngScreen;
-  delete rngTreatment;
 
   // output
   // TODO: clean up these objects in C++ (cf. R)

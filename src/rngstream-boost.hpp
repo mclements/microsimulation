@@ -76,9 +76,9 @@ namespace boost {
       
       /** Seeds the generator with the default seed. */
       void seed() { 
-	unsigned long seed[6];
+	double seed[6];
 	for (int i = 0; i<6; i++) 
-	  seed[i] = 12345ul;
+	  seed[i] = 12345.0;
 	SetSeed(seed);
       }
       
@@ -100,7 +100,7 @@ namespace boost {
       friend std::basic_ostream<CharT,Traits>&
       operator<<(std::basic_ostream<CharT,Traits>& os, const rngstream& r)
       { 
-	unsigned long seed[6];
+	double seed[6];
 	r.GetState (seed);
 	for (int i = 0; i<5; i++)
 	  os << seed[i] << ' ';
@@ -113,7 +113,7 @@ namespace boost {
       friend std::basic_istream<CharT,Traits>&
       operator>>(std::basic_istream<CharT,Traits>& is, rngstream& r)
       { 
-	unsigned long seed[6];
+	double seed[6];
 	for (int i = 0; i<6; i++)
 	  is >> seed[i]; 
 	r.SetSeed(seed);
@@ -127,7 +127,7 @@ namespace boost {
        */
       friend bool operator==(const rngstream& x, const rngstream& y)
       { 
-	unsigned long seedx[6], seedy[6];
+	double seedx[6], seedy[6];
 	x.GetState (seedx);
 	y.GetState (seedy);
 	for (int i = 0; i<6; i++)

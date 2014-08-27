@@ -1,20 +1,19 @@
 #include "microsimulation.h"
 #include "rngstream-boost.hpp"
 #include <boost/random/uniform_01.hpp>
+#include <boost/random/weibull_distribution.hpp>
 
 namespace {
 
 using namespace std;
 using namespace ssim;
 
-  boost::uniform_01<> U;
+  typedef boost::random::weibull_distribution<> Weibull;
+
+  boost::random::uniform_01<> runif;
+  Weibull rweibull;
   boost::rngstream gen;
-
-  double rweibull(double u, double shape, double scale) {
-    double t = scale * exp(log(-log(u))/shape);
-    return t;
-  }
-
+  
 enum state_t {Healthy,Cancer,Death};
 
 enum event_t {toOtherDeath, toCancer, toCancerDeath,toCheck};
@@ -36,10 +35,10 @@ map<string, vector<double> > report;
  */
 void SimplePerson::init() {
   state = Healthy;
-  double tm = rweibull(U(gen),8.0,85.0); 
+  double tm = rweibull(gen,Weibull::param_type(8.0,85.0)); 
   scheduleAt(tm,toCheck);
   scheduleAt(tm,toOtherDeath);
-  scheduleAt(rweibull(U(gen),3.0,90.0),toCancer);
+  scheduleAt(rweibull(gen,Weibull::param_type(3.0,90.0)),toCancer);
 }
 
 void Reporting(string name,double value)  {
@@ -66,8 +65,8 @@ void SimplePerson::handleMessage(const cMessage* msg) {
     
   case toCancer:
     state = Cancer;
-    if (U(gen) < 0.5)
-      scheduleAt(now() + rweibull(U(gen),2.0,10.0), toCancerDeath);
+    if (runif(gen) < 0.5)
+      scheduleAt(now() + rweibull(gen,Weibull::param_type(2.0,10.0)), toCancerDeath);
     break;
 
   case toCheck:

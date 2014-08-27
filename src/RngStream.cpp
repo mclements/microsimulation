@@ -18,7 +18,6 @@
  * http://www.gnu.org/copyleft/gpl.html
 */
 
-#include <cstdlib>
 //#include <iostream>
 //#include <R.h>
 #include "RngStream.h"
@@ -29,6 +28,8 @@ namespace
 {
 
 using namespace std;
+
+  typedef double Matrix[3][3];
 
 const double m1   =       4294967087.0;
 const double m2   =       4294944443.0;
@@ -44,49 +45,49 @@ const double fact =       5.9604644775390625e-8;     /* 1 / 2^24  */
 // The following are the transition matrices of the two MRG components
 // (in matrix form), raised to the powers -1, 1, 2^76, and 2^127, resp.
 
-const double InvA1[3][3] = {          // Inverse of A1p0
+const Matrix InvA1 = {          // Inverse of A1p0
        { 184888585.0,   0.0,  1945170933.0 },
        {         1.0,   0.0,           0.0 },
        {         0.0,   1.0,           0.0 }
        };
 
-const double InvA2[3][3] = {          // Inverse of A2p0
+const Matrix InvA2 = {          // Inverse of A2p0
        {      0.0,  360363334.0,  4225571728.0 },
        {      1.0,          0.0,           0.0 },
        {      0.0,          1.0,           0.0 }
        };
 
-const double A1p0[3][3] = {
+const Matrix A1p0 = {
        {       0.0,        1.0,       0.0 },
        {       0.0,        0.0,       1.0 },
        { -810728.0,  1403580.0,       0.0 }
        };
 
-const double A2p0[3][3] = {
+const Matrix A2p0 = {
        {        0.0,        1.0,       0.0 },
        {        0.0,        0.0,       1.0 },
        { -1370589.0,        0.0,  527612.0 }
        };
 
-const double A1p76[3][3] = {
+const Matrix A1p76 = {
        {      82758667.0, 1871391091.0, 4127413238.0 },
        {    3672831523.0,   69195019.0, 1871391091.0 },
        {    3672091415.0, 3528743235.0,   69195019.0 }
        };
 
-const double A2p76[3][3] = {
+const Matrix A2p76 = {
        {    1511326704.0, 3759209742.0, 1610795712.0 },
        {    4292754251.0, 1511326704.0, 3889917532.0 },
        {    3859662829.0, 4292754251.0, 3708466080.0 }
        };
 
-const double A1p127[3][3] = {
+const Matrix A1p127 = {
        {    2427906178.0, 3580155704.0,  949770784.0 },
        {     226153695.0, 1230515664.0, 3580155704.0 },
        {    1988835001.0,  986791581.0, 1230515664.0 }
        };
 
-const double A2p127[3][3] = {
+const Matrix A2p127 = {
        {    1464411153.0,  277697599.0, 1610723613.0 },
        {      32183930.0, 1464411153.0, 1022607788.0 },
        {    2824425944.0,   32183930.0, 2093834863.0 }
@@ -100,18 +101,18 @@ const double A2p127[3][3] = {
 double MultModM (double a, double s, double c, double m)
 {
     double v;
-    long a1;
+    int32_t a1;
 
     v = a * s + c;
 
     if (v >= two53 || v <= -two53) {
-        a1 = static_cast<long> (a / two17);    a -= a1 * two17;
+        a1 = static_cast<int32_t> (a / two17);    a -= a1 * two17;
         v  = a1 * s;
-        a1 = static_cast<long> (v / m);     v -= a1 * m;
+        a1 = static_cast<int32_t> (v / m);     v -= a1 * m;
         v = v * two17 + a * s + c;
     }
 
-    a1 = static_cast<long> (v / m);
+    a1 = static_cast<int32_t> (v / m);
     /* in case v < 0)*/
     if ((v -= a1 * m) < 0.0) return v += m;   else return v;
 }
@@ -121,7 +122,7 @@ double MultModM (double a, double s, double c, double m)
 // Compute the vector v = A*s MOD m. Assume that -m < s[i] < m.
 // Works also when v = s.
 //
-void MatVecModM (const double A[3][3], const double s[3], double v[3],
+void MatVecModM (const Matrix A, const double s[3], double v[3],
                  double m)
 {
     int i;
@@ -141,11 +142,12 @@ void MatVecModM (const double A[3][3], const double s[3], double v[3],
 // Compute the matrix C = A*B MOD m. Assume that -m < s[i] < m.
 // Note: works also if A = C or B = C or A = B = C.
 //
-void MatMatModM (const double A[3][3], const double B[3][3],
-                 double C[3][3], double m)
+void MatMatModM (const Matrix A, const Matrix B,
+                 Matrix C, double m)
 {
     int i, j;
-    double V[3], W[3][3];
+    double V[3];
+    Matrix W;
 
     for (i = 0; i < 3; ++i) {
         for (j = 0; j < 3; ++j)
@@ -163,7 +165,7 @@ void MatMatModM (const double A[3][3], const double B[3][3],
 //-------------------------------------------------------------------------
 // Compute the matrix B = (A^(2^e) Mod m);  works also if A = B. 
 //
-void MatTwoPowModM (const double A[3][3], double B[3][3], double m, long e)
+void MatTwoPowModM (const Matrix A, Matrix B, double m, int32_t e)
 {
    int i, j;
 
@@ -182,10 +184,10 @@ void MatTwoPowModM (const double A[3][3], double B[3][3], double m, long e)
 //-------------------------------------------------------------------------
 // Compute the matrix B = (A^n Mod m);  works even if A = B.
 //
-void MatPowModM (const double A[3][3], double B[3][3], double m, long n)
+void MatPowModM (const Matrix A, Matrix B, double m, int32_t n)
 {
     int i, j;
-    double W[3][3];
+    Matrix W;
 
     /* initialize: W = A; B = I */
     for (i = 0; i < 3; ++i)
@@ -209,7 +211,7 @@ void MatPowModM (const double A[3][3], double B[3][3], double m, long n)
 // Check that the seeds are legitimate values. Returns 0 if legal seeds,
 // -1 otherwise.
 //
-int CheckSeed (const unsigned long seed[6])
+int CheckSeed (const double seed[6])
 {
     int i;
 
@@ -253,19 +255,19 @@ int CheckSeed (const unsigned long seed[6])
 //
 double RngStream::U01 ()
 {
-    long k;
+    int32_t k;
     double p1, p2, u;
 
     /* Component 1 */
     p1 = a12 * Cg[1] - a13n * Cg[0];
-    k = static_cast<long> (p1 / m1);
+    k = static_cast<int32_t> (p1 / m1);
     p1 -= k * m1;
     if (p1 < 0.0) p1 += m1;
     Cg[0] = Cg[1]; Cg[1] = Cg[2]; Cg[2] = p1;
 
     /* Component 2 */
     p2 = a21 * Cg[5] - a23n * Cg[3];
-    k = static_cast<long> (p2 / m2);
+    k = static_cast<int32_t> (p2 / m2);
     p2 -= k * m2;
     if (p2 < 0.0) p2 += m2;
     Cg[3] = Cg[4]; Cg[4] = Cg[5]; Cg[5] = p2;
@@ -366,7 +368,7 @@ void RngStream::ResetNextSubstream ()
 
 
 //-------------------------------------------------------------------------
-bool RngStream::SetPackageSeed (const unsigned long seed[6])
+bool RngStream::SetPackageSeed (const double seed[6])
 {
    if (CheckSeed (seed))
       return false;                   // FAILURE     
@@ -377,7 +379,7 @@ bool RngStream::SetPackageSeed (const unsigned long seed[6])
 
 
 //-------------------------------------------------------------------------
-bool RngStream::SetSeed (const unsigned long seed[6])
+bool RngStream::SetSeed (const double seed[6])
 {
    if (CheckSeed (seed))
       return false;                   // FAILURE     
@@ -393,9 +395,9 @@ bool RngStream::SetSeed (const unsigned long seed[6])
 // if e = 0, let n = c.
 // Jump n steps forward if n > 0, backwards if n < 0.
 //
-void RngStream::AdvanceState (long e, long c)
+void RngStream::AdvanceState (int32_t e, int32_t c)
 {
-    double B1[3][3], C1[3][3], B2[3][3], C2[3][3];
+    Matrix B1, C1, B2, C2;
 
     if (e > 0) {
         MatTwoPowModM (A1p0, B1, m1, e);
@@ -424,57 +426,12 @@ void RngStream::AdvanceState (long e, long c)
 
 
 //-------------------------------------------------------------------------
-void RngStream::GetState (unsigned long seed[6]) const
+void RngStream::GetState (double seed[6]) const
 {
    for (int i = 0; i < 6; ++i)
-      seed[i] = static_cast<unsigned long> (Cg[i]);
+      seed[i] = Cg[i];
 }
 
-
-//-------------------------------------------------------------------------
-// void RngStream::WriteState () const
-// {
-//   std::cout << "The current state of the Rngstream";
-//     if (name.size() > 0)
-//         std::cout << " " << name;
-//     std::cout << ":\n   Cg = { ";
-
-//     for (int i = 0; i < 5; i++) {
-//         std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
-//     }
-//     std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
-// }
-
-
-//-------------------------------------------------------------------------
-// void RngStream::WriteStateFull () const
-// {
-//     int i;
-
-//     std::cout << "The RngStream";
-//     if (name.size() > 0)
-//         cout << " " << name;
-//     std::cout << ":\n   anti = " << (anti ? "true" : "false") << "\n";
-//     std::cout << "   incPrec = " << (incPrec ? "true" : "false") << "\n";
-
-//     std::cout << "   Ig = { ";
-//     for (i = 0; i < 5; i++) {
-//         std::cout << static_cast<unsigned long> (Ig [i]) << ", ";
-//     }
-//     std::cout << static_cast<unsigned long> (Ig [5]) << " }\n";
-
-//     std::cout << "   Bg = { ";
-//     for (i = 0; i < 5; i++) {
-//         std::cout << static_cast<unsigned long> (Bg [i]) << ", ";
-//     }
-//     std::cout << static_cast<unsigned long> (Bg [5]) << " }\n";
-
-//     std::cout << "   Cg = { ";
-//     for (i = 0; i < 5; i++) {
-//         std::cout << static_cast<unsigned long> (Cg [i]) << ", ";
-//     }
-//     std::cout << static_cast<unsigned long> (Cg [5]) << " }\n\n";
-// }
 
 
 //-------------------------------------------------------------------------

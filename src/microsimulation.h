@@ -372,12 +372,14 @@ class Rng : public RngStream {
   result_type max() { return 1.0; }
   Rng() : RngStream() { id = ++counter_id; }
   ~Rng();
-  void seed(const unsigned long seed[6]) {
+  void seed(const double seed[6]) {
     SetSeed(seed);
   }
   void set();
   void nextSubstream() { ResetNextSubstream(); }
   int id;
+  static Rng * get_default_stream();
+  static Rng * get_current_stream();
 };
 
 

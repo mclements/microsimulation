@@ -17,7 +17,7 @@ unsigned <- function(seed) ifelse(seed < 0, seed + 2^32, seed)
 signed <- function(seed) ifelse(seed>2^31, seed-2^32, seed)
 
 set.user.Random.seed <- function (seed) {
-  seed <- as.double(unsigned(seed))
+  ## seed <- as.double(unsigned(seed))
   if (length(seed) == 1) seed <- rep(seed,6)
   if (length(seed) == 7) seed <- seed[-1]
   .C("r_set_user_random_seed",seed = seed,PACKAGE="microsimulation")
