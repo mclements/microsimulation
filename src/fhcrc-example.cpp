@@ -191,13 +191,13 @@ void FhcrcPerson::init() {
   // change state variables
   state = Healthy;
   dx = NotDiagnosed;
-  everPSA = previousNegativeBiopsy = organised = adt = false;
   t0 = sqrt(2*rexp(genNh)/g0);
-  y0 = ymean(t0);
   grade = (runif(genNh)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
+  everPSA = previousNegativeBiopsy = organised = adt = false;
   beta0 = rnorm(genNh,Normal::param_type(mubeta0,sebeta0)); 
   beta1 = rnormPos(genNh,Normal::param_type(mubeta1,sebeta1)); 
   beta2 = rnormPos(genNh,Normal::param_type(mubeta2[grade],sebeta2[grade])); 
+  y0 = ymean(t0);
   tm = (log((beta1+beta2)*rexp(genNh)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
   tc = (log((beta1+beta2)*rexp(genNh,1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
@@ -633,9 +633,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   ages.push_back(1.0e+6);
 
   // set up the random number generators
-  double seed[6];
-  Rng::get_default_stream()->GetState(seed);
-  genNh.SetSeed(seed);
+  //double seed[6]= {12345,12345,12345,12345,12345,12345};
+  //genNh.SetSeed(seed);
   // TODO: change the seeds for genScreen, genTreatment, genOther
 
   // re-set the output objects
