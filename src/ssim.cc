@@ -275,13 +275,13 @@ void Sim::set_error_handler(SimErrorHandler * eh) throw() {
     error_handler = eh;
 }
 
-  ProcessId Sim::create_process(ProcessWithPId * p) throw() {
-    if (p->process_id == NULL_PROCESSID) {
-      return p->process_id = Sim::create_process((Process *) p);
+  ProcessId ProcessWithPId::activate() throw() {
+    if (process_id == NULL_PROCESSID) {
+      return process_id = Sim::create_process(this);
     } else {
-	return NULL_PROCESSID;
+      return NULL_PROCESSID;
     }
-}
+  }
 
 ProcessWithPId::ProcessWithPId() throw(): process_id(NULL_PROCESSID) {}
 

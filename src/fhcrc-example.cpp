@@ -150,7 +150,7 @@ namespace {
       Calculate the (geometric) mean PSA value at a given time (** NB: time = age - 35 **)
   */
   double FhcrcPerson::ymean(double t) {
-    if (t<0) t = 0; // is this the correct way to handle PSA before age 35 years?
+    if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
     double yt = t<t0 ? exp(beta0+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
     return yt;
   }
@@ -176,12 +176,12 @@ void FhcrcPerson::init() {
   dx = NotDiagnosed;
   everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
-  t0 = sqrt(2*R::rexp(1.0)/g0);
-  y0 = ymean(t0);
   grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
   beta0 = R::rnorm(mubeta0,sebeta0); 
   beta1 = R::rnormPos(mubeta1,sebeta1); 
   beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]); 
+  t0 = sqrt(2*R::rexp(1.0)/g0);
+  y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
   tc = (log((beta1+beta2)*R::rexp(1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
@@ -307,7 +307,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       record(parameters,"age_d",now());
       revise(parameters,"pca_death",1.0);
     }
-    FhcrcPerson::clear();
+    Sim::stop_simulation();
     break;
 
   case toOtherDeath:
@@ -316,7 +316,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
     }
-    FhcrcPerson::clear();
+    Sim::stop_simulation();
     break;
 
   case toLocalised:
