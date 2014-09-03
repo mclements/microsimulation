@@ -176,11 +176,11 @@ void FhcrcPerson::init() {
   dx = NotDiagnosed;
   everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
+  t0 = sqrt(2*R::rexp(1.0)/g0);
   grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
   beta0 = R::rnorm(mubeta0,sebeta0); 
   beta1 = R::rnormPos(mubeta1,sebeta1); 
   beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]); 
-  t0 = sqrt(2*R::rexp(1.0)/g0);
   y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
