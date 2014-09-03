@@ -98,9 +98,13 @@ namespace ssim {
       ++result;
     } else {
       const Event * e = (*first).event;
-      if (e != 0 && !pred(e)) {
-	*result = *first;
-      ++result;
+      if (e != 0) { 
+	if(!pred(e)) {
+	  *result = *first;
+	  ++result;
+	} else {
+	  delete(e);
+	}
       }
     }
     ++first;
