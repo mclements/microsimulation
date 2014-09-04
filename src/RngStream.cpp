@@ -366,6 +366,17 @@ void RngStream::ResetNextSubstream ()
        Cg[i] = Bg[i];
 }
 
+//-------------------------------------------------------------------------
+// Reset Stream to NextSubStream.
+//
+void RngStream::ResetNextStream ()
+{
+   MatVecModM(A1p127, Bg, Bg, m1);
+   MatVecModM(A2p127, &Bg[3], &Bg[3], m2);
+   for (int i = 0; i < 6; ++i)
+       Ig[i] = Cg[i] = Bg[i];
+}
+
 
 //-------------------------------------------------------------------------
 bool RngStream::SetPackageSeed (const double seed[6])

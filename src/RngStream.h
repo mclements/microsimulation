@@ -45,6 +45,8 @@ void ResetStartSubstream ();
 
 void ResetNextSubstream ();
 
+void ResetNextStream ();
+
 
 void SetAntithetic (bool a);
 

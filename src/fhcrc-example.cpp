@@ -634,8 +634,18 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // set up the random number generators
   //double seed[6]= {12345,12345,12345,12345,12345,12345};
-  //genNh.SetSeed(seed);
-  // TODO: change the seeds for genScreen, genTreatment, genOther
+  NumericVector seed = as<NumericVector>(parms["seed"]); 
+  genNh.SetSeed(&seed[0]);
+  genScreen.SetSeed(&seed[0]);
+  genTreatment.SetSeed(&seed[0]);
+  genOther.SetSeed(&seed[0]);
+  genScreen.ResetNextStream();
+  genTreatment.ResetNextStream();
+  genTreatment.ResetNextStream();
+  genOther.ResetNextStream();
+  genOther.ResetNextStream();
+  genOther.ResetNextStream();
+  // TODO: improve this code!
 
   // re-set the output objects
   report.clear();

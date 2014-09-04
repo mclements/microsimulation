@@ -150,6 +150,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
   RNGkind("user")
+  if (length(seed) == 1) seed <- rep(seed,6)
   set.user.Random.seed(seed)
   ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
   pop1 <- data.frame(cohort=1980:1900, pop=c(rep(17239,9), 16854, 16085, 15504, 15604, 16381, 16705, 
@@ -183,7 +184,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
     cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
     n <- length(cohort)
   } else
-    cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
+    cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE) # random number call!
   cohort <- sort(cohort)
   ## now separate the data into chunks
   chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)
@@ -218,11 +219,12 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
                   chunk <- chunks[[i]]
-                  set.user.Random.seed(initialSeeds[[i]])
+                  ## set.user.Random.seed(initialSeeds[[i]])
                   .Call("callFhcrc",
                         parms=list(n=as.integer(length(chunk)),
                             firstId=ns[i],
-                          screen=as.integer(screenIndex),
+                            seed=as.double(unsigned(initialSeeds[[i]])),
+                            screen=as.integer(screenIndex),
                           nLifeHistories=as.integer(nLifeHistories),
                           screeningCompliance=as.double(screeningCompliance),
                           studyParticipation=as.double(studyParticipation),
