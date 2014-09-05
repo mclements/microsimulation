@@ -101,9 +101,6 @@ namespace {
   // new parameters (we need to merge the old and new implementations)
   double c_low_grade_slope=-0.006;
 
-  boost::rngstream genNh, genOther, genScreen, genTreatment;
-  Rpexp rmu0;
-
   /** 
       Utilities to record information in a map<string, vector<double> > object
   */
@@ -138,6 +135,8 @@ namespace {
 		  0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
 		  0.782609};
 
+  Rpexp rmu0;
+
   class FhcrcPerson : public cProcess 
   {
   public:
@@ -154,7 +153,14 @@ namespace {
     int id;
     double cohort;
     bool everPSA, previousNegativeBiopsy, organised;
-    FhcrcPerson(const int i = 0, const double coh = 1950) : id(i), cohort(coh) { };
+    boost::rngstream genNh, genOther, genScreen, genTreatment;
+    FhcrcPerson(const int i = 0, 
+		const double coh = 1950, 
+		boost::rngstream genNh,
+		boost::rngstream genOther,
+		boost::rngstream genScreen,
+		boost::rngstream genTreatment
+		) : id(i), cohort(coh), genNh(genNh), genOther(genOther), genScreen(genScreen), genTreatment(genTreatment) { };
     double ymean(double t);
     double y(double t);
     void init();
@@ -635,16 +641,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // set up the random number generators
   //double seed[6]= {12345,12345,12345,12345,12345,12345};
   NumericVector seed = as<NumericVector>(parms["seed"]); 
-  genNh.SetSeed(&seed[0]);
-  genScreen.SetSeed(&seed[0]);
-  genTreatment.SetSeed(&seed[0]);
-  genOther.SetSeed(&seed[0]);
-  genScreen.ResetNextStream();
-  genTreatment.ResetNextStream();
-  genTreatment.ResetNextStream();
-  genOther.ResetNextStream();
-  genOther.ResetNextStream();
-  genOther.ResetNextStream();
+  // set the package seed!
+  boost::rngstream genNh[M], genOther[M], genTreatment[M], genScreen[M];
   // TODO: improve this code!
 
   // re-set the output objects
@@ -659,8 +657,11 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   Sim sim;
 
   // main loop
+  // #pragma omp for (int chunk = 0; chunk<M; ++chunk) {
+  // for (int i = 0; i < nChunkSize; i++) {
   for (int i = 0; i < n; i++) {
-    person = FhcrcPerson(i+firstId,cohort[i]);
+    person = FhcrcPerson(i+firstId,cohort[i],genNh[m],genTreatment[m],genOther[m],genScreen[m]);
+    //person = FhcrcPerson(i+firstId,cohort[i]);
     sim.create_process(&person);
     sim.run_simulation();
     sim.clear();
@@ -669,6 +670,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     genScreen.ResetNextSubstream();
     genTreatment.ResetNextSubstream();
   }
+  // } // chunk  
 
 
   // output
