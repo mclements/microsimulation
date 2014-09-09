@@ -6,6 +6,9 @@
 #include <boost/random/weibull_distribution.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
+#include <omp.h>
+#include <stdio.h>   /* Temporary for debugging*/
+#include <stdlib.h>   /* Temporary for debugging*/
 
 namespace {
 
@@ -642,7 +645,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   //double seed[6]= {12345,12345,12345,12345,12345,12345};
   NumericVector seed = as<NumericVector>(parms["seed"]); 
   // set the package seed!
-  boost::rngstream genNh[M], genOther[M], genTreatment[M], genScreen[M];
+  boost::rngstream genNh, genOther, genTreatment, genScreen;
   // TODO: improve this code!
 
   // re-set the output objects
@@ -655,13 +658,34 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   costs.setPartition(ages);
 
   Sim sim;
-
+  
   // main loop
   // #pragma omp for (int chunk = 0; chunk<M; ++chunk) {
   // for (int i = 0; i < nChunkSize; i++) {
-  for (int i = 0; i < n; i++) {
-    person = FhcrcPerson(i+firstId,cohort[i],genNh[m],genTreatment[m],genOther[m],genScreen[m]);
-    //person = FhcrcPerson(i+firstId,cohort[i]);
+
+  int nthreads, tid, i, chunk=1000;
+
+#pragma omp parallel shared(nthreads,chunk) private(i,tid)
+  {
+    /* This section only prints the number of available threads and the start each thread*/
+    tid = omp_get_thread_num();
+    if (tid == 0)
+      {
+	nthreads = omp_get_num_threads();
+	printf("Number of threads = %d\n", nthreads);
+      }
+    printf("Thread %d starting...\n",tid);
+    
+
+    /* Note that by using "dynamic" each thread will take a chunk and if
+       there are chunks left when it is finished it will start on
+       another i.e. dynamic chunk-thread allocation.*/
+
+#pragma omp for schedule(dynamic,chunk)    
+    for (int i = 0; i < n; i++) {
+    //person = FhcrcPerson(i+firstId,cohort[i],genNh[i],genTreatment[i],genOther[i],genScreen[i]);
+    printf("Does firstId follow the threads? This is firstId:%d\n", firstId)
+    person = FhcrcPerson(i+firstId,cohort[i]);
     sim.create_process(&person);
     sim.run_simulation();
     sim.clear();
@@ -669,9 +693,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     genOther.ResetNextSubstream();
     genScreen.ResetNextSubstream();
     genTreatment.ResetNextSubstream();
+    }
   }
-  // } // chunk  
-
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
