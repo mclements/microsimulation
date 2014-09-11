@@ -301,8 +301,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toCancerDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
-    //costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
-    costs.add("DeathCost",now(),DeathCost);
+    costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
       revise(parameters,"pca_death",1.0);
@@ -312,7 +311,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toOtherDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
-    costs.add("DeathCost",now(),DeathCost);
+    costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
     if (id<nLifeHistories) {
       record(parameters,"age_d",now());
     }
@@ -327,7 +326,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   
   case toMetastatic:
     EventCost += MetastaticCancerCost; // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
-    costs.add("MetastaticCancerCost",now(),MetastaticCancerCost);
+    costs.add("MetastaticCancerCost",now(),cost_parameters["MetastaticCancerCost"]); // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
@@ -364,13 +363,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toScreen:
     EventCost += InvitationCost; // cost for PSA invitation, we are missing the invitation cost for the 25% not complying
-    costs.add("InvitationCost",now(),InvitationCost);
+    costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
     if (organised) {
 	EventCost += FormalPSACost;
-	costs.add("FormalPSACost",now(),FormalPSACost); //Some formal screening scenarios don't seem to be set to organised
+	costs.add("FormalPSACost",now(),cost_parameters["FormalPSACost"]); //Some formal screening scenarios don't seem to be set to organised
     } else {
       EventCost += OpportunisticPSACost;
-      costs.add("OpportunisticPSACost",now(),OpportunisticPSACost); //cost for opportunistic PSA test
+      costs.add("OpportunisticPSACost",now(),cost_parameters["OpportunisticPSACost"]); //cost for opportunistic PSA test
     }
     if (!everPSA) {
       if (id<nLifeHistories) {
@@ -392,7 +391,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  break;
 	case stockholm3_risk_stratified:
 	  EventCost += FormalPSABiomarkerCost; //cost for biomarker panel
-	  costs.add("FormalPSABiomarkerCost",now(),FormalPSABiomarkerCost);
+	  costs.add("FormalPSABiomarkerCost",now(),cost_parameters["FormalPSABiomarkerCost"]); //cost for opportunistic PSA test
 	  if (psa<1.0)
 	    scheduleAt(now() + 8.0, toScreen);
 	  else 
@@ -451,12 +450,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
     EventCost += BiopsyCost; // cost for diagnostic biopsies
-    costs.add("BiopsyCost",now(),BiopsyCost); //cost for opportunistic PSA test
+    costs.add("BiopsyCost",now(),cost_parameters["BiopsyCost"]);
     break;
 
   case toScreenInitiatedBiopsy:
     EventCost += BiopsyCost; // cost for screening initiated biopsies
-    costs.add("BiopsyCost",now(),BiopsyCost);
+    costs.add("BiopsyCost",now(),cost_parameters["BiopsyCost"]);
       switch(state) {
       case Healthy:
 	previousNegativeBiopsy = true;
@@ -523,17 +522,18 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toRP:
     EventCost += ProstatectomyCost; // cost for radical prostatectomy
-    costs.add("ProstatectomyCost",now(),ProstatectomyCost);
+    costs.add("ProstatectomyCost",now(),cost_parameters["ProstatectomyCost"]);
     break;
 
   case toRT:
     EventCost += RadiationTherapyCost; // cost for radiation therapy
-    costs.add("RadiationTherapyCost",now(),RadiationTherapyCost);
+    costs.add("RadiationTherapyCost",now(),cost_parameters["RadiationTherapyCost"]);
     break;
 
   case toCM:
     EventCost += ActiveSurveillanceCost; // cost for contiouos monitoring
-    costs.add("ActiveSurveillanceCost",now(),ActiveSurveillanceCost);
+    costs.add("ActiveSurveillanceCost",now(),cost_parameters["ActiveSurveillanceCost"]);
+
     break; 
 
   case toADT:

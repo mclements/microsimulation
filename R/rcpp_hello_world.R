@@ -213,7 +213,16 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
       with(fhcrcData$survival_dist,
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
-  cost_parameters = c(DeathCost=10000)
+  cost_parameters = c(InvitationCost = 15,
+      FormalPSACost = 41,
+      FormalPSABiomarkerCost = 641,
+      BiopsyCost = 8082,
+      OpportunisticPSACost = 1774,
+      ProstatectomyCost = 95000,
+      RadiationTherapyCost = 135000,
+      ActiveSurveillanceCost = 140000,
+      MetastaticCancerCost = 769574,
+      DeathCost = 0)
   ## now run the chunks separately
   print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
