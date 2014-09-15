@@ -223,7 +223,7 @@ public:
     scheduleAt(t, new cMessage(-1,s));  
   }
   virtual void scheduleAt(Time t, short k) {
-    scheduleAt(t, new cMessage(k,""));  
+    scheduleAt(t, new cMessage(k,""));
   }
   
   Time previousEventTime;

@@ -22,7 +22,8 @@ namespace {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen, 
-		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT};
+		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,
+		toUtilityChange, toUtility };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
 		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
@@ -98,6 +99,17 @@ namespace {
     obj[variable].push_back(value);
   }
 
+  class cMessageUtilityChange : public cMessage {
+  public:
+    cMessageUtilityChange(double change) : cMessage(toUtilityChange), change(change) { }
+    double change;
+  };
+
+  class cMessageUtility : public cMessage {
+  public:
+    cMessageUtility(double utility) : cMessage(toUtility), utility(utility) { }
+    double utility;
+  };
 
   template<class T>
   T bounds(T x, T a, T b) {
@@ -136,10 +148,10 @@ namespace {
     bool adt; 
     double txhaz;
     int id;
-    double cohort;
+    double cohort, utility;
     bool everPSA, previousNegativeBiopsy, organised;
     FhcrcPerson(const int id = 0, const double cohort = 1950) : 
-      id(id), cohort(cohort) { };
+      id(id), cohort(cohort), utility(1.0) { };
     double ymean(double t);
     double y(double t);
     void init();
@@ -248,6 +260,16 @@ void FhcrcPerson::init() {
 
   rngNh->set();
 
+  // utilities
+  // (i) set initial baseline utility
+  utility = 0.98;
+  // (ii) schedule changes in the baseline by age
+  scheduleAt(20.0, new cMessageUtility(0.97));
+  scheduleAt(40.0, new cMessageUtility(0.96));
+  scheduleAt(60.0, new cMessageUtility(0.95));
+  scheduleAt(80.0, new cMessageUtility(0.91));
+
+
   // record some parameters
   // faster: initialise the length of the vectors and use an index
   if (id<nLifeHistories) {
@@ -280,7 +302,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
-  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
+  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now(), utility);
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);
@@ -537,9 +559,29 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break; 
 
   case toADT:
-    //EventCost += ?; //What to do whit this? Pataky: $3600
+    //EventCost += ?; //What to do with this? Pataky: $3600
     //costs.add("?",now(),?);
     break;
+
+  case toUtility:
+    {
+      const cMessageUtility * msgUtility;
+      if ((msgUtility = dynamic_cast<const cMessageUtility *>(msg)) != 0) { 
+	utility = msgUtility->utility;
+      } else {
+	REprintf("Could not cast to cMessageUtility.");
+      }
+    } break;
+
+  case toUtilityChange:
+    {
+      const cMessageUtilityChange * msgUtilityChange;
+      if ((msgUtilityChange = dynamic_cast<const cMessageUtilityChange *>(msg)) != 0) { 
+	utility += msgUtilityChange->change;
+      } else {
+	REprintf("Could not cast to cMessageUtilityChange.");
+      }
+    } break;
 
   default:
     REprintf("No valid kind of event: %i\n",msg->kind);
