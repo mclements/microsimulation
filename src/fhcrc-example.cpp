@@ -80,6 +80,7 @@ namespace {
   double studyParticipation = 35.0/260.0;
   int nLifeHistories = 10, screen = 0;
   double psaThreshold = 3.0;
+  double discountRate = 0.035;
 
   // new parameters (we need to merge the old and new implementations)
   double c_low_grade_slope=-0.006;
@@ -302,7 +303,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
-  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now(), utility);
+  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now(), utility, discountRate);
 
   if (id<nLifeHistories) { // only record up to the first n rows
     record(lifeHistories,"id", (double) id);

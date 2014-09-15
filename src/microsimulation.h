@@ -451,7 +451,16 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _prev.clear();
    _partition.clear();
  }
- void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
+ Utility discountedUtilities(Time a, Time b, Utility utility = 1.0, Utility discountRate = 0.0) {
+   if (a==b) return 0.0;
+   if (discountRate>0.0) {
+     double alpha = log(1.0+discountRate);
+     return utility/alpha*(exp(-a*alpha) - exp(-b*alpha));
+   }
+   else // assumes discount==0.0 
+     return utility * (b-a);
+ }
+ void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1, const Utility discountRate = 0.0) {
    Iterator lo, hi, it, last;
    lo = _partition.lower_bound(lhs);
    hi = _partition.lower_bound(rhs); 
@@ -463,12 +472,12 @@ inline double discountedInterval(double start, double end, double discountRate) 
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[Pair(state,*it)];
       if (it == last) {
-	_pt[Pair(state,*it)] += utility*(rhs - std::max<Time>(lhs,*it));
+	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility, discountRate);
 	// this_pt[it-this_pt.begin()] += rhs - std::max<Time>(lhs,*it);
       }
       else {
 	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
-	_pt[Pair(state,*it)] += utility*(std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it));
+	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility, discountRate);
       }
    }
  }
