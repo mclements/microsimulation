@@ -7,8 +7,8 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
 #include <omp.h>
-#include <stdio.h>   /* Temporary for debugging*/
-#include <stdlib.h>   /* Temporary for debugging*/
+//#include <stdio.h>   /* Temporary for debugging*/
+//#include <stdlib.h>   /* Temporary for debugging*/
 
 namespace {
 
@@ -55,7 +55,7 @@ namespace {
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
-  CostReport<string> costs;
+  // CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
@@ -157,8 +157,9 @@ namespace {
     double cohort;
     bool everPSA, previousNegativeBiopsy, organised;
     boost::rngstream genNh, genOther, genScreen, genTreatment;
-    FhcrcPerson(const int i = 0, 
-		const double coh = 1950, 
+    CostReport<string> costs;
+    FhcrcPerson(const int i, 
+		const double coh, 
 		boost::rngstream genNh,
 		boost::rngstream genOther,
 		boost::rngstream genScreen,
@@ -272,23 +273,23 @@ void FhcrcPerson::init() {
 
   // record some parameters
   // faster: initialise the length of the vectors and use an index
-  if (id<nLifeHistories) {
-    record(parameters,"id",double(id));
-    record(parameters,"beta0",beta0);
-    record(parameters,"beta1",beta1);
-    record(parameters,"beta2",beta2);
-    record(parameters,"t0",t0);
-    record(parameters,"tm",tm);
-    record(parameters,"tc",tc);
-    record(parameters,"tmc",tmc);
-    record(parameters,"y0",y0);
-    record(parameters,"ym",ym);
-    record(parameters,"aoc",aoc);
-    record(parameters,"cohort",cohort);
-    record(parameters,"ext_grade",ext_grade);
-    record(parameters,"age_psa",-1.0);
-    record(parameters,"pca_death",0.0);
-  }
+  // if (id<nLifeHistories) {
+  //   record(parameters,"id",double(id));
+  //   record(parameters,"beta0",beta0);
+  //   record(parameters,"beta1",beta1);
+  //   record(parameters,"beta2",beta2);
+  //   record(parameters,"t0",t0);
+  //   record(parameters,"tm",tm);
+  //   record(parameters,"tc",tc);
+  //   record(parameters,"tmc",tmc);
+  //   record(parameters,"y0",y0);
+  //   record(parameters,"ym",ym);
+  //   record(parameters,"aoc",aoc);
+  //   record(parameters,"cohort",cohort);
+  //   record(parameters,"ext_grade",ext_grade);
+  //   record(parameters,"age_psa",-1.0);
+  //   record(parameters,"pca_death",0.0);
+  // }
 }
 
 /** 
@@ -302,18 +303,18 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
-  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
+  // report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
 
-  if (id<nLifeHistories) { // only record up to the first n rows
-    record(lifeHistories,"id", (double) id);
-    record(lifeHistories,"state", (double) state);
-    record(lifeHistories,"ext_grade", (double) ext_grade);
-    record(lifeHistories,"dx", (double) dx);
-    record(lifeHistories,"event", (double) msg->kind);
-    record(lifeHistories,"begin", previousEventTime);
-    record(lifeHistories,"end", now());
-    record(lifeHistories,"psa", psa);
-  }
+  // if (id<nLifeHistories) { // only record up to the first n rows
+  //   record(lifeHistories,"id", (double) id);
+  //   record(lifeHistories,"state", (double) state);
+  //   record(lifeHistories,"ext_grade", (double) ext_grade);
+  //   record(lifeHistories,"dx", (double) dx);
+  //   record(lifeHistories,"event", (double) msg->kind);
+  //   record(lifeHistories,"begin", previousEventTime);
+  //   record(lifeHistories,"end", now());
+  //   record(lifeHistories,"psa", psa);
+  // }
 
   // handle messages by kind
 
@@ -321,21 +322,21 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toCancerDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
-    //costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
-    costs.add("DeathCost",now(),DeathCost);
-    if (id<nLifeHistories) {
-      record(parameters,"age_d",now());
-      revise(parameters,"pca_death",1.0);
-    }
+    costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
+    // costs.add("DeathCost",now(),DeathCost);
+    // if (id<nLifeHistories) {
+    //   record(parameters,"age_d",now());
+    //   revise(parameters,"pca_death",1.0);
+    // }
     FhcrcPerson::clear();
     break;
 
   case toOtherDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),DeathCost);
-    if (id<nLifeHistories) {
-      record(parameters,"age_d",now());
-    }
+    // if (id<nLifeHistories) {
+    //   record(parameters,"age_d",now());
+    // }
     FhcrcPerson::clear();
     break;
 
@@ -393,9 +394,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       costs.add("OpportunisticPSACost",now(),OpportunisticPSACost); //cost for opportunistic PSA test
     }
     if (!everPSA) {
-      if (id<nLifeHistories) {
-	revise(parameters,"age_psa",now());
-      }
+      // if (id<nLifeHistories) {
+      // 	revise(parameters,"age_psa",now());
+      // }
       everPSA = true;
     } 
     if (psa>=psaThreshold) {
@@ -568,7 +569,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // declarations
-  FhcrcPerson person;
+  // FhcrcPerson person;
 
   // read in the parameters
   List parms(parmsIn);
@@ -645,17 +646,17 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   //double seed[6]= {12345,12345,12345,12345,12345,12345};
   NumericVector seed = as<NumericVector>(parms["seed"]); 
   // set the package seed!
-  boost::rngstream genNh, genOther, genTreatment, genScreen;
+  // boost::rngstream genNh, genOther, genTreatment, genScreen;
   // TODO: improve this code!
 
   // re-set the output objects
   report.clear();
-  costs.clear();
+  // costs.clear();
   parameters.clear();
   lifeHistories.clear();
 
   report.setPartition(ages);
-  costs.setPartition(ages);
+  // costs.setPartition(ages);
 
   Sim sim;
   
@@ -665,6 +666,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   int nthreads, tid, i, chunk=1000;
 
+  //#pragma omp parallel shared(nthreads,chunk) private(i,tid,genNh,genOther,genTreatment,genScreen)
 #pragma omp parallel shared(nthreads,chunk) private(i,tid)
   {
     /* This section only prints the number of available threads and the start each thread*/
@@ -672,9 +674,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     if (tid == 0)
       {
 	nthreads = omp_get_num_threads();
-	printf("Number of threads = %d\n", nthreads);
+	Rprintf("Number of threads = %d\n", nthreads); // is this thread-safe?
       }
-    printf("Thread %d starting...\n",tid);
+    Rprintf("Thread %d starting...\n",tid);
     
 
     /* Note that by using "dynamic" each thread will take a chunk and if
@@ -682,27 +684,30 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
        another i.e. dynamic chunk-thread allocation.*/
 
 #pragma omp for schedule(dynamic,chunk)    
-    for (int i = 0; i < n; i++) {
-    //person = FhcrcPerson(i+firstId,cohort[i],genNh[i],genTreatment[i],genOther[i],genScreen[i]);
-    printf("Does firstId follow the threads? This is firstId:%d\n", firstId)
-    person = FhcrcPerson(i+firstId,cohort[i]);
-    sim.create_process(&person);
-    sim.run_simulation();
-    sim.clear();
-    genNh.ResetNextSubstream();
-    genOther.ResetNextSubstream();
-    genScreen.ResetNextSubstream();
-    genTreatment.ResetNextSubstream();
+    for (i = 0; i < n; i++) {
+      //person = FhcrcPerson(i+firstId,cohort[i],genNh[i],genTreatment[i],genOther[i],genScreen[i]);
+      boost::rngstream genNh, genOther, genTreatment, genScreen;
+      Rprintf("id:%d, tid=%d\n", firstId+i, tid);
+      FhcrcPerson person = FhcrcPerson(i+firstId,cohort[i],genNh,genTreatment,genOther,genScreen);
+      person.costs.clear();
+      sim.create_process(&person);
+      sim.run_simulation();
+      sim.clear();
+      genNh.ResetNextSubstream();
+      genOther.ResetNextSubstream();
+      genScreen.ResetNextSubstream();
+      genTreatment.ResetNextSubstream();
     }
   }
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  return List::create(_("costs") = costs.out(),
-		      _("summary") = report.out(),
-		      _("lifeHistories") = wrap(lifeHistories),
-		      _("parameters") = wrap(parameters)
-		      );
+  // return List::create(_("costs") = costs.out(),
+  // 		      _("summary") = report.out(),
+  // 		      _("lifeHistories") = wrap(lifeHistories),
+  // 		      _("parameters") = wrap(parameters)
+  // 		      );
+  return wrap(true);
 }
 
 } // anonymous namespace
