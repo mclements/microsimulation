@@ -37,7 +37,7 @@ namespace {
   // CostReport<string,double,long> costs;
   CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
-  map<string, vector<double> > parameters;
+  map<string, vector<double> > outParameters;
 
   bool debug = false;
 
@@ -56,8 +56,9 @@ namespace {
   Rpexp rmu0;
 
   NumericVector parameter;
-  NumericVector cost_parameter;
+  NumericVector cost_parameters;
   NumericVector mubeta2, sebeta2;
+  int screen, nLifeHistories;
 
   /** 
       Utilities to record information in a map<string, vector<double> > object
@@ -93,7 +94,6 @@ namespace {
   public:
     double beta0, beta1, beta2;
     double t0, y0, tm, tc, tmc;
-    int EventCost;
     state_t state;
     diagnosis_t dx;
     base::grade_t grade;
@@ -117,7 +117,7 @@ namespace {
   */
   double FhcrcPerson::ymean(double t) {
     if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
-    double yt = t<t0 ? exp(parameter["beta0"]+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
+    double yt = t<t0 ? exp(beta0+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
     return yt;
   }
       
@@ -125,7 +125,7 @@ namespace {
       Calculate the *measured* PSA value at a given time (** NB: time = age - 35 **)
   */
   double FhcrcPerson::y(double t) {
-      double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(tau2)));
+    double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(double(parameter["tau2"]))));
       return yt;
     }
 
@@ -156,7 +156,6 @@ void FhcrcPerson::init() {
   ext_grade= (grade==base::Gleason_le_7) ? 
     (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
     ext::Gleason_ge_8;
-  EventCost = 0;
   tx = no_treatment;
   txhaz = -1.0;
   // schedule natural history events
@@ -165,7 +164,7 @@ void FhcrcPerson::init() {
 
   // schedule screening events
   rngScreen->set();
-  if (R::runif(0.0,1.0)<screeningCompliance) {
+  if (R::runif(0.0,1.0)<parameter["screeningCompliance"]) {
     switch(screen) {
     case noScreening:
       break; // no screening
@@ -206,7 +205,7 @@ void FhcrcPerson::init() {
       break;
     }
   }
-  if (R::runif(0.0,1.0)<studyParticipation &&
+  if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
       ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
       (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
     scheduleAt(R::runif(2013.0,2015.0) - cohort, toOrganised);
@@ -227,21 +226,21 @@ void FhcrcPerson::init() {
   // record some parameters
   // faster: initialise the length of the vectors and use an index
   if (id<nLifeHistories) {
-    record(parameters,"id",double(id));
-    record(parameters,"beta0",beta0);
-    record(parameters,"beta1",beta1);
-    record(parameters,"beta2",beta2);
-    record(parameters,"t0",t0);
-    record(parameters,"tm",tm);
-    record(parameters,"tc",tc);
-    record(parameters,"tmc",tmc);
-    record(parameters,"y0",y0);
-    record(parameters,"ym",ym);
-    record(parameters,"aoc",aoc);
-    record(parameters,"cohort",cohort);
-    record(parameters,"ext_grade",ext_grade);
-    record(parameters,"age_psa",-1.0);
-    record(parameters,"pca_death",0.0);
+    record(outParameters,"id",double(id)); // cf. "parameter" !!
+    record(outParameters,"beta0",beta0);
+    record(outParameters,"beta1",beta1);
+    record(outParameters,"beta2",beta2);
+    record(outParameters,"t0",t0);
+    record(outParameters,"tm",tm);
+    record(outParameters,"tc",tc);
+    record(outParameters,"tmc",tmc);
+    record(outParameters,"y0",y0);
+    record(outParameters,"ym",ym);
+    record(outParameters,"aoc",aoc);
+    record(outParameters,"cohort",cohort);
+    record(outParameters,"ext_grade",ext_grade);
+    record(outParameters,"age_psa",-1.0);
+    record(outParameters,"pca_death",0.0);
   }
 }
 
@@ -276,20 +275,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-    EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
+    // costs.add("DeathCost",now());
     if (id<nLifeHistories) {
-      record(parameters,"age_d",now());
-      revise(parameters,"pca_death",1.0);
+      record(outParameters,"age_d",now());
+      revise(outParameters,"pca_death",1.0);
     }
     Sim::stop_simulation();
     break;
 
   case toOtherDeath:
-    EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
     if (id<nLifeHistories) {
-      record(parameters,"age_d",now());
+      record(outParameters,"age_d",now());
     }
     Sim::stop_simulation();
     break;
@@ -301,7 +299,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
   
   case toMetastatic:
-    EventCost += MetastaticCancerCost; // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
     costs.add("MetastaticCancerCost",now(),cost_parameters["MetastaticCancerCost"]); // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
@@ -338,22 +335,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toScreen:
-    EventCost += InvitationCost; // cost for PSA invitation, we are missing the invitation cost for the 25% not complying
     costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
     if (organised) {
-	EventCost += FormalPSACost;
 	costs.add("FormalPSACost",now(),cost_parameters["FormalPSACost"]); //Some formal screening scenarios don't seem to be set to organised
     } else {
-      EventCost += OpportunisticPSACost;
       costs.add("OpportunisticPSACost",now(),cost_parameters["OpportunisticPSACost"]); //cost for opportunistic PSA test
     }
     if (!everPSA) {
       if (id<nLifeHistories) {
-	revise(parameters,"age_psa",now());
+	revise(outParameters,"age_psa",now());
       }
       everPSA = true;
     } 
-    if (psa>=psaThreshold) {
+    if (psa>=parameter["psaThreshold"]) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } else { // re-screening schedules
       rngScreen->set();
@@ -366,7 +360,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	    scheduleAt(now() + 2.0, toScreen);
 	  break;
 	case stockholm3_risk_stratified:
-	  EventCost += FormalPSABiomarkerCost; //cost for biomarker panel
 	  costs.add("FormalPSABiomarkerCost",now(),cost_parameters["FormalPSABiomarkerCost"]); //cost for opportunistic PSA test
 	  if (psa<1.0)
 	    scheduleAt(now() + 8.0, toScreen);
@@ -425,12 +418,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
-    EventCost += BiopsyCost; // cost for diagnostic biopsies
     costs.add("BiopsyCost",now(),cost_parameters["BiopsyCost"]);
     break;
 
   case toScreenInitiatedBiopsy:
-    EventCost += BiopsyCost; // cost for screening initiated biopsies
     costs.add("BiopsyCost",now(),cost_parameters["BiopsyCost"]);
       switch(state) {
       case Healthy:
@@ -481,9 +472,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     txhaz = (state == Localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
     double sxbenefit = 1;
     u = R::runif(0.0,1.0);
-    u = pow(u,1/c_baseline_specific); // global improvement to baseline survival
+    u = pow(u,1/parameter["c_baseline_specific"]); // global improvement to baseline survival
     double lead_time = (tc+35.0) - now();
-    double txbenefit = exp(log(txhaz)+log(c_txlt_interaction)*lead_time);
+    double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
     if (debug) Rprintf("lead_time=%f, txbenefit=%f, u=%f, ustar=%f\n",lead_time,txbenefit,u,pow(u,1/(txbenefit*sxbenefit)));
     u = pow(u,1/(txbenefit*sxbenefit));
     // TODO: calculate survival
@@ -497,24 +488,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   } break;
 
   case toRP:
-    EventCost += ProstatectomyCost; // cost for radical prostatectomy
     costs.add("ProstatectomyCost",now(),cost_parameters["ProstatectomyCost"]);
     break;
 
   case toRT:
-    EventCost += RadiationTherapyCost; // cost for radiation therapy
     costs.add("RadiationTherapyCost",now(),cost_parameters["RadiationTherapyCost"]);
     break;
 
   case toCM:
-    EventCost += ActiveSurveillanceCost; // cost for contiouos monitoring
     costs.add("ActiveSurveillanceCost",now(),cost_parameters["ActiveSurveillanceCost"]);
 
     break; 
 
   case toADT:
-    //EventCost += ?; //What to do with this? Pataky: $3600
-    //costs.add("?",now(),?);
+    // costs??
     break;
 
   case toUtility:
@@ -560,6 +547,11 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // read in the parameters
   List parms(parmsIn);
   List tables = parms["tables"];
+  parameter = parms["parameter"];
+  List otherParameters = parms["otherParameters"];
+  mubeta2 = as<NumericVector>(otherParameters["mubeta2"]);
+  sebeta2 = as<NumericVector>(otherParameters["sebeta2"]);
+  NumericVector mu0 = as<NumericVector>(otherParameters["mu0"]);
   int n = as<int>(parms["n"]);
   int firstId = as<int>(parms["firstId"]);
   interp_prob_grade7 = 
@@ -584,7 +576,6 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   for (H_dist_t::iterator it_sd = H_dist.begin(); it_sd != H_dist.end(); it_sd++) 
     it_sd->second.prepare();
   // now we can use: H_dist[grade].invert(-log(u))
-
   H_local.clear();
   // extract the columns from the data-frame
   IntegerVector sl_grades = df_survival_local["Grade"];
@@ -612,18 +603,15 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
   }
 
-  nLifeHistories = as<int>(parms["nLifeHistories"]);
-  screen = as<int>(parms["screen"]);
-  screeningCompliance = as<double>(parms["screeningCompliance"]);
-  studyParticipation = as<double>(parms["studyParticipation"]);
-  psaThreshold = as<double>(parms["psaThreshold"]);
+  nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
+  screen = as<int>(otherParameters["screen"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
   cost_parameters = as<NumericVector>(parms["cost_parameters"]);
   // set up the parameters
   double ages0[106];
   boost::algorithm::iota(ages0, ages0+106, 0.0);
-  rmu0 = Rpexp(mu0, ages0, 106);
+  rmu0 = Rpexp(&mu0[0], ages0, 106);
   vector<double> ages(101);
   boost::algorithm::iota(ages.begin(), ages.end(), 0.0);
   ages.push_back(1.0e+6);
@@ -631,7 +619,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // re-set the output objects
   report.clear();
   costs.clear();
-  parameters.clear();
+  outParameters.clear();
   lifeHistories.clear();
 
   report.setPartition(ages);
@@ -660,7 +648,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   return List::create(_("costs") = costs.out(),
 		      _("summary") = report.out(),
 		      _("lifeHistories") = wrap(lifeHistories),
-		      _("parameters") = wrap(parameters)
+		      _("parameters") = wrap(outParameters)
 		      );
 }
 

@@ -541,6 +541,19 @@ inline double discountedInterval(double start, double end, double discountRate) 
  Partition _partition;
    boost::unordered_map<pair<State,Time>, Cost > _table;
  };
+
+ /* class StringCostReport : public CostReport<std::string, double, double> { */
+ /* public: */
+ /*   typedef std::string State; */
+ /*   typedef double Time; */
+ /*   typedef double Cost; */
+ /* StringCostReport(NumericVector costs = NULL, Cost discountRate = 0) : costs(costs), discountRate(discountRate) { } */
+ /*   void add(const State state, const Time time) { */
+ /*     Time time_lhs = * _partition.lower_bound(time);  */
+ /*     _table[Pair(state,time_lhs)] += discountedCost(time,costs[state]); */
+ /*   } */
+ /*   NumericVector costs; */
+ /* }; */
  
  
 } // namespace ssim

@@ -144,6 +144,7 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
   out
 }
 
+## initial values for the FHCRC model
 FhcrcParameters <- list(
     tau2 = 0.0829,
     g0=0.0005,
@@ -160,7 +161,7 @@ FhcrcParameters <- list(
     c_baseline_specific = 1.0,
     screeningCompliance = 0.75,
     studyParticipation = 35.0/260.0,
-    nLifeHistories = 10, screen = 0, ## integers
+    nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,
     c_low_grade_slope=-0.006,
     discountRate = 0.035,
@@ -181,7 +182,7 @@ FhcrcParameters <- list(
 		  0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
 		  0.782609)
     )
-ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)==a"numeric" & sapply(FhcrcParameters,length)==1]
+ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
 
 
@@ -254,6 +255,15 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
       with(fhcrcData$survival_dist,
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
+  updateParameters <- list(nLifeHistories=as.integer(nLifeHistories),
+                           screeningCompliance=screeningCompliance,
+                           studyParticipation=studyParticipation,
+                           psaThreshold=psaThreshold,
+                           screen=as.integer(screenIndex))
+  parameter <- FhcrcParameters
+  for (name in names(updateParameters))
+      parameter[[name]] <- updateParameters[[name]]
+  pind <- sapply(parameter,class)=="numeric" & sapply(parameter,length)==1
   cost_parameters = c(InvitationCost = 15,
       FormalPSACost = 41,
       FormalPSABiomarkerCost = 641,
@@ -272,13 +282,10 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                   .Call("callFhcrc",
                         parms=list(n=as.integer(length(chunk)),
                             firstId=ns[i],
-                          screen=as.integer(screenIndex),
-                          nLifeHistories=as.integer(nLifeHistories),
-                          screeningCompliance=as.double(screeningCompliance),
-                          studyParticipation=as.double(studyParticipation),
-                          psaThreshold=as.double(psaThreshold),
-                          cohort=as.double(chunk),
-                          tables=fhcrcData,
+                            cohort=as.double(chunk),
+                            parameter=unlist(parameter[pind]),
+                            otherParameters=parameter[!pind],
+                            tables=fhcrcData,
                             cost_parameters=cost_parameters),
                         PACKAGE="microsimulation")
                 })))
