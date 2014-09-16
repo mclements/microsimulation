@@ -442,6 +442,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef std::set<Time, std::greater<Time> > Partition;
  typedef typename Partition::iterator Iterator;
  typedef std::pair<State,Time> Pair;
+ EventReport(Utility discountRate = 0.0) : discountRate(discountRate) { }
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
@@ -451,16 +452,19 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _prev.clear();
    _partition.clear();
  }
- Utility discountedUtilities(Time a, Time b, Utility utility = 1.0, Utility discountRate = 0.0) {
-   if (a==b) return 0.0;
-   if (discountRate>0.0) {
+ Utility discountedUtilities(Time a, Time b, Utility utility = 1.0) {
+   if (discountRate == 0.0) return utility * (b-a);
+   else if (a==b) return 0.0;
+   else if (discountRate>0.0) {
      double alpha = log(1.0+discountRate);
      return utility/alpha*(exp(-a*alpha) - exp(-b*alpha));
    }
-   else // assumes discount==0.0 
-     return utility * (b-a);
+   else {
+     REprintf("discountRate less than zero.");
+     return 0.0;
+   }
  }
- void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1, const Utility discountRate = 0.0) {
+ void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
    Iterator lo, hi, it, last;
    lo = _partition.lower_bound(lhs);
    hi = _partition.lower_bound(rhs); 
@@ -472,12 +476,12 @@ inline double discountedInterval(double start, double end, double discountRate) 
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[Pair(state,*it)];
       if (it == last) {
-	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility, discountRate);
+	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
 	// this_pt[it-this_pt.begin()] += rhs - std::max<Time>(lhs,*it);
       }
       else {
 	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
-	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility, discountRate);
+	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
       }
    }
  }
@@ -490,10 +494,11 @@ inline double discountedInterval(double start, double end, double discountRate) 
   			_("events") = wrap_map(_events,"event","age","number"),
   			_("prev") = wrap_map(_prev,"age","number"));
  }
- 
+
+ Utility discountRate;
  Partition _partition;
  boost::unordered_map<pair<State,Time>, int > _prev;
- boost::unordered_map<pair<State,Time>, Time > _pt;
+ boost::unordered_map<pair<State,Time>, Utility > _pt;
  boost::unordered_map<boost::tuple<State,Event,Time>, int > _events;
  
  };
@@ -502,11 +507,21 @@ inline double discountedInterval(double start, double end, double discountRate) 
  /**
     @brief CostReport class for collecting statistics on costs.
  */
- template< class State, class Time = double, class Cost = long>
+ template< class State, class Time = double, class Cost = double>
    class CostReport {
  public:
  typedef std::set<Time, std::greater<Time> > Partition;
  typedef std::pair<State,Time> Pair;
+ CostReport(Cost discountRate = 0) : discountRate(discountRate) { }
+ Cost discountedCost(Time a, Cost cost) {
+   if (discountRate == 0) return cost;
+   else if (discountRate>0) 
+     return cost/pow(1+discountRate,a);
+   else {
+     REprintf("discountRate less than zero.");
+     return 0;
+   }
+ }
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
  }
@@ -516,12 +531,13 @@ inline double discountedInterval(double start, double end, double discountRate) 
  }
  void add(const State state, const Time time, const Cost cost) {
    Time time_lhs = * _partition.lower_bound(time); 
-   _table[Pair(state,time_lhs)] += cost;
+   _table[Pair(state,time_lhs)] += discountedCost(time,cost);
  }
  SEXP out() {
    using namespace Rcpp;
    return wrap_map(_table,"age","cost");
  }
+ Cost discountRate;
  Partition _partition;
    boost::unordered_map<pair<State,Time>, Cost > _table;
  };
