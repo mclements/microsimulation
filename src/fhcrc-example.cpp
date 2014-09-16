@@ -57,7 +57,7 @@ namespace {
 
   NumericVector parameter;
   NumericVector cost_parameters;
-  NumericVector mubeta2, sebeta2;
+  NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
 
   /** 
@@ -302,6 +302,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     costs.add("MetastaticCancerCost",now(),cost_parameters["MetastaticCancerCost"]); // cost for metastatic cancer, do we want this one to be time dependent? Lack the numbers.
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
+    RemoveKind(toUtility);
+    // utility = utilities["metastatic"];
+    // scheduleAt(now(), new cMessageUtility(utilities["metastatic"]));
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
     break;
     
@@ -419,6 +422,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
     costs.add("BiopsyCost",now(),cost_parameters["BiopsyCost"]);
+    // change utility now
+    // utility -= delta;
+    // scheduleAt(now() + 3.0/52.0, new cMessageUtilityChange(delta)); 
     break;
 
   case toScreenInitiatedBiopsy:
