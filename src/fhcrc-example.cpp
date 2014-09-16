@@ -33,24 +33,13 @@ namespace {
   typedef boost::tuple<short,short,short,bool,double> FullState;
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
-  double discountRate = 0.035;
-  EventReport<FullState,short,double> report(discountRate);
+  EventReport<FullState,short,double> report;
   // CostReport<string,double,long> costs;
-  CostReport<string> costs(discountRate);
+  CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
   bool debug = false;
-
-  double tau2 = 0.0829,
-    g0=0.0005, gm=0.0004, gc=0.0015, 
-    thetac=19.1334,
-    mubeta0=-1.609, sebeta0=0.2384,
-    mubeta1=0.04463, sebeta1=0.0430,
-    mubeta2[2]={0.0397,0.1678},sebeta2[2]={0.0913,0.3968};
-
-  double c_txlt_interaction = 1.0,
-    c_baseline_specific = 1.0;
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
   typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
@@ -63,30 +52,12 @@ namespace {
   H_local_t H_local;
   set<double,greater<double> > H_local_age_set;
 
-  // initialise costs (this should be changed to a table input as soon as I figure out how /Andreas)
-  NumericVector cost_parameters;
-  int InvitationCost = 15;
-  int FormalPSACost = 41;
-  int FormalPSABiomarkerCost = 641;
-  int BiopsyCost = 8082;
-  int OpportunisticPSACost = 1774;
-  int ProstatectomyCost = 95000;
-  int RadiationTherapyCost = 135000;
-  int ActiveSurveillanceCost = 140000;
-  int MetastaticCancerCost = 769574;
-  int DeathCost = 0;
-
-  // initialise input parameters (see R::callFhcrc for actual defaults)
-  double screeningCompliance = 0.75;
-  double studyParticipation = 35.0/260.0;
-  int nLifeHistories = 10, screen = 0;
-  double psaThreshold = 3.0;
-
-  // new parameters (we need to merge the old and new implementations)
-  double c_low_grade_slope=-0.006;
-
   Rng * rngNh, * rngOther, * rngScreen, * rngTreatment;
   Rpexp rmu0;
+
+  NumericVector parameter;
+  NumericVector cost_parameter;
+  NumericVector mubeta2, sebeta2;
 
   /** 
       Utilities to record information in a map<string, vector<double> > object
@@ -117,24 +88,6 @@ namespace {
     return (x<a)?a:((x>b)?b:x);
   }
   
-  // all cause mortality rates by single year of age from age 0 could be a parameter input
-  double mu0[] = {0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
-		  0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
-		  0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
-		  0.000696, 0.000611, 0.000708, 0.000659, 0.000643, 0.000654, 0.000651, 
-		  0.000687, 0.000637, 0.00063, 0.000892, 0.000543, 0.00058, 0.00077, 
-		  0.000702, 0.000768, 0.000664, 0.000787, 0.00081, 0.000991, 9e-04, 
-		  0.000933, 0.001229, 0.001633, 0.001396, 0.001673, 0.001926, 0.002217, 
-		  0.002562, 0.002648, 0.002949, 0.002729, 0.003415, 0.003694, 0.004491, 
-		  0.00506, 0.004568, 0.006163, 0.006988, 0.006744, 0.00765, 0.007914, 
-		  0.009153, 0.010231, 0.011971, 0.013092, 0.013839, 0.015995, 0.017693, 
-		  0.018548, 0.020708, 0.022404, 0.02572, 0.028039, 0.031564, 0.038182, 
-		  0.042057, 0.047361, 0.05315, 0.058238, 0.062619, 0.074934, 0.089776, 
-		  0.099887, 0.112347, 0.125351, 0.143077, 0.153189, 0.179702, 0.198436, 
-		  0.240339, 0.256215, 0.275103, 0.314157, 0.345252, 0.359275, 0.41768, 
-		  0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
-		  0.782609};
-
   class FhcrcPerson : public cProcess 
   {
   public:
@@ -164,7 +117,7 @@ namespace {
   */
   double FhcrcPerson::ymean(double t) {
     if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
-    double yt = t<t0 ? exp(beta0+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
+    double yt = t<t0 ? exp(parameter["beta0"]+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
     return yt;
   }
       
@@ -189,16 +142,16 @@ void FhcrcPerson::init() {
   dx = NotDiagnosed;
   everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
-  t0 = sqrt(2*R::rexp(1.0)/g0);
-  grade = (R::runif(0.0, 1.0)>=1+c_low_grade_slope*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
-  beta0 = R::rnorm(mubeta0,sebeta0); 
-  beta1 = R::rnormPos(mubeta1,sebeta1); 
+  t0 = sqrt(2*R::rexp(1.0)/parameter["g0"]);
+  grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
+  beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]); 
+  beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]); 
   beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]); 
   y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
-  tm = (log((beta1+beta2)*R::rexp(1.0)/gm + y0) - beta0 + beta2*t0) / (beta1+beta2);
+  tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
-  tc = (log((beta1+beta2)*R::rexp(1.0)/gc + y0) - beta0 + beta2*t0) / (beta1+beta2);
-  tmc = (log((beta1+beta2)*R::rexp(1.0)/(gc*thetac) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+  tc = (log((beta1+beta2)*R::rexp(1.0)/parameter["gc"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
+  tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand(R::runif(0.0,1.0));
   ext_grade= (grade==base::Gleason_le_7) ? 
     (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 

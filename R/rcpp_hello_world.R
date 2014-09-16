@@ -144,6 +144,47 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
   out
 }
 
+FhcrcParameters <- list(
+    tau2 = 0.0829,
+    g0=0.0005,
+    gm=0.0004,
+    gc=0.0015, 
+    thetac=19.1334,
+    mubeta0=-1.609,
+    sebeta0=0.2384,
+    mubeta1=0.04463,
+    sebeta1=0.0430,
+    mubeta2=c(0.0397,0.1678),
+    sebeta2=c(0.0913,0.3968),
+    c_txlt_interaction = 1.0,
+    c_baseline_specific = 1.0,
+    screeningCompliance = 0.75,
+    studyParticipation = 35.0/260.0,
+    nLifeHistories = 10, screen = 0, ## integers
+    psaThreshold = 3.0,
+    c_low_grade_slope=-0.006,
+    discountRate = 0.035,
+    mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
+		  0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
+		  0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
+		  0.000696, 0.000611, 0.000708, 0.000659, 0.000643, 0.000654, 0.000651, 
+		  0.000687, 0.000637, 0.00063, 0.000892, 0.000543, 0.00058, 0.00077, 
+		  0.000702, 0.000768, 0.000664, 0.000787, 0.00081, 0.000991, 9e-04, 
+		  0.000933, 0.001229, 0.001633, 0.001396, 0.001673, 0.001926, 0.002217, 
+		  0.002562, 0.002648, 0.002949, 0.002729, 0.003415, 0.003694, 0.004491, 
+		  0.00506, 0.004568, 0.006163, 0.006988, 0.006744, 0.00765, 0.007914, 
+		  0.009153, 0.010231, 0.011971, 0.013092, 0.013839, 0.015995, 0.017693, 
+		  0.018548, 0.020708, 0.022404, 0.02572, 0.028039, 0.031564, 0.038182, 
+		  0.042057, 0.047361, 0.05315, 0.058238, 0.062619, 0.074934, 0.089776, 
+		  0.099887, 0.112347, 0.125351, 0.143077, 0.153189, 0.179702, 0.198436, 
+		  0.240339, 0.256215, 0.275103, 0.314157, 0.345252, 0.359275, 0.41768, 
+		  0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
+		  0.782609)
+    )
+ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)==a"numeric" & sapply(FhcrcParameters,length)==1]
+## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
+
+
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
                       seed=12345, studyParticipation=50/260, psaThreshold=3.0, mc.cores=1) {
   ## save the random number state for resetting later
