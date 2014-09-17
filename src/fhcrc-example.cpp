@@ -7,8 +7,6 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
 #include <omp.h>
-//#include <stdio.h>   /* Temporary for debugging*/
-//#include <stdlib.h>   /* Temporary for debugging*/
 
 namespace {
 
@@ -55,7 +53,7 @@ namespace {
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
   //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
-  // CostReport<string> costs;
+  CostReport<string> costs;
   map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
   map<string, vector<double> > parameters;
 
@@ -273,23 +271,23 @@ void FhcrcPerson::init() {
 
   // record some parameters
   // faster: initialise the length of the vectors and use an index
-  // if (id<nLifeHistories) {
-  //   record(parameters,"id",double(id));
-  //   record(parameters,"beta0",beta0);
-  //   record(parameters,"beta1",beta1);
-  //   record(parameters,"beta2",beta2);
-  //   record(parameters,"t0",t0);
-  //   record(parameters,"tm",tm);
-  //   record(parameters,"tc",tc);
-  //   record(parameters,"tmc",tmc);
-  //   record(parameters,"y0",y0);
-  //   record(parameters,"ym",ym);
-  //   record(parameters,"aoc",aoc);
-  //   record(parameters,"cohort",cohort);
-  //   record(parameters,"ext_grade",ext_grade);
-  //   record(parameters,"age_psa",-1.0);
-  //   record(parameters,"pca_death",0.0);
-  // }
+if (id<nLifeHistories) {
+  record(parameters,"id",double(id));
+  record(parameters,"beta0",beta0);
+  record(parameters,"beta1",beta1);
+  record(parameters,"beta2",beta2);
+  record(parameters,"t0",t0);
+  record(parameters,"tm",tm);
+  record(parameters,"tc",tc);
+  record(parameters,"tmc",tmc);
+  record(parameters,"y0",y0);
+  record(parameters,"ym",ym);
+  record(parameters,"aoc",aoc);
+  record(parameters,"cohort",cohort);
+  record(parameters,"ext_grade",ext_grade);
+  record(parameters,"age_psa",-1.0);
+  record(parameters,"pca_death",0.0);
+}
 }
 
 /** 
@@ -303,18 +301,18 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
-  // report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
+  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
 
-  // if (id<nLifeHistories) { // only record up to the first n rows
-  //   record(lifeHistories,"id", (double) id);
-  //   record(lifeHistories,"state", (double) state);
-  //   record(lifeHistories,"ext_grade", (double) ext_grade);
-  //   record(lifeHistories,"dx", (double) dx);
-  //   record(lifeHistories,"event", (double) msg->kind);
-  //   record(lifeHistories,"begin", previousEventTime);
-  //   record(lifeHistories,"end", now());
-  //   record(lifeHistories,"psa", psa);
-  // }
+  if (id<nLifeHistories) { // only record up to the first n rows
+    record(lifeHistories,"id", (double) id);
+    record(lifeHistories,"state", (double) state);
+    record(lifeHistories,"ext_grade", (double) ext_grade);
+    record(lifeHistories,"dx", (double) dx);
+    record(lifeHistories,"event", (double) msg->kind);
+    record(lifeHistories,"begin", previousEventTime);
+    record(lifeHistories,"end", now());
+    record(lifeHistories,"psa", psa);
+  }
 
   // handle messages by kind
 
@@ -323,11 +321,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toCancerDeath:
     EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
-    // costs.add("DeathCost",now(),DeathCost);
-    // if (id<nLifeHistories) {
-    //   record(parameters,"age_d",now());
-    //   revise(parameters,"pca_death",1.0);
-    // }
+    costs.add("DeathCost",now(),DeathCost);
+    if (id<nLifeHistories) {
+      record(parameters,"age_d",now());
+      revise(parameters,"pca_death",1.0);
+    }
     FhcrcPerson::clear();
     break;
 
@@ -651,12 +649,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // re-set the output objects
   report.clear();
-  // costs.clear();
+  costs.clear();
   parameters.clear();
   lifeHistories.clear();
 
   report.setPartition(ages);
-  // costs.setPartition(ages);
+  costs.setPartition(ages);
 
   Sim sim;
   
@@ -702,12 +700,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  // return List::create(_("costs") = costs.out(),
-  // 		      _("summary") = report.out(),
-  // 		      _("lifeHistories") = wrap(lifeHistories),
-  // 		      _("parameters") = wrap(parameters)
-  // 		      );
-  return wrap(true);
+  return List::create(_("costs") = costs.out(),
+  		      _("summary") = report.out(),
+  		      _("lifeHistories") = wrap(lifeHistories),
+  		      _("parameters") = wrap(parameters)
+  		      );
+  //return wrap(true);
 }
 
 } // anonymous namespace
