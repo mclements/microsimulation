@@ -274,10 +274,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
-  browser()
- ## costsNameless_idx <- names(out[[1]]$costs)==""
- ## costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
- ## names(costs) <- c("item","age","costs")
+  ## costsNameless_idx <- names(out[[1]]$costs)==""
+  ## costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
+  ## names(costs) <- c("item","age","costs")
     
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
