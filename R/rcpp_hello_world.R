@@ -274,6 +274,34 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
       ActiveSurveillanceCost = 140000,
       MetastaticCancerCost = 769574,
       DeathCost = 0)
+  ## IHE doesn't use the postrecovery period (as reported in the Heijnsdijk 2012 reference), should we?
+  utility_estimates = 1 - c(InvitationUtility = 1,
+      FormalPSAUtility = 0.99,
+      FormalPSABiomarkerUtility = 0.90,
+      BiopsyUtility = 0.90,
+      OpportunisticPSAUtility = 0.99,
+      ProstatectomyUtilityPart1 = 0.67,
+      ProstatectomyUtilityPart2 = 0.77,
+      RadiationTherapyUtilityPart1 = 0.73,
+      RadiationTherapyUtilityPart2 = 0.78,
+      ActiveSurveillanceUtility = 0.97,
+      MetastaticCancerUtilityPart1 = 0.60,
+      MetastaticCancerUtilityPart2 = 0.40,
+      DeathUtility = 0.00)
+  ## Utility duration is given in years.
+  utility_duration = c(InvitationUtilityDuration = 0.0,
+      FormalPSAUtilityDuration = 1/52,
+      FormalPSABiomarkerUtilityDuration = 3/52,
+      BiopsyUtilityDuration = 3/52,
+      OpportunisticPSAUtilityDuration = 1/52,
+      ProstatectomyUtilityDurationPart1 = 2/12,
+      ProstatectomyUtilityDurationPart2 = 10/12,
+      RadiationTherapyUtilityDurationPart1 = 2/12,
+      RadiationTherapyUtilityDurationPart2 = 10/12,
+      ActiveSurveillanceUtilityDuration = 7,
+      MetastaticCancerUtilityDurationPart1 = 30/12,
+      MetastaticCancerUtilityDurationPart2 = 6/12)
+
   ## now run the chunks separately
   print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
@@ -286,7 +314,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                             parameter=unlist(parameter[pind]),
                             otherParameters=parameter[!pind],
                             tables=fhcrcData,
-                            cost_parameters=cost_parameters),
+                            cost_parameters=cost_parameters,
+                            utility_estimates=utility_estimates,
+                            utility_duration=utility_duration),
                         PACKAGE="microsimulation")
                 })))
   ## Apologies: we now need to massage the chunks from C++
