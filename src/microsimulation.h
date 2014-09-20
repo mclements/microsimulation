@@ -432,21 +432,26 @@ inline double discountedInterval(double start, double end, double discountRate) 
         }
     return result;
  }
- 
+
  /**
    @brief EventReport class for collecting statistics on person-time, prevalence and numbers of events.
  */
  template< class State, class Event, class Time = double, class Utility = double>
    class EventReport {
  public:
- typedef std::set<Time, std::greater<Time> > Partition;
+ typedef std::set<Time, std::greater<Time> > Partition; // NB: greater<Time> cf. lesser<Time>
  typedef typename Partition::iterator Iterator;
  typedef std::pair<State,Time> Pair;
- EventReport(Utility discountRate = 0.0) : discountRate(discountRate) { }
+ typedef boost::unordered_map<pair<State,Time>, int > PrevMap;
+ typedef boost::unordered_map<pair<State,Time>, Utility > UtilityMap;
+ typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
+ typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventsMap;
+ EventReport(Utility discountRate = 0.0, bool outputUtilities = true) : discountRate(discountRate), outputUtilities(outputUtilities) { }
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
  void clear() {
+   _ut.clear();
    _pt.clear();
    _events.clear();
    _prev.clear();
@@ -470,37 +475,52 @@ inline double discountedInterval(double start, double end, double discountRate) 
    hi = _partition.lower_bound(rhs); 
    last = _partition.begin(); // because it is ordered by greater<Time>
    ++_events[boost::make_tuple(state,event,*hi)];
-   // vector<Time> this_pt = _pt[state]; if (this_pt.size() == 0) this_pt.resize(100);
    bool iterating;
    for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[Pair(state,*it)];
       if (it == last) {
-	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
-	// this_pt[it-this_pt.begin()] += rhs - std::max<Time>(lhs,*it);
+	_ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
+	_pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
       }
       else {
 	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
-	_pt[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	_ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	_pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
       }
    }
  }
- 
- SEXP out() {
-   
-   using namespace Rcpp;
-   
-    return List::create(_("pt") = wrap_map(_pt,"age","pt"),
-  			_("events") = wrap_map(_events,"event","age","number"),
-  			_("prev") = wrap_map(_prev,"age","number"));
+ template<class T>
+ void append_map(T & base_map, T & new_map) {
+   typename T::iterator it;
+   for (it = new_map.begin(); it != new_map.end(); ++it)
+     base_map[it->first] += it->second;
  }
-
+ void append(EventReport<State,Event,Time,Utility> & er) {
+   append_map<PrevMap>(_prev,er._prev);
+   append_map<EventsMap>(_events,er._events);
+   append_map<PtMap>(_pt,er._pt);
+   append_map<UtilityMap>(_ut,er._ut);
+ }
+ SEXP out() {
+   using namespace Rcpp;
+   if (outputUtilities)
+     return List::create(_("pt") = wrap_map(_pt,"age","pt"),
+			 _("ut") = wrap_map(_ut,"age","utility"),
+			 _("events") = wrap_map(_events,"event","age","number"),
+			 _("prev") = wrap_map(_prev,"age","number"));
+   else 
+     return List::create(_("pt") = wrap_map(_pt,"age","pt"),
+			 _("events") = wrap_map(_events,"event","age","number"),
+			 _("prev") = wrap_map(_prev,"age","number"));
+ }
  Utility discountRate;
+ bool outputUtilities;
  Partition _partition;
- boost::unordered_map<pair<State,Time>, int > _prev;
- boost::unordered_map<pair<State,Time>, Utility > _pt;
- boost::unordered_map<boost::tuple<State,Event,Time>, int > _events;
- 
+ PrevMap _prev;
+ UtilityMap _ut;
+ PtMap _pt;
+ EventsMap _events;
  };
  
 
@@ -512,6 +532,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  public:
  typedef std::set<Time, std::greater<Time> > Partition;
  typedef std::pair<State,Time> Pair;
+ typedef CostReport<State,Time,Cost> This;
  CostReport(Cost discountRate = 0) : discountRate(discountRate) { }
  Cost discountedCost(Time a, Cost cost) {
    if (discountRate == 0) return cost;
@@ -529,6 +550,11 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _table.clear();
    _partition.clear();
  }
+ void append(This & new_report) { // assuming that discountRate and _partition are the same for both reports
+   typename This::iterator it;
+   for(it = new_report._table.begin(); it != new_report._table.end(); ++it)
+     _table[it->first] += it->second;
+ }
  void add(const State state, const Time time, const Cost cost) {
    Time time_lhs = * _partition.lower_bound(time); 
    _table[Pair(state,time_lhs)] += discountedCost(time,cost);
@@ -539,7 +565,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  }
  Cost discountRate;
  Partition _partition;
-   boost::unordered_map<pair<State,Time>, Cost > _table;
+ boost::unordered_map<pair<State,Time>, Cost > _table;
  };
 
  /* class StringCostReport : public CostReport<std::string, double, double> { */

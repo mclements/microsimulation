@@ -315,6 +315,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                  data.frame(obj[,-(1:5)]))
     out
   }
+  ## grab all of the pt, prev, ut, events from summary
+  ## pt <- lapply(out, function(obj) obj$summary$pt)
   summary <- lapply(seq_along(out[[1]]$summary),
                     function(i) do.call("rbind",
                                         lapply(out, function(obj) reader(obj$summary[[i]]))))
