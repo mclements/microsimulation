@@ -187,7 +187,7 @@ ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply
 
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, mc.cores=1) {
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, includePSArecords=FALSE, mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -301,7 +301,6 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
       ActiveSurveillanceUtilityDuration = 7,
       MetastaticCancerUtilityDurationPart1 = 30/12,
       MetastaticCancerUtilityDurationPart2 = 6/12)
-
   ## now run the chunks separately
   print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
@@ -316,7 +315,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                             tables=fhcrcData,
                             cost_parameters=cost_parameters,
                             utility_estimates=utility_estimates,
-                            utility_duration=utility_duration),
+                            utility_duration=utility_duration,
+                            includePSArecords=includePSArecords),
                         PACKAGE="microsimulation")
                 })))
   ## Apologies: we now need to massage the chunks from C++
@@ -331,10 +331,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ## }
   cbindList <- function(obj) # recursive
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
-  
   rbindList <- function(obj) # recursive  
       if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
-      
   reader <- function(obj) {
     obj <- cbindList(obj)
     out <- cbind(data.frame(state=enum(obj[[1]],stateT),
@@ -360,11 +358,13 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ## map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
   map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
+  psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
   costsNameless_idx <- names(out[[1]]$costs)==""
   costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
   names(costs) <- c("item","age","costs")
+  names(psarecord) <- c("id","state","ext_grade","organised","dx","age","psa","Z")
     
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
@@ -374,7 +374,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
               ## prev=summary$prev, pt=summary$pt, events=summary$events)
-              summary=summary,costs=costs)
+              summary=summary,costs=costs, psarecord=psarecord)
   class(out) <- "fhcrc"
   out
 }

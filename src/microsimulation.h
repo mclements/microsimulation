@@ -93,6 +93,15 @@ namespace Rcpp {
   template <class T1, class T2, class T3, class T4, class T5>
     SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5> > v);
 
+  template <class T1, class T2, class T3, class T4, class T5, class T6>
+    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6> > v);
+
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7> > v);
+
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8> > v);
+
   // maps defined in terms of vectors
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v);
@@ -433,6 +442,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
     return result;
  }
 
+
  /**
    @brief EventReport class for collecting statistics on person-time, prevalence and numbers of events.
  */
@@ -664,6 +674,83 @@ namespace Rcpp {
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
 			_("Var5")=wrap(v5));
+  }
+  
+  template <class T1, class T2, class T3, class T4, class T5, class T6>
+    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    vector<T5> v5(n);
+    vector<T6> v6(n);
+    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+      v1[i] = boost::get<0>(*it);
+      v2[i] = boost::get<1>(*it);
+      v3[i] = boost::get<2>(*it);
+      v4[i] = boost::get<3>(*it);
+      v5[i] = boost::get<4>(*it);
+      v6[i] = boost::get<5>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
+			_("Var5")=wrap(v5),_("Var6")=wrap(v6));
+  }
+  
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    vector<T5> v5(n);
+    vector<T6> v6(n);
+    vector<T7> v7(n);
+    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+      v1[i] = boost::get<0>(*it);
+      v2[i] = boost::get<1>(*it);
+      v3[i] = boost::get<2>(*it);
+      v4[i] = boost::get<3>(*it);
+      v5[i] = boost::get<4>(*it);
+      v6[i] = boost::get<5>(*it);
+      v7[i] = boost::get<6>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
+			_("Var5")=wrap(v5),_("Var6")=wrap(v6),
+			_("Var7")=wrap(v7));
+  }
+  
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    vector<T5> v5(n);
+    vector<T6> v6(n);
+    vector<T7> v7(n);
+    vector<T8> v8(n);
+    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+      v1[i] = boost::get<0>(*it);
+      v2[i] = boost::get<1>(*it);
+      v3[i] = boost::get<2>(*it);
+      v4[i] = boost::get<3>(*it);
+      v5[i] = boost::get<4>(*it);
+      v6[i] = boost::get<5>(*it);
+      v7[i] = boost::get<6>(*it);
+      v8[i] = boost::get<7>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
+			_("Var5")=wrap(v5),_("Var6")=wrap(v6),
+			_("Var7")=wrap(v7),_("Var8")=wrap(v8));
   }
   
   template <class T1, class T2>

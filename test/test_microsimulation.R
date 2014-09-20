@@ -24,8 +24,51 @@ stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
 ## all(callFhcrc(10)$lifeHistories == callFhcrc(10)$lifeHistories) # fails
 ## all(callFhcrc(1e4)$parameters == callFhcrc(1e4)$parameters) # okay
 
+## extract PSA values
+refresh
+require(microsimulation)
+set.seed(12345)
+temp <- callFhcrc(350000,screen="stockholm3_risk_stratified",includePSArecords=TRUE)$psarecord
+temp2 <- subset(temp,organised & age>=50 & age<70 & !dx) 
+## first organised screen
+i <- tapply(1:nrow(temp2),temp2$id,min)
+temp2 <- temp2[i,]
+xtabs(~state+ext_grade+I(psa>=3),temp2)
+temp2 <- transform(temp2, advanced=(state>0 & ext_grade==2), cancer=(state>0))
+tau2 = 0.0829 # variance
 
+set.seed(12345+1)
+temp2 <- transform(temp2,
+                   psa2=Z+0.3+rnorm(nrow(temp2),0,sqrt(tau2)),
+                   BBP=Z+rnorm(nrow(temp2),0,0.5*sqrt(tau2)))
+## STHLM3 simulation report
+with(list(threshold=3),with(temp2,
+     cat(sprintf("
+Advanced:\t\t\t%i
+Cancers:\t\t\t%i
+PSA>=3 & advanced:\t\t%i
+PSA>=3 & cancer:\t\t%i
+PSA>=1 & BBP>=%3.1f & adv:\t%i
+PSA>=1 & BBP>=%3.1f & can:\t%i
+PSA>=1 & BBP>=%3.1f & PSA<3:\t%i
+BBP<%3.1f & PSA>=3:\t\t%i
+(PSA>=1 & BBP>=%3.1f) | PSA>=3:\t%i
+Prop reduction in biospies:\t%5.3f\n",
+                 sum(advanced),
+                 sum(cancer),
+                 sum(psa2>=3 & advanced),
+                 sum(psa2>=3 & cancer),
+                 threshold,sum(psa2>=1 & BBP>=threshold & advanced),
+                 threshold,sum(psa2>=1 & BBP>=threshold & cancer),
+                 threshold,sum(psa2>=1 & BBP>=threshold & psa2<3),
+                 threshold,sum(psa2>=1 & BBP<threshold & psa2>=3),
+                 threshold,sum(psa2>=1 & BBP>=threshold & psa2>=3),
+                 (sum(psa2>=1 & BBP<threshold & psa2>=3) - sum(psa2>=1 & BBP>=threshold & psa2<3))/
+                       sum(psa2>=1 & BBP>=threshold & psa2>=3)
+))))
+## The baseline FHCRC model assumes that PSA is an unbiased measure of the underlying diease process. The results here suggest that imprecision in the measure is less important than bias - and that PSA would need to be relatively biased to get the predicted change in biopsies from STHLM3.
 
+## The main challenge now is that the FHCRC model was based on PCPT trial data which will not be available - nor, probably, will the bias be estimable from observed data.
 
 ## testing the user-defined random number generator
 init.seed <- as.integer(c(407,rep(12345,6)))

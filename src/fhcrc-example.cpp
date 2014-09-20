@@ -17,7 +17,7 @@ namespace {
     enum grade_t {Gleason_le_6,Gleason_7,Gleason_ge_8};
   }
   
-  enum state_t {Healthy,Localised,Metastatic};
+  enum state_t {Healthy,Localised,Metastatic}; // stage?
 
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
@@ -29,14 +29,14 @@ namespace {
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
-  typedef boost::tuple<short,short,short,bool,double> FullState;
+  typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
+  typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
   //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
-  //vector<string> states(astates,astates+5);
   EventReport<FullState,short,double> report;
-  // CostReport<string,double,long> costs;
   CostReport<string> costs;
-  map<string, vector<double> > lifeHistories;  // NB: wrap re-defined to return a list
+  map<string, vector<double> > lifeHistories;
   map<string, vector<double> > outParameters;
+  vector<PSArecord> psarecord;
 
   bool debug = false;
 
@@ -58,6 +58,7 @@ namespace {
   NumericVector cost_parameters, utility_estimates, utility_duration;
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
+  bool includePSArecords;
 
   /** 
       Utilities to record information in a map<string, vector<double> > object
@@ -250,6 +251,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // declarations
   double psa = y(now()-35.0);
+  double Z = ymean(now()-35.0);
   // double age = now();
   double year = now() + cohort;
 
@@ -348,6 +350,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toScreen:
+    if (includePSArecords)
+      psarecord.push_back(PSArecord(id, state, ext_grade, organised, dx, now(), psa, Z));
     costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
     scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
@@ -609,6 +613,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   sebeta2 = as<NumericVector>(otherParameters["sebeta2"]);
   NumericVector mu0 = as<NumericVector>(otherParameters["mu0"]);
   int n = as<int>(parms["n"]);
+  includePSArecords = as<bool>(parms["includePSArecords"]);
   int firstId = as<int>(parms["firstId"]);
   interp_prob_grade7 = 
     NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
@@ -680,6 +685,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   costs.clear();
   outParameters.clear();
   lifeHistories.clear();
+  psarecord.clear();
 
   report.setPartition(ages);
   costs.setPartition(ages);
@@ -707,7 +713,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   return List::create(_("costs") = costs.out(),
 		      _("summary") = report.out(),
 		      _("lifeHistories") = wrap(lifeHistories),
-		      _("parameters") = wrap(outParameters)
+		      _("parameters") = wrap(outParameters),
+		      _("psarecord")=wrap(psarecord)
 		      );
 }
 
