@@ -354,6 +354,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   states <- c("state","grade","dx","psa","cohort")
   names(summary$prev) <- c(states,"age","count")
   names(summary$pt) <- c(states,"age","pt")
+  names(summary$ut) <- c(states,"age","ut")
   names(summary$events) <- c(states,"event","age","n")
   summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
   ## map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
