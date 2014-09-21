@@ -29,14 +29,48 @@ namespace {
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
-  typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
-  typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
-  //string astates[] = {"stage", "ext_grade", "dx", "psa_ge_3", "cohort"};
-  EventReport<FullState,short,double> report;
+  namespace FullState {
+    typedef boost::tuple<short,short,short,bool,double> Type;
+    enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
+  }
+  namespace PSArecord {
+    typedef boost::tuple<int,short,short,bool,short,double,double,double> Type;
+    enum Fields {id,state,ext_grade,organised,dx,age,ymean,y};
+  }
+  namespace LifeHistory {
+    typedef boost::tuple<int,short,short,int,short,double,double,double> Type;
+    enum Fields {id,state,ext_grade,dx,event,begin,end,psa};
+  }
+
+  template<class T>
+  class SimpleReport {
+  public:
+    typedef map<string,vector<T> > Map;
+    void record(string field, T value) {
+      _data[field].push_back(value);
+    }
+    void revise(string field, T value) {
+      _data[field].pop_back();
+      _data[field].push_back(value);
+    }
+    void clear() { _data.clear(); }
+    SEXP wrap() {
+      return Rcpp::wrap(_data);
+    }
+    void append(SimpleReport<T> & obj) {
+      for(typename Map::iterator it = obj._data.begin(); it != obj._data.end(); ++it)
+	_data.push_back(*it);
+    }
+    Map _data;
+  };
+
+  //typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
+  //typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
+  EventReport<FullState::Type,short,double> report;
   CostReport<string> costs;
-  map<string, vector<double> > lifeHistories;
-  map<string, vector<double> > outParameters;
-  vector<PSArecord> psarecord;
+  SimpleReport<double> outParameters;
+  vector<LifeHistory::Type> lifeHistories;
+  vector<PSArecord::Type> psarecord;
 
   bool debug = false;
 
@@ -63,14 +97,14 @@ namespace {
   /** 
       Utilities to record information in a map<string, vector<double> > object
   */
-  void record(map<string, vector<double> > & obj, const string variable, const double value) {
-    obj[variable].push_back(value);
-  }
-  void revise(map<string, vector<double> > & obj, const string variable, const double value) {
-    //*(--obj[variable].end()) = value;
-    obj[variable].pop_back();
-    obj[variable].push_back(value);
-  }
+  // void record(map<string, vector<double> > & obj, const string variable, const double value) {
+  //   obj[variable].push_back(value);
+  // }
+  // void revise(map<string, vector<double> > & obj, const string variable, const double value) {
+  //   //*(--obj[variable].end()) = value;
+  //   obj[variable].pop_back();
+  //   obj[variable].push_back(value);
+  // }
 
   class cMessageUtilityChange : public cMessage {
   public:
@@ -223,24 +257,23 @@ void FhcrcPerson::init() {
   scheduleAt(80.0, new cMessageUtility(0.91));
   // Mark, which reference do/should we use for this?
 
-  // record some parameters
-  // faster: initialise the length of the vectors and use an index
+  // record some parameters using SimpleReport - too many for a tuple
   if (id<nLifeHistories) {
-    record(outParameters,"id",double(id)); // cf. "parameter" !!
-    record(outParameters,"beta0",beta0);
-    record(outParameters,"beta1",beta1);
-    record(outParameters,"beta2",beta2);
-    record(outParameters,"t0",t0);
-    record(outParameters,"tm",tm);
-    record(outParameters,"tc",tc);
-    record(outParameters,"tmc",tmc);
-    record(outParameters,"y0",y0);
-    record(outParameters,"ym",ym);
-    record(outParameters,"aoc",aoc);
-    record(outParameters,"cohort",cohort);
-    record(outParameters,"ext_grade",ext_grade);
-    record(outParameters,"age_psa",-1.0);
-    record(outParameters,"pca_death",0.0);
+    outParameters.record("id",double(id));
+    outParameters.record("beta0",beta0);
+    outParameters.record("beta1",beta1);
+    outParameters.record("beta2",beta2);
+    outParameters.record("t0",t0);
+    outParameters.record("tm",tm);
+    outParameters.record("tc",tc);
+    outParameters.record("tmc",tmc);
+    outParameters.record("y0",y0);
+    outParameters.record("ym",ym);
+    outParameters.record("aoc",aoc);
+    outParameters.record("cohort",cohort);
+    outParameters.record("ext_grade",ext_grade);
+    outParameters.record("age_psa",-1.0);
+    outParameters.record("pca_death",0.0);
   }
 }
 
@@ -252,21 +285,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // declarations
   double psa = y(now()-35.0);
   double Z = ymean(now()-35.0);
-  // double age = now();
-  double year = now() + cohort;
+  double age = now();
+  double year = age + cohort;
 
   // record information
-  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now(), utility);
+  report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
 
-  if (id<nLifeHistories) { // only record up to the first n rows
-    record(lifeHistories,"id", (double) id);
-    record(lifeHistories,"state", (double) state);
-    record(lifeHistories,"ext_grade", (double) ext_grade);
-    record(lifeHistories,"dx", (double) dx);
-    record(lifeHistories,"event", (double) msg->kind);
-    record(lifeHistories,"begin", previousEventTime);
-    record(lifeHistories,"end", now());
-    record(lifeHistories,"psa", psa);
+  if (id<nLifeHistories) { // only record up to the first n individuals
+    lifeHistories.push_back(LifeHistory::Type(id,state,ext_grade,dx,msg->kind,previousEventTime,age,psa));
   }
   // by default, use the natural history RNG
   rngNh->set();
@@ -279,8 +305,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
     
     if (id<nLifeHistories) {
-      record(outParameters,"age_d",now());
-      revise(outParameters,"pca_death",1.0);
+      outParameters.record("age_d",now());
+      outParameters.revise("pca_death",1.0);
     }
     Sim::stop_simulation();
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["BiopsyUtility"]));
@@ -292,7 +318,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
     
     if (id<nLifeHistories) {
-      record(outParameters,"age_d",now());
+      outParameters.record("age_d",now());
     }
     Sim::stop_simulation();
     break;
@@ -351,7 +377,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toScreen:
     if (includePSArecords)
-      psarecord.push_back(PSArecord(id, state, ext_grade, organised, dx, now(), psa, Z));
+      psarecord.push_back(PSArecord::Type(id, state, ext_grade, organised, dx, now(), psa, Z));
     costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
     scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
@@ -371,7 +397,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
     if (!everPSA) {
       if (id<nLifeHistories) {
-	revise(outParameters,"age_psa",now());
+	outParameters.revise("age_psa",now());
       }
       everPSA = true;
     } 
@@ -710,11 +736,11 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // output
   // TODO: clean up these objects in C++ (cf. R)
-  return List::create(_("costs") = costs.out(),
-		      _("summary") = report.out(),
-		      _("lifeHistories") = wrap(lifeHistories),
-		      _("parameters") = wrap(outParameters),
-		      _("psarecord")=wrap(psarecord)
+  return List::create(_("costs") = costs.wrap(),                // CostReport
+		      _("summary") = report.wrap(),             // EventReport 
+		      _("lifeHistories") = wrap(lifeHistories), // vector<LifeHistory::Type>
+		      _("parameters") = outParameters.wrap(),   // SimpleReport<double>
+		      _("psarecord")=wrap(psarecord)            // vector<PSArecord::Type>
 		      );
 }
 
