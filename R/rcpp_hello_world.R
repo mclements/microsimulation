@@ -210,7 +210,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
               "toCancerDeath","toOtherDeath","toScreen",
               "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
-              "toOrganised","toTreatment","toCM","toRP","toRT","toADT")
+              "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toChangeUtility","toAgeUtility")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
   treatmentT <- c("CM","RP","RT")
   psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
