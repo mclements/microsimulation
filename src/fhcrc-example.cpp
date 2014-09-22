@@ -32,17 +32,18 @@ namespace {
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
+    // string names[5] = {"state","ext_grade","dx","psa_ge_3","cohort"};
   }
-  namespace PSArecord {
-    typedef boost::tuple<int,short,short,bool,short,double,double,double> Type;
-    enum Fields {id,state,ext_grade,organised,dx,age,ymean,y};
-  }
+  // namespace PSArecord {
+  //   typedef boost::tuple<int,short,short,bool,short,double,double,double> Type;
+  //   enum Fields {id,state,ext_grade,organised,dx,age,ymean,beta0,beta1,beta2,t0};
+  // }
   namespace LifeHistory {
     typedef boost::tuple<int,short,short,int,short,double,double,double> Type;
     enum Fields {id,state,ext_grade,dx,event,begin,end,psa};
   }
 
-  template<class T>
+  template<class T = double>
   class SimpleReport {
   public:
     typedef map<string,vector<T> > Map;
@@ -58,8 +59,9 @@ namespace {
       return Rcpp::wrap(_data);
     }
     void append(SimpleReport<T> & obj) {
-      for(typename Map::iterator it = obj._data.begin(); it != obj._data.end(); ++it)
-	_data.push_back(*it);
+      for(typename Map::iterator it = obj._data.begin(); it != obj._data.end(); ++it) {
+	_data[it->first].insert(_data[it->first].end(), it->second.begin(), it->second.end());
+      }
     }
     Map _data;
   };
@@ -68,9 +70,9 @@ namespace {
   //typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
   EventReport<FullState::Type,short,double> report;
   CostReport<string> costs;
-  SimpleReport<double> outParameters;
   vector<LifeHistory::Type> lifeHistories;
-  vector<PSArecord::Type> psarecord;
+  SimpleReport<double> outParameters;
+  SimpleReport<double> psarecord;
 
   bool debug = false;
 
@@ -376,8 +378,21 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toScreen:
-    if (includePSArecords)
-      psarecord.push_back(PSArecord::Type(id, state, ext_grade, organised, dx, now(), psa, Z));
+    if (includePSArecords) {
+      psarecord.record("id",id);
+      psarecord.record("state",state);
+      psarecord.record("ext_grade",ext_grade);
+      psarecord.record("organised",organised);
+      psarecord.record("dx",dx);
+      psarecord.record("age",age);
+      psarecord.record("psa",psa);
+      psarecord.record("t0",t0);
+      psarecord.record("beta0",beta0);
+      psarecord.record("beta1",beta1);
+      psarecord.record("beta2",beta2);
+      psarecord.record("Z",Z);
+      // psarecord.push_back(PSArecord::Type(id, state, ext_grade, organised, dx, now(), psa, Z));
+    }
     costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
     scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
@@ -740,7 +755,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 		      _("summary") = report.wrap(),             // EventReport 
 		      _("lifeHistories") = wrap(lifeHistories), // vector<LifeHistory::Type>
 		      _("parameters") = outParameters.wrap(),   // SimpleReport<double>
-		      _("psarecord")=wrap(psarecord)            // vector<PSArecord::Type>
+		      _("psarecord")=psarecord.wrap()            // SimpleReport<double>
 		      );
 }
 

@@ -364,7 +364,6 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   costsNameless_idx <- names(out[[1]]$costs)==""
   costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
   names(costs) <- c("item","age","costs")
-  names(psarecord) <- c("id","state","ext_grade","organised","dx","age","psa","Z")
   names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","psa")
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT

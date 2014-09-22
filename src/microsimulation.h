@@ -496,12 +496,14 @@ inline double discountedInterval(double start, double end, double discountRate) 
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[Pair(state,*it)];
       if (it == last) {
-	_ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
+	if (outputUtilities)
+	  _ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
 	_pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
       }
       else {
 	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
-	_ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	if (outputUtilities)
+	  _ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
 	_pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
       }
    }
@@ -822,6 +824,7 @@ namespace Rcpp {
 			_("Var7")=wrap(v7),_("Var8")=wrap(v8),
 			_("Var9")=wrap(v9),_("Var10")=wrap(v10));
   }
+  
   
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v) {
