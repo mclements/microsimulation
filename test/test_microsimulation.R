@@ -28,22 +28,61 @@ stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
 refresh
 require(microsimulation)
 set.seed(12345)
-temp <- callFhcrc(350000,screen="stockholm3_risk_stratified",includePSArecords=TRUE)$psarecord
+temp <- callFhcrc(1e6,screen="stockholm3_risk_stratified",includePSArecords=TRUE)$psarecord
 temp2 <- subset(temp,organised & age>=50 & age<70 & !dx) 
 ## first organised screen
 i <- tapply(1:nrow(temp2),temp2$id,min)
 temp2 <- temp2[i,]
 xtabs(~state+ext_grade+I(psa>=3),temp2)
 pos <- function(x) ifelse(x>0,x,0)
-temp2 <- transform(temp2, advanced=(state>0 & ext_grade==2), cancer=(state>0), logpsa=log(psa), logZ=log(Z), logZstar=beta0+beta1*(age-35)+pos(beta2*(age-35-t0)))
-tau2 = 0.0829 # variance
+temp2 <- transform(temp2,
+                   advanced=(state>0 & ext_grade==2),
+                   cancer=(state>0),
+                   logpsa=log(psa),
+                   logZ=log(Z),
+                   logZstar=beta0+beta1*(age-35)+pos(beta2*(age-35-t0)),
+                   grade=ifelse(ext_grade %in% 0:1,1,2))
+rnormPos <- function(n,mean=0,sd=1,lbound=0) {
+    if (length(mean)<n) mean <- rep(mean,length=n)
+    if (length(sd)<n) sd <- rep(sd,length=n)
+    x <- rnorm(n,mean,sd)
+    while(any(i <- (x<lbound)))
+        x[i] <- rnorm(sum(i),mean[i],sd[i])
+    x
+}
+p <- list(mubeta0=-1.609,
+          sebeta0=0.2384,
+          mubeta1=0.04463,
+          sebeta1=0.0430,
+          mubeta2=c(0.0397,0.1678),
+          sebeta2=c(0.0913,0.3968),
+          tau2=0.0829)
+n <- nrow(temp2)
+correlatedValue <- function(y,mu,se=NULL,rho) {
+    residual <- y - mu 
+    if (is.null(se)) se <- sqrt(var(residual))
+    u <- rnorm(length(y),0,se) # marginal error
+    mu + rho*residual + sqrt(1-rho^2)*u # new value
+}
 
-set.seed(12345+1)
-temp3 <- transform(temp2,
-                   BBP=logZstar+rnorm(nrow(temp2),0,tau2))
-plot(density(temp3$BBP))
+## correlated biomarkers based on the mean
+set.seed(12345+5)
+biomarker2 <- exp(correlatedValue(log(temp2$psa),
+                                  p$mubeta0+p$mubeta1*(temp2$age-35)+p$mubeta2[temp2$grade]*pos(temp2$age-35-temp2$t0),
+                                  rho=0.25))
+biomarker2 <- exp(log(temp2$psa) + 0.1*pos(temp2$age-35-temp2$t0)+rnorm(n,0,sqrt(p$tau2)))
+if (FALSE) {
+    plot(temp2$psa,biomarker2,log="xy")
+    sqrt(var(log(temp2$psa) - p$mubeta0+p$mubeta1*(temp2$age-35)+p$mubeta2*pos(temp2$age-35-temp2$t0)))
+    cor(log(biomarker2),log(temp2$psa))
+    plot(density(log(temp2$psa)))
+    lines(density(log(biomarker2)),lty=2)
+    var(log(biomarker2))
+    var(log(temp2$psa))
+}
+temp3 <- transform(temp2, BBP=biomarker2)
 ## STHLM3 simulation report
-with(list(threshold=log(3)),with(transform(temp3,BBPpos=(psa>=1 & BBP>=threshold),PSApos=(psa>=3)),
+with(list(threshold=5),with(transform(temp3,BBPpos=(psa>=1 & BBP>=threshold),PSApos=(psa>=3)),
      cat(sprintf("
 PSA+ & advanced:\t\t%i
 PSA+ & cancer:\t\t\t%i
@@ -63,11 +102,50 @@ Prop reduction in biospies:\t%5.3f\n",
                  sum(!BBPpos & PSApos),
                  sum(BBPpos | PSApos),
                  (sum(!BBPpos & PSApos) - sum(BBPpos & !PSApos))/
-                       sum(BBPpos | PSApos)
+                       sum(PSApos)
                  ))))
+
+report <- function(psa, BBP, advanced, threshold=3) {
+    BBPpos <- (psa>=1 & BBP>=threshold)
+    PSApos <- (psa>=3)
+    c(PSAposAdvanced=sum(PSApos & advanced),
+      BBPposAdvanced=sum(BBPpos & advanced),
+      pBiopsy=(sum(!BBPpos & PSApos) - sum(BBPpos & !PSApos))/
+      sum(PSApos))
+}
+report(temp2$psa,biomarker2,temp2$advanced,threshold=1.8)
+reports <- sapply(1:200,function(i) {
+    biomarker2 <- exp(correlatedValue(log(temp2$psa),
+                                      p$mubeta0+p$mubeta1*(temp2$age-35)+p$mubeta2[temp2$grade]*pos(temp2$age-35-temp2$t0),
+                                      rho=0.25))
+    report(temp2$psa,biomarker2,temp2$advanced, threshold=1.8)
+})
+reports <- as.data.frame(t(reports))
+with(reports, mean( PSAposAdvanced <= BBPposAdvanced))
+with(reports, plot(table( PSAposAdvanced - BBPposAdvanced)))
+with(reports, plot(density(pBiopsy)))
+with(reports, plot(PSAposAdvanced - BBPposAdvanced,pBiopsy))
+
+
 
 ## The baseline FHCRC model assumes that PSA is an unbiased measure of the underlying diease process. The results here suggest that imprecision in the measure is less important than bias - and that PSA would need to be relatively biased to get the predicted change in biopsies from STHLM3.
 ## The main challenge now is that the FHCRC model was based on PCPT trial data which will not be available - nor, probably, will the bias be estimable from observed data.
+
+## correlated betas
+rho <- 0.5 # correlation
+set.seed(12345+1)
+beta0 <- correlatedValue(temp2$beta0,p$mubeta0,p$sebeta0, rho)
+beta1 <- correlatedValue(temp2$beta1,p$mubeta1,p$sebeta1, rho)
+beta2 <- pmax(0,correlatedValue(temp2$beta2,p$mubeta2[temp2$grade],p$sebeta2[temp2$grade], rho)) # should be a conditional distribution
+biomarker2 <- exp(beta0+beta1*(temp2$age-35)+beta2*pos(temp2$age-35-temp2$t0)+rnorm(n,0,sqrt(p$tau2)))
+
+## completely independent biomarker with more measurement error
+set.seed(12345+1)
+beta0 <- rnorm(n,p$mubeta0,p$sebeta0)
+beta1 <- rnorm(n,p$mubeta1,p$sebeta1)
+beta2 <- rnormPos(n,p$mubeta2[temp2$grade],p$sebeta2[temp2$grade])
+biomarker2 <- exp(beta0+beta1*(temp2$age-35)+beta2*pos(temp2$age-35-temp2$t0)+rnorm(n,0,2*sqrt(p$tau2)))
+plot(temp2$psa,biomarker2,log="xy")
 
 set.seed(12345+2)
 temp2 <- transform(temp2,
@@ -93,11 +171,10 @@ Prop reduction in biospies:\t%5.3f\n",
                  sum(!BBPpos & PSApos),
                  sum(BBPpos | PSApos),
                  (sum(!BBPpos & PSApos) - sum(BBPpos & !PSApos))/
-                       sum(BBPpos | PSApos)
-))))
+                       sum(BBPpos | PSApos))))))
 
 logZ=rnorm(100000,0,0.1)
-logpsa=logZ+rnorm(100000,0,sqrt(tau2))
+logpsa=logZ+rnorm(100000,0,sqrt(p$tau2))
 Z=exp(logZ)
 psa=exp(logpsa)
 plot(density(logZ))
@@ -107,6 +184,22 @@ mean(logpsa)
 mean(Z)
 mean(psa)
 
+
+
+## simulating sequentially from a bivariate normal distribution
+set.seed(12345)
+n <- 1e5
+rho <- 0.6
+sigma <- 2
+u1 <- rnorm(n)
+u2 <- rnorm(n)
+x1 <- u1*sigma
+x2 <- rho*u1*sigma+sqrt(1-rho^2)*u2*sigma
+cor(x1,x2)
+var(x1)
+var(x2)
+
+    
 ## testing the user-defined random number generator
 init.seed <- as.integer(c(407,rep(12345,6)))
 RNGkind("user")
