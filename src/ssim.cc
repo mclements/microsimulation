@@ -29,48 +29,33 @@
 
 namespace ssim { 
 
-  namespace Impl {
-
-    class SimImpl  {
-    public:
-
-      static void schedule(Sim * sim, Time t, ActionType i, ProcessId p, 
-		  const Event * e = 0) throw();
-    
-      static void schedule_now(Sim * sim, ActionType i, ProcessId p, 
-		      const Event * e = 0) throw();
-
-};
-
-    void SimImpl::schedule(Sim * sim, Time t, ActionType i, ProcessId p, 
+  void Sim::schedule(Time t, Impl::ActionType i, ProcessId p, 
 			 const Event * e) throw() {
 	if (e != 0) { 
 	    ++(e->refcount); 
 	}
-	sim->actions.insert(Action(sim->current_time + t, i, p, e ));
+	actions.insert(Impl::Action(current_time + t, i, p, e ));
     }
 
-    void SimImpl::schedule_now(Sim * sim, ActionType i, ProcessId p, 
+  void Sim::schedule_now(Impl::ActionType i, ProcessId p, 
 			     const Event * e) throw() {
 	if (e != 0) { 
 	    ++(e->refcount); 
 	}
-	sim->actions.insert(Action(sim->current_time, i, p, e ));
+	actions.insert(Impl::Action(current_time, i, p, e ));
     }
-
-  } // namespace Impl
 
   Sim::Sim() : stop_time(INIT_TIME), 
 		      current_time(INIT_TIME), 
 		      current_process(NULL_PROCESSID),
 		      running(false),
-		      error_handler(0) {};
+	       error_handler(0), lock(false) {};
 
   ProcessId Sim::create_process(Process * p) throw() {
     p->sim = this;
     processes.push_back(Impl::PDescr(p));
     ProcessId newpid = processes.size() - 1;
-    Impl::SimImpl::schedule_now(this, Impl::A_Init, newpid);
+    schedule_now(Impl::A_Init, newpid);
     return newpid;
   }
 
@@ -121,8 +106,9 @@ namespace ssim {
     // isn't meant to be thread-safe, it works if some process calls
     // Sim::run_simulation() within their process_event() function.
     //
-    static bool lock = false;
-    if (lock) return;
+    // static bool lock = false;
+    if (lock) 
+      return;
     lock = true;
     running = true;
 
@@ -202,12 +188,12 @@ namespace ssim {
 }
 
   void Sim::stop_process() throw() {
-    Impl::SimImpl::schedule_now(this, Impl::A_Stop, current_process); 
+    schedule_now(Impl::A_Stop, current_process); 
 }
 
   int Sim::stop_process(ProcessId pid) throw() {
     if (processes[pid].terminated) return -1;
-    Impl::SimImpl::schedule_now(this, Impl::A_Stop, pid); 
+    schedule_now(Impl::A_Stop, pid); 
     return 0;
 }
 
@@ -229,19 +215,19 @@ namespace ssim {
 }
 
   void Sim::self_signal_event(const Event * e) throw() {
-    Impl::SimImpl::schedule_now(this, Impl::A_Event, current_process, e);
+    schedule_now(Impl::A_Event, current_process, e);
 }
 
   void Sim::self_signal_event(const Event * e, Time d) throw() {
-    Impl::SimImpl::schedule(this, d, Impl::A_Event, current_process, e);
+    schedule(d, Impl::A_Event, current_process, e);
 }
 
   void Sim::signal_event(ProcessId pid, const Event * e) throw() {
-    Impl::SimImpl::schedule_now(this, Impl::A_Event, pid, e);
+    schedule_now(Impl::A_Event, pid, e);
 }
 
   void Sim::signal_event(ProcessId pid, const Event * e, Time d) throw() {
-    Impl::SimImpl::schedule(this, d, Impl::A_Event, pid, e);
+    schedule(d, Impl::A_Event, pid, e);
 }
 
   void Sim::set_error_handler(SimErrorHandler * eh) throw() {

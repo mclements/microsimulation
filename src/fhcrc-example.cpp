@@ -687,7 +687,6 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
       boost::rngstream genNh, genOther, genTreatment, genScreen;
       Rprintf("id:%d, tid=%d\n", firstId+i, tid);
       FhcrcPerson person = FhcrcPerson(i+firstId,cohort[i],genNh,genTreatment,genOther,genScreen);
-      person.costs.clear();
       sim.create_process(&person);
       sim.run_simulation();
       sim.clear();

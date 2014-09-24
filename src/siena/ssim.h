@@ -124,8 +124,6 @@ namespace Impl {
 
     typedef std::vector<PDescr> PsTable;
 
-    class SimImpl;
-
   }
 
 /** @brief basic event in the simulation.
@@ -161,7 +159,6 @@ public:
   
 private:
   mutable unsigned refcount;
-  friend class Impl::SimImpl;
   friend class Sim;
 };
 
@@ -653,7 +650,13 @@ public:
   void		set_error_handler(SimErrorHandler *) throw();
   void remove_event(EventPredicate pred) throw();
 
-Sim();
+  void schedule(Time t, Impl::ActionType i, ProcessId p, 
+		const Event * e = 0) throw();
+  
+  void schedule_now(Impl::ActionType i, ProcessId p, 
+		      const Event * e = 0) throw();
+
+  Sim();
 
 private:
 
@@ -666,12 +669,13 @@ private:
   bool			running;
 
   SimErrorHandler *	error_handler;
+  
+  bool lock;
 
 Impl::a_table_t actions;
 
 Impl::PsTable processes;
 
-friend class Impl::SimImpl;
 };
 
 
