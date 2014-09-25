@@ -79,7 +79,7 @@ RcppExport SEXP callSimplePerson2(SEXP parms) {
     Sim::run_simulation();
     Sim::clear();
   }
-  return SimplePerson::report.out();
+  return SimplePerson::report.wrap();
 } 
 
 } // namespace simpleExample2

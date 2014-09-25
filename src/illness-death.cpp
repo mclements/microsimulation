@@ -90,7 +90,7 @@ namespace illnessDeath {
       Sim::run_simulation();
       Sim::clear();
     }
-    return report.out();
+    return report.wrap();
   } 
   
 } // namespace illnessDeath

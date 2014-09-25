@@ -463,7 +463,7 @@ RcppExport SEXP callFhcrcReimplementation(SEXP parms) {
   delete rngScreen;
 
   // output
-  return Rcpp::List::create(Rcpp::Named("summary") = report.out(),
+  return Rcpp::List::create(Rcpp::Named("summary") = report.wrap(),
 			    Rcpp::Named("lifeHistories") = Rcpp::wrap(lifeHistories),
 			    Rcpp::Named("parameters") = Rcpp::wrap(parameters)
 			    );
