@@ -91,6 +91,8 @@ namespace {
   Rpexp rmu0;
 
   NumericVector parameter;
+
+  // read in the parameters
   NumericVector cost_parameters, utility_estimates, utility_duration;
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
@@ -283,7 +285,7 @@ void FhcrcPerson::init() {
     Handle self-messages received
  */
 void FhcrcPerson::handleMessage(const cMessage* msg) {
-
+  
   // declarations
   double psa = y(now()-35.0);
   double Z = ymean(now()-35.0);
@@ -653,6 +655,10 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   mubeta2 = as<NumericVector>(otherParameters["mubeta2"]);
   sebeta2 = as<NumericVector>(otherParameters["sebeta2"]);
   NumericVector mu0 = as<NumericVector>(otherParameters["mu0"]);
+  cost_parameters = as<NumericVector>(otherParameters["cost_parameters"]);
+  utility_estimates = as<NumericVector>(otherParameters["utility_estimates"]);
+  utility_duration = as<NumericVector>(otherParameters["utility_duration"]);
+
   int n = as<int>(parms["n"]);
   includePSArecords = as<bool>(parms["includePSArecords"]);
   int firstId = as<int>(parms["firstId"]);
@@ -704,14 +710,11 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
     Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
   }
-
+  
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
   screen = as<int>(otherParameters["screen"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
-  cost_parameters = as<NumericVector>(parms["cost_parameters"]);
-  utility_estimates = as<NumericVector>(parms["utility_estimates"]);
-  utility_duration = as<NumericVector>(parms["utility_duration"]);
 
   // set up the parameters
   double ages0[106];
