@@ -167,7 +167,7 @@ void CalibPerson::handleMessage(const cMessage* msg) {
      }
     report[stagestr][cind]+=1;
   }		   
-};
+}
 
 
 extern "C" {
