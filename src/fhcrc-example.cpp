@@ -665,16 +665,16 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   int nthreads, tid, i, chunk=1000;
 
   //#pragma omp parallel shared(nthreads,chunk) private(i,tid,genNh,genOther,genTreatment,genScreen)
-#pragma omp parallel shared(nthreads,chunk) private(i,tid)
+#pragma omp parallel shared(nthreads,chunk) private(i,tid,sim)
   {
     /* This section only prints the number of available threads and the start each thread*/
     tid = omp_get_thread_num();
     if (tid == 0)
       {
 	nthreads = omp_get_num_threads();
-	Rprintf("Number of threads = %d\n", nthreads); // is this thread-safe?
+	//Rprintf("Number of threads = %d\n", nthreads); // is this thread-safe?
       }
-    Rprintf("Thread %d starting...\n",tid);
+    //Rprintf("Thread %d starting...\n",tid);
     
 
     /* Note that by using "dynamic" each thread will take a chunk and if
@@ -685,7 +685,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     for (i = 0; i < n; i++) {
       //person = FhcrcPerson(i+firstId,cohort[i],genNh[i],genTreatment[i],genOther[i],genScreen[i]);
       boost::rngstream genNh, genOther, genTreatment, genScreen;
-      Rprintf("id:%d, tid=%d\n", firstId+i, tid);
+      //Rprintf("id:%d, tid=%d\n", firstId+i, tid);
       FhcrcPerson person = FhcrcPerson(i+firstId,cohort[i],genNh,genTreatment,genOther,genScreen);
       sim.create_process(&person);
       sim.run_simulation();

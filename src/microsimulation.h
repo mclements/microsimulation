@@ -227,7 +227,7 @@ public:
     msg->timestamp = t;
     msg->sendingTime = sim->clock();
     msg->pid = pid();
-    sim->self_signal_event(msg, t - sim->clock());  
+    sim->signal_event(pid(), msg, t - sim->clock());  
   }
   virtual void scheduleAt(Time t, string n) {
     scheduleAt(t, new cMessage(-1,n));  
