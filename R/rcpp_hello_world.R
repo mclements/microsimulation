@@ -160,6 +160,8 @@ FhcrcParameters <- list(
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
     screeningCompliance = 0.75,
+    biopsyCompliance = 0.858,
+    biopsySensitivity = 0.8,
     studyParticipation = 35.0/260.0,
     nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,

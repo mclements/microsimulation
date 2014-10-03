@@ -418,8 +418,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       }
       everPSA = true;
     } 
-    if (psa>=parameter["psaThreshold"]) {
-      scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
+    if (psa>=parameter["psaThreshold"] && R::runif(0.0,1.0) < parameter["biopsyCompliance"]) {
+	scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } else { // re-screening schedules
       rngScreen->set();
       if (organised) {
@@ -431,7 +431,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	    scheduleAt(now() + 2.0, toScreen);
 	  break;
 	case stockholm3_risk_stratified:
-	  costs.add("FormalPSABiomarkerCost",now(),cost_parameters["FormalPSABiomarkerCost"]); //cost for opportunistic PSA test
+	  if (psa>=1.0)
+	    costs.add("FormalPSABiomarkerCost",now(),cost_parameters["FormalPSABiomarkerCost"]);
+	  else
+	    costs.add("FormalPSACost",now(),cost_parameters["FormalPSACost"]);
 	  scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
 	  scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
 		     new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
@@ -505,19 +508,17 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now() + utility_duration["BiopsyUtilityDuration"], 
 	       new cMessageUtilityChange(utility_estimates["BiopsyUtility"]));
 
-      switch(state) {
-      case Healthy:
-	previousNegativeBiopsy = true;
-      	if (now() < 70.0) scheduleAt(now() + 1.0, toScreen);
-      	break;
-      case Localised:
-      case Metastatic:
+    if (state == Healthy) {
+      previousNegativeBiopsy = true;
+      if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toScreen);
+    } else { // state != Healthy
+      if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) {
 	scheduleAt(now(), toScreenDiagnosis);
-	break;
-      default:
-      	REprintf("State not matched\n");
-    	break;
-    } break;
+      } else { // false negative biopsy
+	if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toScreen);
+      }
+    }
+    break;
 
   case toTreatment: {
     rngTreatment->set();
