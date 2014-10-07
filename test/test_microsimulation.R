@@ -42,6 +42,9 @@ temp2 <- transform(temp2,
                    logZ=log(Z),
                    logZstar=beta0+beta1*(age-35)+pos(beta2*(age-35-t0)),
                    grade=ifelse(ext_grade %in% 0:1,1,2))
+temp2 <- within(temp2, {
+    ext_grade <- ifelse(cancer, ext_grade, NA)
+})
 rnormPos <- function(n,mean=0,sd=1,lbound=0) {
     if (length(mean)<n) mean <- rep(mean,length=n)
     if (length(sd)<n) sd <- rep(sd,length=n)
@@ -64,6 +67,41 @@ correlatedValue <- function(y,mu,se=NULL,rho) {
     u <- rnorm(length(y),0,se) # marginal error
     mu + rho*residual + sqrt(1-rho^2)*u # new value
 }
+
+rtpf <- function(marker1, threshold1, marker2, threshold2, disease) {
+    n1 <- sum(marker1[disease] > threshold1)
+    n2 <- sum(marker2[disease] > threshold2)
+    list(n1=n1, n2=n2, rtpf=n1/n2)
+}
+rfpf <- function(marker1, threshold1, marker2, threshold2, disease) {
+    n1 <- sum(marker1[!disease] > threshold1)
+    n2 <- sum(marker2[!disease] > threshold2)
+    list(n1=n1, n2=n2, rfpf=n1/n2)
+}
+scale <- 0.01
+optim1 <- optim(c(log(4.5),log(0.1)),
+                function(par) {
+                    set.seed(12345)
+                    threshold <- par[1]
+                    variance <- exp(par[2])
+                    temp2$bbp <<- with(temp2, logpsa + scale*pos(age-t0) + rnorm(nrow(temp2), 0, sqrt(variance)))
+                    with(temp2,
+                         (rtpf(logpsa, log(3.0), bbp, threshold, advanced)$rtpf-1)^2 +
+                         (rfpf(logpsa, log(3.0), bbp, threshold, advanced)$rfpf-1.25)^2)
+                })
+set.seed(12345)
+threshold <- optim1$par[1]
+variance <- exp(optim1$par[2])
+temp2$bbp <- with(temp2, logpsa + scale*pos(age-t0) + rnorm(nrow(temp2), 0, sqrt(variance)))
+with(temp2, rtpf(logpsa, log(3.0), bbp, threshold, advanced))
+with(temp2, rfpf(logpsa, log(3.0), bbp, threshold, advanced))
+
+with(temp2, rtpf(logpsa, log(3.0), bbp, log(10), advanced))
+with(temp2, rfpf(logpsa, log(3.0), bbp, log(10), advanced))
+root1 <- uniroot(function(threshold) with(temp2, rtpf(logpsa, log(3.0), bbp, threshold, advanced))$rtpf-1, c(log(2), log(100)))
+with(temp2, rtpf(logpsa, log(3.0), bbp, root1$root, advanced))
+with(temp2, rfpf(logpsa, log(3.0), bbp, root1$root, advanced))
+
 
 ## correlated biomarkers based on the mean
 set.seed(12345+5)
