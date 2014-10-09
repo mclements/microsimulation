@@ -7,13 +7,13 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
 #include <omp.h>
+// [[Rcpp::plugins(openmp)]]
 
 namespace {
 
   using namespace std;
   using namespace Rcpp;
   using namespace ssim;
-
   // declarations
 
   namespace base {
@@ -271,49 +271,54 @@ void FhcrcPerson::init() {
 
   // record some parameters
   // faster: initialise the length of the vectors and use an index
-if (id<nLifeHistories) {
-  record(parameters,"id",double(id));
-  record(parameters,"beta0",beta0);
-  record(parameters,"beta1",beta1);
-  record(parameters,"beta2",beta2);
-  record(parameters,"t0",t0);
-  record(parameters,"tm",tm);
-  record(parameters,"tc",tc);
-  record(parameters,"tmc",tmc);
-  record(parameters,"y0",y0);
-  record(parameters,"ym",ym);
-  record(parameters,"aoc",aoc);
-  record(parameters,"cohort",cohort);
-  record(parameters,"ext_grade",ext_grade);
-  record(parameters,"age_psa",-1.0);
-  record(parameters,"pca_death",0.0);
+#pragma omp critical
+  {
+    if (id<nLifeHistories) {
+      record(parameters,"id",double(id));
+      record(parameters,"beta0",beta0);
+      record(parameters,"beta1",beta1);
+      record(parameters,"beta2",beta2);
+      record(parameters,"t0",t0);
+      record(parameters,"tm",tm);
+      record(parameters,"tc",tc);
+      record(parameters,"tmc",tmc);
+      record(parameters,"y0",y0);
+      record(parameters,"ym",ym);
+      record(parameters,"aoc",aoc);
+      record(parameters,"cohort",cohort);
+      record(parameters,"ext_grade",ext_grade);
+      record(parameters,"age_psa",-1.0);
+      record(parameters,"pca_death",0.0);
+    }
+  }
 }
-}
-
 /** 
     Handle self-messages received
  */
 void FhcrcPerson::handleMessage(const cMessage* msg) {
-
+  
   // declarations
   double psa = y(now()-35.0);
   // double age = now();
   double year = now() + cohort;
-
+#pragma omp critical
+  {
   // record information
-  report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
-
+    report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
+  }
+#pragma omp critical
+  {
   if (id<nLifeHistories) { // only record up to the first n rows
-    record(lifeHistories,"id", (double) id);
-    record(lifeHistories,"state", (double) state);
-    record(lifeHistories,"ext_grade", (double) ext_grade);
-    record(lifeHistories,"dx", (double) dx);
-    record(lifeHistories,"event", (double) msg->kind);
+    record(lifeHistories,"id", id);
+    record(lifeHistories,"state", state);
+    record(lifeHistories,"ext_grade", ext_grade);
+    record(lifeHistories,"dx", dx);
+    record(lifeHistories,"event", msg->kind);
     record(lifeHistories,"begin", previousEventTime);
     record(lifeHistories,"end", now());
     record(lifeHistories,"psa", psa);
   }
-
+  }
   // handle messages by kind
 
   switch(msg->kind) {
@@ -322,10 +327,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
     costs.add("DeathCost",now(),DeathCost);
+#pragma omp critical
+  } 
     if (id<nLifeHistories) {
-      record(parameters,"age_d",now());
-      revise(parameters,"pca_death",1.0);
-    }
+    record(parameters,"age_d",now());
+    revise(parameters,"pca_death",1.0);
+  }
+  }
     FhcrcPerson::clear();
     break;
 
@@ -565,7 +573,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
 
 RcppExport SEXP callFhcrc(SEXP parmsIn) {
-
   // declarations
   // FhcrcPerson person;
 
@@ -652,10 +659,10 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   costs.clear();
   parameters.clear();
   lifeHistories.clear();
-
+  
   report.setPartition(ages);
   costs.setPartition(ages);
-
+  
   Sim sim;
   
   // main loop
