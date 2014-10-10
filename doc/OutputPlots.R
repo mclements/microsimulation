@@ -9,36 +9,6 @@ require(microsimulation)
 require(data.table)
 
 ## ===========================================
-## Read csv files
-## ===========================================
-myPath <- path.expand('~/src/ki/MortRateCalc')
-
-## All-cause mortality plotting
-popSwe_raw <- as.data.frame(read.csv2(file.path(myPath,"Alive_men_in_Sweden_by_age_and_year.csv"),
-                                      header = TRUE, sep = "\t", dec = ",", fill = TRUE,
-                                      comment.char = "", skip=2,fileEncoding="latin1"))
-
-deathSwe_raw <- as.data.frame(read.csv2(file.path(myPath,"Dead_men_in_Sweden_by_age_and_year.csv"),
-                                        header = TRUE, sep = ";", dec = ",", fill = TRUE,
-                                        comment.char = "", skip=2,fileEncoding="latin1"))
-
-popSthlm_raw <- as.data.frame(read.csv2(file.path(myPath,"Alive_men_in_Stockholm_by_age_and_year.csv"),
-                                        header = TRUE, sep = "\t", dec = ",", fill = TRUE,
-                                        comment.char = "", skip=2,fileEncoding="latin1"))
-
-deathSthlm_raw <- as.data.frame(read.csv2(file.path(myPath,"Dead_men_in_Stockholm_by_age_and_year.csv"),
-                                          header = TRUE, sep = "\t", dec = ",", fill = TRUE,
-                                          comment.char = "", skip=2,fileEncoding="latin1"))
-
-## Prostate cancer mortality
-pcMortality_raw <- read.csv2(file.path(myPath,"ProstateCancerMortalitySocialstyrelsenStatistikdatabasen_2014-10-03 14_03_42.csv"), header = TRUE, sep = ";", dec = ".", comment.char = "", skip=1, na.strings=c("­­"))
-
-
-## Prostate cancer incidence
-pcIncidence_raw <- read.csv2(file.path(myPath,"ProstateCancerIncidenceSocialstyrelsenStatistikdatabasen_2014-10-03 13_56_35.csv"), header = TRUE, sep = ";", dec = ".", comment.char = "", skip=1, na.strings=c("­­"))
-
-
-## ===========================================
 ## Helper functions
 ## ===========================================
 eventRates <- function(obj,pattern="toClinicalDiagnosis",cumAge=NULL) {
@@ -54,59 +24,14 @@ eventRates <- function(obj,pattern="toClinicalDiagnosis",cumAge=NULL) {
     return(out)
 }
 
-reshapeSocialStyrelsen <- function(data.in){
-    tmp <- data.table(melt(data.in,id.vars = c("År", "Region")))
-    data.out <- within(subset(tmp,variable!="Totalt"),
-                       {origin <- Region
-                        levels(origin) <- sub("Riket","SweStat",levels(origin))
-                        levels(origin) <- sub("Stockholms län","SthlmStat",levels(origin))
-                        rate <- value/100000 #data given in per 100 000
-                        year <- År
-                        ## age span mid-point imputation
-                        age <- variable
-                        age <- sub('X85.','X85.85', age)  #trick for the last value
-                        age <- sub('X','', age)
-                        age <- as.character(lapply(lapply(strsplit(age,"[.]"),as.numeric),mean))
-                        rm(År,Region,value,variable)})
-    data.out$age <- as.numeric(data.out$age)
-    return(data.table(data.out))
-    
-}
-
-reshapeSCB <- function(data.in){
-    data.out <- within(subset(data.in,ålder!="Totalt"),{
-        ålder <- sub(' år','',ålder)
-        ålder <- sub('[+]','',ålder)
-        age <- as.integer(ålder)
-        origin <- region
-        rm(ålder,region,kön)})
-    data.out <- melt(data.out, id=c('age','origin'))
-    data.out <- within(data.out,{
-        year <- variable
-        year <- sub('X','', year)
-        levels(origin) <- sub("00 Riket","SweStat",levels(origin))
-        levels(origin) <- sub("01 Stockholms län","SthlmStat",levels(origin))
-        rm(variable)})
-    data.out$year <- as.numeric(data.out$year)
-    return(data.out)
-}
-
-rateSCB <- function(pop.in, mort.in){
-    rate.out <- merge(pop.in,mort.in,by=c("age","year","origin"))
-    rate.out <- within(rate.out, {
-        rate=value.y/value.x
-        rm(value.x, value.y)})
-    return(data.table(rate.out))
-}
-
 ## @knitr RunSim
 ## ===========================================
 ## Run simulation
 ## ===========================================    
-n=1e7
-#n.cores <- 3
+n=1e6
 noScreening <- callFhcrc(n=n, screen="noScreening")#, mc.cores=n.cores)
 screenUptake <- callFhcrc(n=n, screen="screenUptake")#, mc.cores=n.cores)
+
 
 ## @knitr Preprocessing
 ## ===========================================
@@ -121,25 +46,15 @@ simPcMortScreenUptake <- data.table(cbind(eventRates(screenUptake, pattern="toCa
 simPcIncNoScreening <- data.table(cbind(eventRates(noScreening, pattern="toClinicalDiagnosis", cumAge=85), origin="simNoScreening"))
 simPcIncScreenUptake <- data.table(cbind(eventRates(screenUptake, pattern=c("toClinicalDiagnosis","toScreenDiagnosis"), cumAge=85), origin="simScreenUptake"))
 
-## Preparing the SCB and socialstyrelsen stats
-allMortSwe <- rateSCB(reshapeSCB(popSwe_raw),reshapeSCB(deathSwe_raw))
-allMortSthlm <- rateSCB(reshapeSCB(popSthlm_raw),reshapeSCB(deathSthlm_raw))
-pcMortality <- reshapeSocialStyrelsen(pcMortality_raw)
-pcIncidence <- reshapeSocialStyrelsen(pcIncidence_raw)
-
-allCauseMortDt <- rbindlist(list(allMortSthlm,
-                                 allMortSwe,
-                                 simAllMortNoScreening[,list(age,year,origin,rate)], 
+allCauseMortDt <- rbindlist(list(simAllMortNoScreening[,list(age,year,origin,rate)], 
                                  simAllMortScreenUptake[,list(age,year,origin,rate)]),
                             use.names=TRUE)
 
-pcMortDt <- rbindlist(list(pcMortality,
-                           simPcMortNoScreening[,list(age,year,origin,rate)],
+pcMortDt <- rbindlist(list(simPcMortNoScreening[,list(age,year,origin,rate)],
                            simPcMortScreenUptake[,list(age,year,origin,rate)]),
                            use.names=TRUE)
 
-pcIncDt <- rbindlist(list(pcIncidence,
-                          simPcIncNoScreening[,list(age,year,origin,rate)],  
+pcIncDt <- rbindlist(list(simPcIncNoScreening[,list(age,year,origin,rate)],  
                           simPcIncScreenUptake[,list(age,year,origin,rate)]),
                           use.names=TRUE)
 
