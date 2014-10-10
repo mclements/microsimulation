@@ -1,2 +1,2 @@
 require(microsimulation)
-callFhcrc(n=1e5)
+callFhcrc(n=1e6)

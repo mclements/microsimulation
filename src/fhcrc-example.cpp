@@ -271,9 +271,10 @@ void FhcrcPerson::init() {
 
   // record some parameters
   // faster: initialise the length of the vectors and use an index
-#pragma omp critical
-  {
-    if (id<nLifeHistories) {
+
+  if (id<nLifeHistories) {
+#pragma omp critical (parametersReport)
+    {
       record(parameters,"id",double(id));
       record(parameters,"beta0",beta0);
       record(parameters,"beta1",beta1);
@@ -301,24 +302,26 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double psa = y(now()-35.0);
   // double age = now();
   double year = now() + cohort;
-#pragma omp critical
-  {
+
   // record information
+#pragma omp critical (mainReport)
+  {
     report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
   }
-#pragma omp critical
-  {
-  if (id<nLifeHistories) { // only record up to the first n rows
-    record(lifeHistories,"id", id);
-    record(lifeHistories,"state", state);
-    record(lifeHistories,"ext_grade", ext_grade);
-    record(lifeHistories,"dx", dx);
-    record(lifeHistories,"event", msg->kind);
-    record(lifeHistories,"begin", previousEventTime);
-    record(lifeHistories,"end", now());
-    record(lifeHistories,"psa", psa);
-  }
-  }
+
+    if (id<nLifeHistories) { // only record up to the first n rows
+#pragma omp critical (lifeHistoriesReport)
+      {
+	record(lifeHistories,"id", id);
+	record(lifeHistories,"state", state);
+	record(lifeHistories,"ext_grade", ext_grade);
+	record(lifeHistories,"dx", dx);
+	record(lifeHistories,"event", msg->kind);
+	record(lifeHistories,"begin", previousEventTime);
+	record(lifeHistories,"end", now());
+	record(lifeHistories,"psa", psa);
+      }
+    }
   // handle messages by kind
 
   switch(msg->kind) {
@@ -327,13 +330,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     EventCost += DeathCost; // cost for death, should this be zero???
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]);
     costs.add("DeathCost",now(),DeathCost);
-#pragma omp critical
-  } 
+    
     if (id<nLifeHistories) {
-    record(parameters,"age_d",now());
-    revise(parameters,"pca_death",1.0);
-  }
-  }
+#pragma omp critical (parametersReport)
+      { 
+      record(parameters,"age_d",now());
+      revise(parameters,"pca_death",1.0);
+    }
+    }
     FhcrcPerson::clear();
     break;
 
@@ -688,7 +692,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
        there are chunks left when it is finished it will start on
        another i.e. dynamic chunk-thread allocation.*/
 
-#pragma omp for schedule(dynamic,chunk)    
+#pragma omp for schedule(static,1)
     for (i = 0; i < n; i++) {
       //person = FhcrcPerson(i+firstId,cohort[i],genNh[i],genTreatment[i],genOther[i],genScreen[i]);
       boost::rngstream genNh, genOther, genTreatment, genScreen;
