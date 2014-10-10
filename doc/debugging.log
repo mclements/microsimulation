@@ -104,14 +104,22 @@ Stuff I did:
 
 Stuff to do:
       
- *profile!
-     
- *omp critical -> omp atomic write/update?
+ *profile r! (AK)
+ *profile valgrind! (NO) 
+
+ *omp critical -> omp atomic write/update? (AK)
+
+ *profile again
+
+ ---
+
+ *if keep critical consider naming them (possible speedup) (AK)
  
- *if keep critical consider naming them (possible speedup)
+ *what does nowait do? speedup? (NO)
  
- *what does nowait do? speedup?
+ Start testing on Povel
+ --------
  
  *optimizing flags / compilers
-  
+   
  *MPI? (if so on R-side, or?)
