@@ -1,0 +1,117 @@
+Stuff I did:
+
+1)    As described by:		
+      http://stats.blogoverflow.com/2011/08/using-openmp-ized-c-code-with-r/
+
+      tried sim_instances rcpp-example.cpp with:
+      #define CSTACK_DEFNS 7
+      #include "Rinterface.h"
+
+      R_CStackLimit=(uintptr_t)-1;	
+
+      Makevar -std=c++11
+
+      // [[Rcpp::plugins(openmp)]] - does this do any good?
+
+
+
+2)    
+      Thread Stack Size, as described by:
+       https://computing.llnl.gov/tutorials/openMP/	
+       Default thread stack size can be easy to exhaust. It can also be non-portable between compilers For example, the table below shows some approximate thread stack size li mits at LC using the default version compilers (Aug 2011).
+
+       Compiler 	Approx. Stack Limit 	Approx. Array Size (doubles)
+       Linux icc, ifort 	4 MB 	700 x 700
+       Linux pgcc, pgf90 	8 MB 	1000 x 1000
+       Linux gcc, gfortran 	2 MB 	500 x 500
+
+       Threads that exceed their stack allocation may or may not seg fault. An application may continue to run while data is being corrupted.
+
+       Statically linked codes may be subject to further stack restrictions.
+
+       A user's login shell may also restrict stack size
+
+       If your compiler supports the OpenMP 3.0 OMP_STACKSIZE environment variable (covered in previous section), you can use it to set the thread stack size prior to program execution. For example:
+
+       setenv OMP_STACKSIZE 2000500B
+       setenv OMP_STACKSIZE "3000 k "
+       setenv OMP_STACKSIZE 10M
+       setenv OMP_STACKSIZE " 10 M "
+       setenv OMP_STACKSIZE "20 m "
+       setenv OMP_STACKSIZE " 1G"
+       setenv OMP_STACKSIZE 20000
+
+       Otherwise, at LC, you should be able to use the method below for Linux clusters. The example shows setting the thread stack size to 12 MB, and as a precaution, setting the shell stack size to unlimited.
+
+       csh/tcsh 	
+
+       setenv KMP_STACKSIZE 12000000
+       limit stacksize unlimited 
+
+       ksh/sh/bash 	
+
+       export KMP_STACKSIZE=12000000
+       ulimit -s unlimited 
+
+       Run:
+       export OMP_STACKSIZE=16M
+
+3)     
+       Still got error	       
+       double free or corruption (fasttop)
+
+4)
+	GDB debugging:
+	> require(microsimulation)
+	Loading required package: microsimulation
+	Loading required package: Rcpp
+	> 
+	> 
+	> callFhcrc(n=1e2)
+	[New Thread 0x7ffff1b43700 (LWP 11035)]
+	[New Thread 0x7ffff12f2700 (LWP 11036)]
+	[New Thread 0x7ffff0aa1700 (LWP 11037)]
+	user  system elapsed 
+	0.030   0.004   0.027 
+	FHCRC prostate cancer model with 100 individual(s) under scenario 'noScreening'.
+	> callFhcrc(n=1e5)
+	user  system elapsed 
+	4.330   0.019   1.394 
+	FHCRC prostate cancer model with 100000 individual(s) under scenario 'noScreening'.
+	> callFhcrc(n=1e3,nLifeHistories=1e3)
+	user  system elapsed 
+	0.082   0.000   0.070 
+	FHCRC prostate cancer model with 1000 individual(s) under scenario 'noScreening'.
+	> callFhcrc(n=1e4,nLifeHistories=1e4)
+	*** Error in `/usr/lib/R/bin/exec/R': double free or corruption (fasttop): 0x00007fffe800f360 ***
+
+	Program received signal SIGABRT, Aborted.
+	[Switching to Thread 0x7ffff12f2700 (LWP 11036)]
+	0x00007ffff72f7bb9 in __GI_raise (sig=sig@entry=6) at ../nptl/sysdeps/unix/sysv/linux/raise.c:56
+	56	../nptl/sysdeps/unix/sysv/linux/raise.c: No such file or directory.
+
+5) 	Experimented with reporting in test.cpp (simplified implementation). 
+
+
+6)
+	The solution!!!
+	pragma omp critical
+
+	...everywhere :-/
+	(around the reporting)
+
+
+
+Stuff to do:
+      
+ *profile!
+     
+ *omp critical -> omp atomic write/update?
+ 
+ *if keep critical consider naming them (possible speedup)
+ 
+ *what does nowait do? speedup?
+ 
+ *optimizing flags / compilers
+  
+ *MPI? (if so on R-side, or?)
