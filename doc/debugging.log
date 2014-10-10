@@ -123,3 +123,29 @@ Stuff to do:
  *optimizing flags / compilers
    
  *MPI? (if so on R-side, or?)
+
+
+
+
+
+
+
+Howto install and compile the R-package:
+
+https://github.com/mclements/microsimulation
+
+shell: git clone https://github.com/mclements/microsimulation.git
+
+R: install.packages(“BH”)
+
+R: install.packages(“Rcpp”)
+
+shell: R CMD INSTALL path_to_microsimulation
+
+
+Howto run valgrind from shell:
+R --vanilla -d "valgrind --tool=memcheck --track-origins=yes" < ~/src/ki/microsimulation/doc/RunSim.R
+
+R --vanilla -d "valgrind --tool=memcheck --tool=callgrind" < ~/src/ki/microsimulation/doc/RunSim.R
+
+
