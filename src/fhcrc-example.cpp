@@ -92,7 +92,9 @@ namespace {
   int ActiveSurveillanceCost = 140000;
   int MetastaticCancerCost = 769574;
   int DeathCost = 0;
-
+  double diffTime = 0;
+  double cumTime = 0;
+  
   // initialise input parameters (see R::callFhcrc for actual defaults)
   double screeningCompliance = 0.75;
   double studyParticipation = 35.0/260.0;
@@ -192,7 +194,8 @@ namespace {
     Initialise a simulation run for an individual
  */
 void FhcrcPerson::init() {
-  
+  double diffTime;
+  double cumTime;
   // declarations
   double ym, aoc;
 
@@ -304,11 +307,22 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
+  //double start_time = omp_get_wtime();
+
 #pragma omp critical (mainReport)
-  {
+    {
     report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
   }
 
+  // int tid = omp_get_thread_num();
+  // if (tid == 0)
+  //   {
+  //     diffTime = omp_get_wtime() - start_time;
+  //     cumTime = cumTime + diffTime;
+  //     printf("The single person main reporting takes:  %f \n", diffTime);
+  //     printf("The cumulated main reporting takes:  %f \n", cumTime);   
+  //   }
+  
     if (id<nLifeHistories) { // only record up to the first n rows
 #pragma omp critical (lifeHistoriesReport)
       {
@@ -676,7 +690,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   int nthreads, tid, i, chunk=1000;
 
   //#pragma omp parallel shared(nthreads,chunk) private(i,tid,genNh,genOther,genTreatment,genScreen)
-#pragma omp parallel shared(nthreads,chunk) private(i,tid,sim)
+#pragma omp parallel shared(nthreads,chunk) private(i,tid,sim,diffTime,cumTime)
   {
     /* This section only prints the number of available threads and the start each thread*/
     tid = omp_get_thread_num();
