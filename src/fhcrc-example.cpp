@@ -275,7 +275,7 @@ void FhcrcPerson::init() {
   // record some parameters
   // faster: initialise the length of the vectors and use an index
 
-  if (id<nLifeHistories) {
+  if (id < nLifeHistories) {
 #pragma omp critical (parametersReport)
     {
       record(parameters,"id",double(id));
@@ -307,21 +307,21 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double year = now() + cohort;
 
   // record information
-  //double start_time = omp_get_wtime();
-
+  double start_time = omp_get_wtime();
+  printf("Handle message!\n");
 #pragma omp critical (mainReport)
     {
     report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
   }
 
-  // int tid = omp_get_thread_num();
-  // if (tid == 0)
-  //   {
-  //     diffTime = omp_get_wtime() - start_time;
-  //     cumTime = cumTime + diffTime;
-  //     printf("The single person main reporting takes:  %f \n", diffTime);
-  //     printf("The cumulated main reporting takes:  %f \n", cumTime);   
-  //   }
+  int tid = omp_get_thread_num();
+  if (tid == 0)
+    {
+      diffTime = omp_get_wtime() - start_time;
+      cumTime = cumTime + diffTime;
+      fprintf(stdout, "TID :%02d\tThe single person main reporting takes:  %f \n", tid, diffTime);
+         
+    }
   
     if (id<nLifeHistories) { // only record up to the first n rows
 #pragma omp critical (lifeHistoriesReport)
@@ -720,6 +720,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
       genScreen.ResetNextSubstream();
       genTreatment.ResetNextSubstream();
     }
+    fprintf(stdout, "TID :%02d\tThe cumulated main reporting takes:  %f \n", tid, cumTime);
   }
 
   // output
