@@ -1,0 +1,5 @@
+*.so
+*.orig
+*.o
+/doc/RunSim.R~
+/doc/Rprofiling.R~

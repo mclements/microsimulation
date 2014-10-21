@@ -9,6 +9,9 @@
 #include <omp.h>
 // [[Rcpp::plugins(openmp)]]
 
+#include <iostream>
+#include <fstream>
+
 namespace {
 
   using namespace std;
@@ -194,8 +197,7 @@ namespace {
     Initialise a simulation run for an individual
  */
 void FhcrcPerson::init() {
-  double diffTime;
-  double cumTime;
+  
   // declarations
   double ym, aoc;
 
@@ -308,34 +310,37 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record information
   double start_time = omp_get_wtime();
-  printf("Handle message!\n");
+  // printf("Handle message!\n");
 #pragma omp critical (mainReport)
-    {
+  {
     report.add(FullState(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, now());
   }
-
-  int tid = omp_get_thread_num();
-  if (tid == 0)
-    {
-      diffTime = omp_get_wtime() - start_time;
-      cumTime = cumTime + diffTime;
-      fprintf(stdout, "TID :%02d\tThe single person main reporting takes:  %f \n", tid, diffTime);
-         
-    }
-  
-    if (id<nLifeHistories) { // only record up to the first n rows
+  // int tid = omp_get_thread_num();
+  // diffTime = omp_get_wtime() - start_time;
+  // cumTime = cumTime + diffTime;
+  // // fprintf(stdout, "TID :%02d\tThe single person main reporting takes:  %f \n", tid, diffTime);
+  // // fprintf(stdout, "TID :%02d\tThe cumulated main reporting takes:  %f \n", tid, cumTime);
+  // ofstream myfile ("example.txt",fstream::app|fstream::out);
+  // if (myfile.is_open())
+  //   {
+  //     myfile << "TID:" << tid << " The single event main reporting takes: " << diffTime << "\n";
+  //     myfile << "TID:" << tid << " The cumulated time in main reporting is: " << diffTime << "\n";
+  //     myfile.close();
+  //   }
+  // else cout << "Unable to open file";
+  if (id<nLifeHistories) { // only record up to the first n rows
 #pragma omp critical (lifeHistoriesReport)
-      {
-	record(lifeHistories,"id", id);
-	record(lifeHistories,"state", state);
-	record(lifeHistories,"ext_grade", ext_grade);
-	record(lifeHistories,"dx", dx);
-	record(lifeHistories,"event", msg->kind);
-	record(lifeHistories,"begin", previousEventTime);
-	record(lifeHistories,"end", now());
-	record(lifeHistories,"psa", psa);
-      }
+    {
+      record(lifeHistories,"id", id);
+      record(lifeHistories,"state", state);
+      record(lifeHistories,"ext_grade", ext_grade);
+      record(lifeHistories,"dx", dx);
+      record(lifeHistories,"event", msg->kind);
+      record(lifeHistories,"begin", previousEventTime);
+      record(lifeHistories,"end", now());
+      record(lifeHistories,"psa", psa);
     }
+  }
   // handle messages by kind
 
   switch(msg->kind) {
@@ -720,7 +725,6 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
       genScreen.ResetNextSubstream();
       genTreatment.ResetNextSubstream();
     }
-    fprintf(stdout, "TID :%02d\tThe cumulated main reporting takes:  %f \n", tid, cumTime);
   }
 
   // output
