@@ -21,7 +21,7 @@ namespace {
 
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
-  enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen, 
+  enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen, 
 		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
@@ -291,6 +291,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double Z = ymean(now()-35.0);
   double age = now();
   double year = age + cohort;
+    
 
   // record information
   report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
@@ -379,6 +380,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toScreen); // now start organised screening
     break;
 
+  case toBiopsyFollowUpScreen:
   case toScreen:
     if (includePSArecords) {
       psarecord.record("id",id);
@@ -417,10 +419,15 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	outParameters.revise("age_psa",now());
       }
       everPSA = true;
+    }
+    // Other threshold here
+    if (msg->kind == toScreen && psa >= parameter["psaThreshold"] && R::runif(0.0,1.0) < parameter["biopsyCompliance"]) {
+      scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } 
-    if (psa>=parameter["psaThreshold"] && R::runif(0.0,1.0) < parameter["biopsyCompliance"]) {
-	scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
-    } else { // re-screening schedules
+    else if (msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"] && R::runif(0.0,1.0) < parameter["biopsyCompliance"]) {
+      	scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy, assuming similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
+    }
+    else { // re-screening schedules
       rngScreen->set();
       if (organised) {
 	switch (screen) {
@@ -510,12 +517,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
     if (state == Healthy) {
       previousNegativeBiopsy = true;
-      if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toScreen);
+      // Here we want 20% to opportunistic and 80% to re-screen in 12 months with threshold of 4. N.B. also the false negative 6 rows below.
+      if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
+      // else schedule a routine future screen
     } else { // state != Healthy
       if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) {
 	scheduleAt(now(), toScreenDiagnosis);
       } else { // false negative biopsy
-	if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toScreen);
+	if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
       }
     }
     break;

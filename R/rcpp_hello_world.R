@@ -165,6 +165,7 @@ FhcrcParameters <- list(
     studyParticipation = 35.0/260.0,
     nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,
+    psaThresholdBiopsyFollowUp = 4.0,
     c_low_grade_slope=-0.006,
     discountRate = 0.035,
     mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
