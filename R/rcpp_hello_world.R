@@ -248,7 +248,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   stateT <- c("Healthy","Localised","Metastatic")
   gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
-              "toCancerDeath","toOtherDeath","toScreen",
+              "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
               "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
               "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toChangeUtility","toAgeUtility")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
