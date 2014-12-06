@@ -1,0 +1,51 @@
+TODO
+* Profiling 
+** profile r! (AK)
+** profile valgrind! (NO) 
+
+* Start report! (NO)
+** Baseline profiling (AK)
+
+* Easy solutions with omp critical
+** omp critical -> omp atomic write/update? (AK)
+** profile again
+
+* Misc tests
+** change from dynamic to static
+** if keep critical consider naming them (possible speedup) (AK)
+** what does nowait do? speedup? (NO)
+ 
+* Start testing on Povel
+ 
+* Optimizing flags / compilers
+   
+* MPI? (if so on R-side, or?)
+
+
+
+
+
+
+* Instructions
+** Build & compile
+Howto install and compile the R-package:
+
+=https://github.com/mclements/microsimulation=
+
+=shell: git clone https://github.com/mclements/microsimulation.git=
+
+=R: install.packages(“BH”)=
+
+=R: install.packages(“Rcpp”)=
+
+=shell: R CMD INSTALL path_to_microsimulation=
+
+** Run valgrind from R
+Howto run valgrind from shell:
+
+=R --vanilla -d "valgrind --tool=memcheck --track-origins=yes" < ~/src/ki/microsimulation/doc/RunSim.R=
+
+=R --vanilla -d "valgrind --tool=memcheck --tool=callgrind" < ~/src/ki/microsimulation/doc/RunSim.R=
+
+
+
