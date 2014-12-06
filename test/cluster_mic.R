@@ -3,16 +3,19 @@ library(snow)
 library(parallel)
 require(microsimulation)
 
-mc.cores <- max(1, mpi.universe.size() - 1)
+#mpi.universe.size()
+
+# A better way to set these would be nice
+NumberOfNodes <- 4
+CoresPerNode <- 24
+mc.cores <- max(1, NumberOfNodes*CoresPerNode-1) # minus one for master
 cl <- makeMPIcluster(mc.cores)
 cat(sprintf("Running with %d workers\n", length(cl)))
 clusterCall(cl, function() { library(microsimulation); NULL })
 
-callFhcrc <- 
-function (n = 10, screen = "noScreening", nLifeHistories = 10, 
+callFhcrc <- function (n = 10, screen = "noScreening", nLifeHistories = 10, 
     screeningCompliance = 0.75, seed = 12345, studyParticipation = 50/260, 
-    psaThreshold = 3, mc.cores, cl) 
-{
+    psaThreshold = 3, mc.cores = 2, cl = NULL) {
     state <- RNGstate()
     on.exit(state$reset())
     RNGkind("user")
@@ -71,7 +74,7 @@ function (n = 10, screen = "noScreening", nLifeHistories = 10,
             Survival = Survival))
     fhcrcData$survival_dist <- with(fhcrcData$survival_dist, 
         data.frame(Grade = Grade, Time = as.double(Time), Survival = Survival))
-    print(system.time(out <- clusterApply(cl, 1:mc.cores, function(i) {
+    step <- function(i) {
         chunk <- chunks[[i]]
         set.user.Random.seed(initialSeeds[[i]])
         .Call("callFhcrc", parms = list(n = as.integer(length(chunk)), 
@@ -80,7 +83,18 @@ function (n = 10, screen = "noScreening", nLifeHistories = 10,
             studyParticipation = as.double(studyParticipation), 
             psaThreshold = as.double(psaThreshold), cohort = as.double(chunk), 
             tables = fhcrcData), PACKAGE = "microsimulation")
-    })))
+    }
+    if (is.null(cl)){
+        print(system.time(out <- mclapply(1:mc.cores, step)))
+    }
+    else {    
+        print(tm <- snow.time(out <- clusterApply(cl, 1:mc.cores, step)))
+        print(tm)
+        # Saving time in cluster nodes plot
+        png(filename="~/cluster_timing.png")
+        plot(tm)
+        dev.off()
+    }
     cbindList <- function(obj) if (is.list(obj)) 
         do.call("cbind", lapply(obj, cbindList))
     else data.frame(obj)
@@ -116,7 +130,8 @@ function (n = 10, screen = "noScreening", nLifeHistories = 10,
     out
 }
 
-print(test <- callFhcrc(1e6, mc.cores=mc.cores, cl=cl))
+print(out <- callFhcrc(n=1e7, nLifeHistories=10, screening = "stockholm3_risk_stratified", mc.cores=mc.cores, cl=cl))
+save(out, cl, file="SimulatedData.Rda")
 
 stopCluster(cl)
 mpi.quit()
