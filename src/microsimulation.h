@@ -969,6 +969,7 @@ namespace R {
      than conditioning on the distribution function.
   */
   double rnormPos(double mean, double sd);
+  double rllogis(double shape, double scale);
 }
 
 #endif

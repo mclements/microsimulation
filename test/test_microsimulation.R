@@ -3,6 +3,7 @@
 ## microsimulation:::.testPackage()
 
 ## unit tests
+refresh
 require(microsimulation)
 temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
@@ -15,6 +16,98 @@ temp=callCalibrationPerson(10)
 stopifnot(temp$StateOccupancy[1:2] == c(422,354))
 temp3 <- callIllnessDeath(10)
 stopifnot(abs(with(temp3,sum(pt$pt)/10)-64.96217)<1e-3)
+
+refresh
+require(microsimulation)
+require(sqldf)
+temp2=callFhcrc(1e7,screen="screenUptake",mc.cores=2)
+
+events <- temp2$summary$events
+pt <- temp2$summary$pt
+m <- dbDriver("SQLite")
+connection <- dbConnect(m, dbname = ":memory:")
+init_extensions(connection)
+dbWriteTable(connection, '`events`', events, row.names = FALSE)
+dbWriteTable(connection, '`pt`', pt, row.names = FALSE)
+
+## cancer mortality rates
+t1 <- dbGetQuery(connection, "select *, n/pt as rate from (select year, min(85,floor(age/5)*5) as age5, sum(n*1.0) as n from events where event in ('toCancerDeath') and year>=1995 and year<=2010 group by year, age5) t1 natural join (select year, min(85,floor(age/5)*5) as age5, sum(pt) as pt from pt where year>=1995 and year<=2010 group by year, age5) as t2 order by t1.age5, t1.year")
+
+## incidence rates
+t1 <- dbGetQuery(connection, "select *, n/pt as rate from (select year, min(85,floor(age/5)*5) as age5, sum(n*1.0) as n from events where event in ('toClinicalDiagnosis','toScreenDiagnosis') and year>=1995 and year<=2010 group by year, age5) t1 natural join (select year, min(85,floor(age/5)*5) as age5, sum(pt) as pt from pt where year>=1995 and year<=2010 group by year, age5) as t2 order by t1.age5, t1.year")
+require(lattice)
+xyplot(rate ~ year | factor(age5), data=t1, type="l")
+
+dbGetQuery(connection, 'select event,sum(n) from events group by event')
+
+
+temp=callFhcrc(1e5,nLifeHistories=1e5)
+life=temp$lifeHistories
+deaths <- sqldf("select t1.id, t1.end as dx, t2.end as death, t1.state, t1.ext_grade from life as t1 inner join life as t2 on t1.id=t2.id where t1.event='toClinicalDiagnosis' and t2.event='toCancerDeath'")
+
+dbDisconnect(connection)
+
+with(subset(deaths,state=="Localised"),plot(density(death-dx,from=0)))
+
+## what proportion of clinical diagnoses die due to cancer?
+deaths <- sqldf("select t1.id, t1.end as dx, t2.end as death, t2.event, t1.state, t1.ext_grade from life as t1 inner join life as t2 on t1.id=t2.id where t1.event='toClinicalDiagnosis' and t2.event in ('toOtherDeath','toCancerDeath')")
+xtabs(~event+pmin(85,floor(death/5)*5),deaths,subset=(state=="Localised"))
+
+
+refresh
+require(rstpm2)
+require(foreign)
+require(lattice)
+d <- read.dta("~/Downloads/prostate-20141010.dta")
+d2 <- subset(d, age>=60 & age<70 & diayear>=1980)
+## debug(pstpm2)
+fit <- pstpm2(Surv(time,pcdeath)~1,data=d2,smooth.formula=~s(time,diayear,k=30),sp=0.001)
+
+xtabs(~diayear+addNA(m),data=d)
+recent <- subset(d,diayear>=2004 & !is.na(m))
+xtabs(~I(floor(age/5)*5)+m,recent)
+require(sqldf)
+sqldf("select min(90,floor(age/5)*5) as age5, count(*) as n, avg(m) as p_m from recent group by age5")
+
+grid <- expand.grid(diayear=1980:2009,
+                    time=seq(0.1,6000,length=50))
+grid$haz <- predict(fit,newdata=grid,type="hazard")
+grid$surv <- predict(fit,newdata=grid)
+xyplot(haz~time | diayear, data=grid, type="l")
+xyplot(surv~time | diayear, data=grid, type="l")
+
+xyplot(surv~time | factor(diayear), data=grid,
+       panel=function(x,y,subscripts) {
+           panel.xyplot(x,y,type="l")
+           d3 <- subset(d2,diayear == grid$diayear[subscripts][1])
+           sfit <- survfit(Surv(time,pcdeath)~1,data=d3)
+           panel.lines(sfit$time,sfit$surv,col=1)
+           panel.lines(sfit$time,sfit$lower,col=1,lty=2)
+           panel.lines(sfit$time,sfit$upper,col=1,lty=2)
+       })
+
+xyplot(pcdeath~time | factor(diayear), data=d,
+       subset=age>=50 & age<70,
+       panel=function(x,y,subscripts) {
+           d3 <- d[subscripts,]
+           sfit <- survfit(Surv(time,pcdeath)~1,data=d3)
+           panel.lines(sfit$time,sfit$surv,col=1,type="S")
+           panel.lines(sfit$time,sfit$lower,col=1,lty=2,type="S")
+           panel.lines(sfit$time,sfit$upper,col=1,lty=2,type="S")
+       })
+
+xyplot(pcdeath~time | factor(diayear), data=d,
+       subset=age>=85 & diayear>=1961,
+       xlim=c(0,365*15),
+       panel=function(x,y,subscripts) {
+           d3 <- d[subscripts,]
+           sfit <- survfit(Surv(time,pcdeath)~1,data=d3)
+           panel.lines(sfit$time,sfit$surv,col=1,type="S")
+           panel.lines(sfit$time,sfit$lower,col=1,lty=2,type="S")
+           panel.lines(sfit$time,sfit$upper,col=1,lty=2,type="S")
+       })
+
+
 
 
 ## all(c(callFhcrc(5)$lifeHistories == callFhcrc(5)$lifeHistories,
@@ -35,6 +128,7 @@ i <- tapply(1:nrow(temp2),temp2$id,min)
 temp2 <- temp2[i,]
 xtabs(~state+ext_grade+I(psa>=3),temp2)
 pos <- function(x) ifelse(x>0,x,0)
+       
 temp2 <- transform(temp2,
                    advanced=(state>0 & ext_grade==2),
                    cancer=(state>0),

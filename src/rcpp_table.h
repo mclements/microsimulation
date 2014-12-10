@@ -157,21 +157,21 @@ template<class Key0, class Outcome>
 template<class Key0, class Key1, class Outcome>
   class Table<pair<Key0,Key1>,Outcome> {
  public:
-  typedef boost::tuple<Key0,Key1> key_type;
+  typedef pair<Key0,Key1> key_type;
   typedef Outcome mapped_type;
   typedef map<key_type,mapped_type> data_type;
-  typedef boost::tuple<
+  typedef pair<
     set<Key0, greater<Key0> >,
     set<Key1, greater<Key1> > 
     > Axis;
   void insert(key_type key, Outcome outcome) {
-    get<0>(axis).insert(get<0>(key));
-    get<1>(axis).insert(get<1>(key));
+    axis.first.insert(key.first);
+    axis.second.insert(key.second);
     data[key] = outcome;
   }
   virtual Outcome operator()(key_type key) {
-    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
-		      *get<1>(axis).lower_bound(get<1>(key)))];
+    return data[key_type(*(axis.first.lower_bound(key.first)),
+			 *(axis.second.lower_bound(key.second)))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2) { 

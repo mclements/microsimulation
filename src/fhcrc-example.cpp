@@ -78,10 +78,14 @@ namespace {
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
   typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
+  typedef Table<pair<double,double>,double> TableBiopsyCompliance;
+  typedef Table<pair<double,double>,double> TableDDD; // as per TableBiopsyCompliance
   typedef map<int,NumericInterpolate> H_dist_t;
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
   TablePrtx prtxCM, prtxRP;
   TablePradt pradt;
+  TableBiopsyCompliance tableBiopsyCompliance;
+  TableDDD rescreen_shape, rescreen_scale, rescreen_cure;
   NumericInterpolate interp_prob_grade7;
   H_dist_t H_dist;
   H_local_t H_local;
@@ -232,10 +236,19 @@ void FhcrcPerson::init() {
     case stockholm3_risk_stratified:
     case screenUptake: {
       // screening participation increases with time
-      if (1995.0 - cohort < 50.0) 
-	scheduleAt(50.0 + R::rweibull(2.0,10.0), toScreen);
-      else
-	scheduleAt(1995.0 - cohort + R::rweibull(2.0,10.0), toScreen);
+      double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.01; 
+      double shape = 3.81;
+      double scale = cohort>1960.0 ? 19.4 : 19.4*17.0/(1977.0 - cohort);
+      double start_age = cohort>1960.0 ? 35.0 : 1995.0 - cohort;
+      if (R::runif(0.0,1.0)<pscreening)
+	scheduleAt(start_age+R::rllogis(shape,scale), toScreen);
+      // if (1995.0 - cohort < 50.0) 
+      // 	scheduleAt(50.0 + R::rweibull(0.7,11.85), toScreen);
+      // else {
+      // 	x = 1995.0 - cohort + R::rweibull(0.7,11.85);
+      // 	if (x<75)
+      // 	  scheduleAt(x, toScreen);
+      // }
       // for re-screening patterns: see handleMessage()
     } break;
     default:
@@ -291,6 +304,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double Z = ymean(now()-35.0);
   double age = now();
   double year = age + cohort;
+  double compliance;
 
   // record information
   report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
@@ -418,11 +432,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       }
       everPSA = true;
     } 
-    if (psa>=parameter["psaThreshold"] && R::runif(0.0,1.0) < parameter["biopsyCompliance"]) {
+    compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.0),
+								  bounds<double>(age,55,75)));
+    // compliance = parameter["biopsyCompliance"]
+    if (psa>=parameter["psaThreshold"] && R::runif(0.0,1.0) < compliance) {
 	scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } else { // re-screening schedules
       rngScreen->set();
-      if (organised) {
+      if (organised) { // NB: currently assumes 100% compliance?
 	switch (screen) {
 	case stockholm3_goteborg:
 	  if (psa<1.0)
@@ -448,20 +465,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  REprintf("Organised screening state not matched: %s\n",screen);
 	  break;
 	}
-      } else  // opportunistic screening
+      } else  // opportunistic screening - move to a separate function?
 	switch(screen) {
 	case screenUptake:
 	case stockholm3_goteborg:
-	case stockholm3_risk_stratified:
-	  double age_screen;
-	  if (psa<3)
-	    age_screen = now() + R::rweibull(1.16,4.79);
-	  else if (psa<4)
-	    age_screen = now() + R::rweibull(0.913,2.94);
-	  else
-	    age_screen = now() + R::rweibull(0.335,0.188);
-	  // what if age_screen >= 70.0?
-	  scheduleAt(age_screen, toScreen);
+	case stockholm3_risk_stratified: {
+	  TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
+	  double pscreened = 1.0 - rescreen_cure(key); 
+	  double shape = rescreen_shape(key);
+	  double scale = rescreen_scale(key);
+	  if (R::runif(0.0,1.0)<pscreened) {
+	    scheduleAt(R::rweibull(shape,scale), toScreen);
+	  }
+	}
 	  break;
 	default:
 	  // do not schedule any other screens
@@ -605,7 +621,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break; 
 
   case toADT:
-    // costs & utlities??
+    // costs & utilities??
     break;
 
   case toUtility:
@@ -670,7 +686,12 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
-
+  tableBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyComplianceTable"]),
+						"psa","age","compliance");
+  rescreen_shape = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "shape");
+  rescreen_scale = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "scale");
+  rescreen_cure  = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "cure");
+  
   H_dist.clear();
   DataFrame df_survival_dist = as<DataFrame>(tables["survival_dist"]); // Grade,Time,Survival
   DataFrame df_survival_local = as<DataFrame>(tables["survival_local"]); // Age,Grade,Time,Survival

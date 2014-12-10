@@ -97,4 +97,10 @@ namespace R {
     while ((x=R::rnorm(mean,sd))<0.0) { }
     return x;
   }
+  
+  double rllogis(double shape, double scale) {
+    double u = R::runif(0.0,1.0);
+    return scale*exp(log(1.0/u-1.0)/shape);
+  }
+
 }
