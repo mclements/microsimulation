@@ -205,8 +205,8 @@ FhcrcParameters <- list(
         RadiationTherapyUtilityPart1 = 0.73,
         RadiationTherapyUtilityPart2 = 0.78,
         ActiveSurveillanceUtility = 0.97,
-        MetastaticCancerUtilityPart1 = 0.60,
-        MetastaticCancerUtilityPart2 = 0.40,
+        MetastaticCancerUtility = 0.60,
+        PalliativeUtility = 0.40,
         DeathUtility = 0.00),
     ## Utility duration is given in years.
     utility_duration = c(InvitationUtilityDuration = 0.0,
@@ -219,8 +219,8 @@ FhcrcParameters <- list(
         RadiationTherapyUtilityDurationPart1 = 2/12,
         RadiationTherapyUtilityDurationPart2 = 10/12,
         ActiveSurveillanceUtilityDuration = 7,
-        MetastaticCancerUtilityDurationPart1 = 30/12,
-        MetastaticCancerUtilityDurationPart2 = 6/12)
+        MetastaticCancerUtilityDuration = 30/12,
+        PalliativeUtilityDuration = 6/12)
     )
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]

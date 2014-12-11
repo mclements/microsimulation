@@ -107,18 +107,6 @@ namespace {
   int screen, nLifeHistories;
   bool includePSArecords;
 
-  /** 
-      Utilities to record information in a map<string, vector<double> > object
-  */
-  // void record(map<string, vector<double> > & obj, const string variable, const double value) {
-  //   obj[variable].push_back(value);
-  // }
-  // void revise(map<string, vector<double> > & obj, const string variable, const double value) {
-  //   //*(--obj[variable].end()) = value;
-  //   obj[variable].pop_back();
-  //   obj[variable].push_back(value);
-  // }
-
   class cMessageUtilityChange : public cMessage {
   public:
     cMessageUtilityChange(double change) : cMessage(toUtilityChange), change(change) { }
@@ -247,13 +235,6 @@ void FhcrcPerson::init() {
       double start_age = cohort>1960.0 ? 35.0 : 1995.0 - cohort;
       if (R::runif(0.0,1.0)<pscreening)
 	scheduleAt(start_age+R::rllogis(shape,scale), toScreen);
-      // if (1995.0 - cohort < 50.0) 
-      // 	scheduleAt(50.0 + R::rweibull(0.7,11.85), toScreen);
-      // else {
-      // 	x = 1995.0 - cohort + R::rweibull(0.7,11.85);
-      // 	if (x<75)
-      // 	  scheduleAt(x, toScreen);
-      // }
       // for re-screening patterns: see handleMessage()
     } break;
     default:
@@ -326,15 +307,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toCancerDeath:
     costs.add("DeathCost",now(),cost_parameters["DeathCost"]); // cost for death, should this be zero???
-    
+    // change in utility for terminal illness at the end of palliative therapy
+    // utility -= utility_duration["PalliativeDuration"]*(utility_estimates["MetastaticCancerUtility"]-utility_estimates["PalliativeUtility"]);
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
       outParameters.revise("pca_death",1.0);
     }
     Sim::stop_simulation();
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["BiopsyUtility"]));
-    scheduleAt(now() + utility_duration["BiopsyUtilityDuration"], 
-	       new cMessageUtilityChange(utility_estimates["BiopsyUtility"]));
     break;
 
   case toOtherDeath:
@@ -353,16 +332,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
   
   case toMetastatic:
-    costs.add("MetastaticCancerCost",now(),cost_parameters["MetastaticCancerCost"]);
-    // Scheduling utilities for palliative therapy
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtilityPart1"]));
-    scheduleAt(now() + utility_duration["MetastaticCancerUtilityDurationPart1"], 
-	       new cMessageUtilityChange(utility_estimates["MetastaticCancerUtilityPart1"]));
-    // Scheduling utilities for terminal illness at the end of palliative therapy
-    scheduleAt(now() + utility_duration["MetastaticCancerUtilityDurationPart1"], 
-	       new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtilityPart2"]));
-    scheduleAt(now() + utility_duration["MetastaticCancerUtilityDurationPart2"], 
-	       new cMessageUtilityChange(utility_estimates["MetastaticCancerUtilityPart2"]));
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
     RemoveKind(toUtility);
@@ -377,19 +346,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toClinicalDiagnosticBiopsy);
     scheduleAt(now(), toClinicalDiagnosticBiopsy);
     scheduleAt(now(), toTreatment);
-    // switch(state) {
-    // case Localised:
-    //   if (R::runif(0.0,1.0) < 0.5) // 50% not cured
-    // 	scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
-    //   break;
-    // case Metastatic:
-    //   if (R::runif(0.0,1.0) < 0.75) // 75% not cured
-    // 	scheduleAt(now() + R::rweibull(2.0,3.0), toCancerDeath);
-    //   break;
-    // default:
-    //   REprintf("State not matched\n");
-    //   break;
-    // }
     break;
 
   case toOrganised:
@@ -413,24 +369,24 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("beta1",beta1);
       psarecord.record("beta2",beta2);
       psarecord.record("Z",Z);
-      // psarecord.push_back(PSArecord::Type(id, state, ext_grade, organised, dx, now(), psa, Z));
     }
     costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
     scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
 	       new cMessageUtilityChange(utility_estimates["InvitationUtility"]));
     if (organised) {
-	costs.add("FormalPSACost",now(),cost_parameters["FormalPSACost"]); //Some formal screening scenarios don't seem to be set to organised
-	scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
-	scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
-		   new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
-
-    } else {
+      if (screen == stockholm3_risk_stratified && psa>=1.0) 
+	costs.add("FormalPSABiomarkerCost",now(),cost_parameters["FormalPSABiomarkerCost"]);
+      else
+	costs.add("FormalPSACost",now(),cost_parameters["FormalPSACost"]);
+      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
+      scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
+		 new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
+    } else { // opportunistic
       costs.add("OpportunisticPSACost",now(),cost_parameters["OpportunisticPSACost"]); //cost for opportunistic PSA test
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["OpportunisticPSAUtility"]));
       scheduleAt(now() + utility_duration["OpportunisticPSAUtilityDuration"], 
 		   new cMessageUtilityChange(utility_estimates["OpportunisticPSAUtility"]));
-
     }
     if (!everPSA) {
       if (id<nLifeHistories) {
@@ -439,8 +395,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       everPSA = true;
     }
     // Other threshold here
-compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.0),
-								  bounds<double>(age,55,75)));
+    compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.0),
+							   bounds<double>(age,55,75)));
     if (msg->kind == toScreen && psa >= parameter["psaThreshold"] && R::runif(0.0,1.0) < compliance) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } 
@@ -503,19 +459,6 @@ compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.
     RemoveKind(toClinicalDiagnosis);
     RemoveKind(toScreen);
     scheduleAt(now(), toTreatment);
-    // switch(state) {
-    // case Localised:
-    //   if (R::runif(0.0,1.0) < 0.45) // assume slightly better stage-specific cure: 55% cf. 50%
-    // 	scheduleAt(tc + 35.0 + R::rweibull(2.0,10.0), toCancerDeath);
-    //   break;
-    // case Metastatic:
-    //   if (R::runif(0.0,1.0) < 0.70) // assume slightly better stage-specific cure: 30% cf. 25%
-    // 	scheduleAt(tmc + 35.0 + R::rweibull(2.0,3.0), toCancerDeath);
-    //   break;
-    // default:
-    //   REprintf("State not matched\n");
-    //   break;
-    // }
     break;
 
   // assumes that biopsies are 100% accurate
@@ -549,40 +492,48 @@ compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.
     break;
 
   case toTreatment: {
-    rngTreatment->set();
-    TablePrtx::key_type key = 
-      TablePrtx::key_type(bounds<double>(now(),50.0,79.0),
-    			  bounds<double>(year,1973.0,2004.0),
-    			  int(grade));
-    double pCM = prtxCM(key);
-    double pRP = prtxRP(key);
-    double u = R::runif(0.0,1.0);
-    tx = (u<pCM)?CM:((u<pCM+pRP)?RP:RT);
-    if (debug) Rprintf("Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%d, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",now(),year,state,grade,tx,u,pCM,pRP);
-    if (tx == CM)
-      scheduleAt(now(), toCM);
-    if (tx == RP)
-      scheduleAt(now(), toRP);
-    if (tx == RT)
-      scheduleAt(now(), toRT);
-    // check for ADT
-    double pADT = 
-      pradt(TablePradt::key_type(tx,
-				 bounds<double>(now(),50,79),
-				 bounds<double>(year,1973,2004),
-				 grade));
-    u = R::runif(0.0,1.0);
-    if (u < pADT)  {
-      adt = true;
-      scheduleAt(now(), toADT);
+    if (state == Metastatic) {
+      costs.add("MetastaticCancerCost",now(),cost_parameters["MetastaticCancerCost"]);
+      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
+      // scheduleAt(now() + utility_duration["MetastaticCancerUtilityDuration"], 
+      // 		 new cMessageUtilityChange(utility_estimates["MetastaticCancerUtility"]));
     }
-    if (debug) Rprintf("adt=%d, u=%8.6f, pADT=%8.6f\n",adt,u,pADT);
+    else { // Localised
+      rngTreatment->set();
+      TablePrtx::key_type key = 
+	TablePrtx::key_type(bounds<double>(now(),50.0,79.0),
+			    bounds<double>(year,1973.0,2004.0),
+			    int(grade));
+      double pCM = prtxCM(key);
+      double pRP = prtxRP(key);
+      double u = R::runif(0.0,1.0);
+      tx = (u<pCM)?CM:((u<pCM+pRP)?RP:RT);
+      if (debug) Rprintf("Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%d, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",now(),year,state,grade,tx,u,pCM,pRP);
+      if (tx == CM)
+	scheduleAt(now(), toCM);
+      if (tx == RP)
+	scheduleAt(now(), toRP);
+      if (tx == RT)
+	scheduleAt(now(), toRT);
+      // check for ADT
+      double pADT = 
+	pradt(TablePradt::key_type(tx,
+				   bounds<double>(now(),50,79),
+				   bounds<double>(year,1973,2004),
+				   grade));
+      u = R::runif(0.0,1.0);
+      if (u < pADT)  {
+	adt = true;
+	scheduleAt(now(), toADT);
+      }
+      if (debug) Rprintf("adt=%d, u=%8.6f, pADT=%8.6f\n",adt,u,pADT);
+    }
     // reset the stream
     rngNh->set();
     // calculate survival
     txhaz = (state == Localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
     double sxbenefit = 1;
-    u = R::runif(0.0,1.0);
+    double u = R::runif(0.0,1.0);
     u = pow(u,1/parameter["c_baseline_specific"]); // global improvement to baseline survival
     double lead_time = (tc+35.0) - now();
     double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
@@ -595,6 +546,25 @@ compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.
     if (state == Metastatic)
       age_cancer_death = tmc + 35.0 + H_dist[grade].invert(-log(u));
     scheduleAt(age_cancer_death, toCancerDeath);
+    // IHE: Metastatic cancer cf. MISCAN: Palliative treatment
+    // Localised -> Metastatic (36/12) -> Cancer death
+    if (state == Localised) {
+      if (age_cancer_death>now()+utility_duration["MetastaticCancerUtilityDuration"]+utility_duration["PalliativeUtilityDuration"])
+	scheduleAt(age_cancer_death - utility_duration["MetastaticCancerUtilityDuration"] - utility_duration["PalliativeUtilityDuration"], 
+		   new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
+      else // cancer death within 36 months of diagnosis/treatment
+	scheduleAt(now(),
+		   new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
+    }
+    // IHE: Palliative care cf. MISCAN: Terminal care
+    // Metastatic -> Palliative (6/12) -> cancer death
+    if (age_cancer_death>now()+utility_duration["PalliativeUtilityDuration"])
+      scheduleAt(age_cancer_death - utility_duration["PalliativeUtilityDuration"], 
+		 new cMessageUtilityChange(-utility_estimates["PalliativeUtility"]+utility_estimates["MetastaticCancerUtility"]));
+    else // cancer death within six months of diagnosis/treatment
+      scheduleAt(now(),
+		 new cMessageUtilityChange(-utility_estimates["PalliativeUtility"]+utility_estimates["MetastaticCancerUtility"]));
+      
     if (debug) Rprintf("SurvivalTime=%f, u=%f\n",age_cancer_death -now(), u);
   } break;
 
