@@ -66,6 +66,11 @@ namespace {
     Map _data;
   };
 
+  RcppExport SEXP rllogis_(SEXP shape, SEXP scale) {
+    RNGScope scope;
+    return wrap(R::rllogis(as<double>(shape),as<double>(scale)));
+  }
+
   //typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
   //typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
   EventReport<FullState::Type,short,double> report;
@@ -471,10 +476,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	case stockholm3_goteborg:
 	case stockholm3_risk_stratified: {
 	  TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
-	  double pscreened = 1.0 - rescreen_cure(key); 
+	  double prescreened = 1.0 - rescreen_cure(key); 
 	  double shape = rescreen_shape(key);
 	  double scale = rescreen_scale(key);
-	  if (R::runif(0.0,1.0)<pscreened) {
+	  if (R::runif(0.0,1.0)<prescreened) {
 	    scheduleAt(R::rweibull(shape,scale), toScreen);
 	  }
 	}

@@ -969,7 +969,12 @@ namespace R {
      than conditioning on the distribution function.
   */
   double rnormPos(double mean, double sd);
+
+  /**
+     @brief rllogis function for a random covariate from a log-logistic distribution with shape and scale.
+  */
   double rllogis(double shape, double scale);
+
 }
 
 #endif
