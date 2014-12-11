@@ -39,8 +39,8 @@ namespace {
   //   enum Fields {id,state,ext_grade,organised,dx,age,ymean,beta0,beta1,beta2,t0};
   // }
   namespace LifeHistory {
-    typedef boost::tuple<int,short,short,int,short,double,double,double> Type;
-    enum Fields {id,state,ext_grade,dx,event,begin,end,psa};
+    typedef boost::tuple<int,short,short,int,short,double,double,double,double> Type;
+    enum Fields {id,state,ext_grade,dx,event,begin,end,year,psa};
   }
 
   template<class T = double>
@@ -297,7 +297,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
 
   if (id<nLifeHistories) { // only record up to the first n individuals
-    lifeHistories.push_back(LifeHistory::Type(id,state,ext_grade,dx,msg->kind,previousEventTime,age,psa));
+    lifeHistories.push_back(LifeHistory::Type(id,state,ext_grade,dx,msg->kind,previousEventTime,age,year,psa));
   }
   // by default, use the natural history RNG
   rngNh->set();
