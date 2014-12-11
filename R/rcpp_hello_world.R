@@ -165,6 +165,7 @@ FhcrcParameters <- list(
     studyParticipation = 35.0/260.0,
     nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,
+    psaThresholdBiopsyFollowUp = 4.0,
     c_low_grade_slope=-0.006,
     discountRate = 0.035,
     mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
@@ -292,7 +293,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   stateT <- c("Healthy","Localised","Metastatic")
   gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
   eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
-              "toCancerDeath","toOtherDeath","toScreen",
+              "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
               "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
               "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toChangeUtility","toAgeUtility")
   diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
@@ -413,7 +414,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   costsNameless_idx <- names(out[[1]]$costs)==""
   costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
   names(costs) <- c("item","age","costs")
-  names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","psa")
+  names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
