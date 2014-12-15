@@ -233,8 +233,11 @@ void FhcrcPerson::init() {
       double shape = 3.81;
       double scale = cohort>1960.0 ? 19.4 : 19.4*17.0/(1977.0 - cohort);
       double start_age = cohort>1960.0 ? 35.0 : 1995.0 - cohort;
-      if (R::runif(0.0,1.0)<pscreening)
-	scheduleAt(start_age+R::rllogis(shape,scale), toScreen);
+      double first_screen = start_age+R::rllogis(shape,scale);
+      double u = R::runif(0.0,1.0);
+      if (u<pscreening)
+	scheduleAt(first_screen, toScreen);
+      // Rprintf("(cohort=%f,pscreening=%f,u=%f,start_age=%f,first_screen=%f)\n",cohort,pscreening,u,start_age,first_screen);
       // for re-screening patterns: see handleMessage()
     } break;
     default:
@@ -371,9 +374,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("Z",Z);
     }
     costs.add("InvitationCost",now(),cost_parameters["InvitationCost"]);
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
-    scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
-	       new cMessageUtilityChange(utility_estimates["InvitationUtility"]));
+    // scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
+    // scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
+    // 	       new cMessageUtilityChange(utility_estimates["InvitationUtility"]));
     if (organised) {
       if (screen == stockholm3_risk_stratified && psa>=1.0) 
 	costs.add("FormalPSABiomarkerCost",now(),cost_parameters["FormalPSABiomarkerCost"]);
@@ -440,8 +443,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  double prescreened = 1.0 - rescreen_cure(key); 
 	  double shape = rescreen_shape(key);
 	  double scale = rescreen_scale(key);
-	  if (R::runif(0.0,1.0)<prescreened) {
-	    scheduleAt(R::rweibull(shape,scale), toScreen);
+	  double u = R::runif(0.0,1.0);
+	  double t = now() + R::rweibull(shape,scale);
+	  // Rprintf("(prescreened=%f,u=%f,shape=%f,scale=%f,t=%f)\n",prescreened,u,shape,scale,t);
+	  if (u<prescreened) {
+	    scheduleAt(t, toScreen);
 	  }
 	}
 	  break;
