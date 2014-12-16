@@ -741,6 +741,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   lifeHistories.clear();
   psarecord.clear();
 
+  report.discountRate = 0.03;
   report.setPartition(ages);
   costs.setPartition(ages);
 

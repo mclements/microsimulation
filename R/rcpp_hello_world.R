@@ -272,7 +272,7 @@ rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40,
 1.29524623033074, 1.02176143186057, 0.673175882772333))
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, includePSArecords=FALSE, mc.cores=1) {
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, includePSArecords=FALSE, flatPop = FALSE, mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -310,7 +310,11 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
     cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
     n <- length(cohort)
   } else
-    cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
+      if (flatPop) {
+          cohort <- rep(pop1$cohort,each=ceiling(n/nrow(pop1))) #Need ceiling so int n=!0
+          n <- ceiling(n/nrow(pop1)) * nrow(pop1) #To get the chunks right
+      } else
+          cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
   cohort <- sort(cohort)
   ## now separate the data into chunks
   chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)
@@ -423,7 +427,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
               ## prev=summary$prev, pt=summary$pt, events=summary$events)
-              summary=summary,costs=costs, psarecord=psarecord)
+              summary=summary,costs=costs, psarecord=psarecord, cohort=table(cohort))
   class(out) <- "fhcrc"
   out
 }
