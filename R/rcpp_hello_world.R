@@ -415,9 +415,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
-  costsNameless_idx <- names(out[[1]]$costs)==""
-  costs <- cbind(rbindList(out[[1]]$costs[costsNameless_idx]),cbindList(out[[1]]$costs[!costsNameless_idx]))
-  names(costs) <- c("item","age","costs")
+  costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs)))
+  names(costs) <- c("item","cohort","age","costs")
   names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
   enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
