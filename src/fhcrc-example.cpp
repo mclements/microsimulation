@@ -145,7 +145,7 @@ namespace {
     double ymean(double t);
     double y(double t);
     void init();
-    void add_costs(string cat, double cost);
+    void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
   };
 
@@ -166,8 +166,11 @@ namespace {
       return yt;
     }
 
-  void FhcrcPerson::add_costs(string cat, double cost) {
-    costs.add(CostKey(cat,cohort),now(),cost);
+  /** 
+      Report on costs for a given item
+  */
+  void FhcrcPerson::add_costs(string item) {
+    costs.add(CostKey(item,cohort),now(),cost_parameters[item]);
   }
 
 
@@ -316,7 +319,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-    add_costs("DeathCost",cost_parameters["DeathCost"]); // cost for death, should this be zero???
+    add_costs("DeathCost"); // cost for death, should this be zero???
     // change in utility for terminal illness at the end of palliative therapy
     // utility -= utility_duration["PalliativeDuration"]*(utility_estimates["MetastaticCancerUtility"]-utility_estimates["PalliativeUtility"]);
     if (id<nLifeHistories) {
@@ -327,7 +330,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toOtherDeath:
-    add_costs("DeathCost",cost_parameters["DeathCost"]); // cost for death, should this be zero???
+    add_costs("DeathCost"); // cost for death, should this be zero???
     
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
@@ -380,20 +383,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("beta2",beta2);
       psarecord.record("Z",Z);
     }
-    add_costs("InvitationCost",cost_parameters["InvitationCost"]);
+    add_costs("InvitationCost");
     // scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
     // scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
     // 	       new cMessageUtilityChange(utility_estimates["InvitationUtility"]));
     if (organised) {
       if (screen == stockholm3_risk_stratified && psa>=1.0) 
-	add_costs("FormalPSABiomarkerCost",cost_parameters["FormalPSABiomarkerCost"]);
+	add_costs("FormalPSABiomarkerCost");
       else
-	add_costs("FormalPSACost",cost_parameters["FormalPSACost"]);
+	add_costs("FormalPSACost");
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
       scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
 		 new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
     } else { // opportunistic
-      add_costs("OpportunisticPSACost",cost_parameters["OpportunisticPSACost"]); //cost for opportunistic PSA test
+      add_costs("OpportunisticPSACost"); //cost for opportunistic PSA test
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["OpportunisticPSAUtility"]));
       scheduleAt(now() + utility_duration["OpportunisticPSAUtilityDuration"], 
 		   new cMessageUtilityChange(utility_estimates["OpportunisticPSAUtility"]));
@@ -425,9 +428,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  break;
 	case stockholm3_risk_stratified:
 	  if (psa>=1.0)
-	    add_costs("FormalPSABiomarkerCost",cost_parameters["FormalPSABiomarkerCost"]);
+	    add_costs("FormalPSABiomarkerCost");
 	  else
-	    add_costs("FormalPSACost",cost_parameters["FormalPSACost"]);
+	    add_costs("FormalPSACost");
 	  scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
 	  scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
 		     new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
@@ -478,14 +481,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
-    add_costs("BiopsyCost",cost_parameters["BiopsyCost"]);
+    add_costs("BiopsyCost");
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["BiopsyUtility"]));
     scheduleAt(now() + utility_duration["BiopsyUtilityDuration"], 
 	       new cMessageUtilityChange(utility_estimates["BiopsyUtility"]));
     break;
 
   case toScreenInitiatedBiopsy:
-    add_costs("BiopsyCost",cost_parameters["BiopsyCost"]);
+    add_costs("BiopsyCost");
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["BiopsyUtility"]));
     scheduleAt(now() + utility_duration["BiopsyUtilityDuration"], 
 	       new cMessageUtilityChange(utility_estimates["BiopsyUtility"]));
@@ -506,7 +509,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toTreatment: {
     if (state == Metastatic) {
-      add_costs("MetastaticCancerCost",cost_parameters["MetastaticCancerCost"]);
+      add_costs("MetastaticCancerCost");
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
       // scheduleAt(now() + utility_duration["MetastaticCancerUtilityDuration"], 
       // 		 new cMessageUtilityChange(utility_estimates["MetastaticCancerUtility"]));
@@ -582,7 +585,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   } break;
 
   case toRP:
-    add_costs("ProstatectomyCost",cost_parameters["ProstatectomyCost"]);
+    add_costs("ProstatectomyCost");
     // Scheduling utilities for the first 2 months after procedure
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["ProstatectomyUtilityPart1"]));
     scheduleAt(now() + utility_duration["ProstatectomyUtilityDurationPart1"], 
@@ -595,7 +598,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toRT:
-    add_costs("RadiationTherapyCost",cost_parameters["RadiationTherapyCost"]);
+    add_costs("RadiationTherapyCost");
     // Scheduling utilities for the first 2 months after procedure
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["RadiationTherapyUtilityPart1"]));
     scheduleAt(now() + utility_duration["RadiationTherapyUtilityDurationPart1"], 
@@ -608,7 +611,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toCM:
-    add_costs("ActiveSurveillanceCost",cost_parameters["ActiveSurveillanceCost"]);
+    add_costs("ActiveSurveillanceCost");
     scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["ActiveSurveillanceUtility"]));
     scheduleAt(now() + utility_duration["ActiveSurveillanceUtilityDuration"], 
 	       new cMessageUtilityChange(utility_estimates["ActiveSurveillanceUtility"]));
