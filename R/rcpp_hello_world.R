@@ -426,7 +426,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
               ## prev=summary$prev, pt=summary$pt, events=summary$events)
-              summary=summary,costs=costs, psarecord=psarecord, cohort=table(cohort))
+              summary=summary,costs=costs, psarecord=psarecord, cohort=data.frame(table(cohort)))
   class(out) <- "fhcrc"
   out
 }
