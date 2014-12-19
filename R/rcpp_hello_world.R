@@ -184,15 +184,16 @@ FhcrcParameters <- list(
         0.240339, 0.256215, 0.275103, 0.314157, 0.345252, 0.359275, 0.41768, 
         0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
         0.782609),
-    cost_parameters = c(InvitationCost = 15,
-        FormalPSACost = 41,
-        FormalPSABiomarkerCost = 641,
-        BiopsyCost = 8082,
-        OpportunisticPSACost = 1774,
-        ProstatectomyCost = 95000,
-        RadiationTherapyCost = 135000,
-        ActiveSurveillanceCost = 140000,
-        MetastaticCancerCost = 769574,
+    cost_parameters = c(InvitationCost = 50,
+        FormalPSACost = 130,
+        OpportunisticPSACost = 1910, #Is this one used?
+        FormalPSABiomarkerCost = 730,
+        OpportunisticPSABiomarkerCost = 2510, #N.B. This one is new and should be used
+        BiopsyCost = 12348,
+        ProstatectomyCost = 117171,
+        RadiationTherapyCost = 117171,
+        ActiveSurveillanceCost = 141358,
+        MetastaticCancerCost = 585054, #This appears not to be used any more
         DeathCost = 0),
     ## IHE doesn't use the postrecovery period (as reported in the Heijnsdijk 2012 reference), should we?
     utility_estimates = 1 - c(InvitationUtility = 1,
