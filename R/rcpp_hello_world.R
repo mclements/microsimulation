@@ -146,6 +146,7 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
 
 ## initial values for the FHCRC model
 FhcrcParameters <- list(
+    ## panel=FALSE,
     tau2 = 0.0829,
     g0=0.0005,
     gm=0.0004,
@@ -223,6 +224,7 @@ FhcrcParameters <- list(
         MetastaticCancerUtilityDuration = 30/12,
         PalliativeUtilityDuration = 6/12)
     )
+IHE <- list(prtx=data.frame(Age=50.0,DxY=1973.0,G=1:2,CM=0.6,RP=0.26,RT=0.14)) ## assumed constant across ages and periods
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
 rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40, 
@@ -273,7 +275,7 @@ rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40,
 1.29524623033074, 1.02176143186057, 0.673175882772333))
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, includePSArecords=FALSE, flatPop = FALSE, mc.cores=1) {
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE, includePSArecords=FALSE, flatPop = FALSE, tables = IHE, mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -331,6 +333,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
   ns <- cumsum(sapply(chunks,length))
   ns <- c(0,ns[-length(ns)])
   ## Minor changes to fhcrcData
+  if (!is.null(tables)) 
+      for (name  in names(tables))
+          fhcrcData[[name]] <- tables[[name]]
   fhcrcData$rescreening <- rescreening
   fhcrcData$rescreening$total <- fhcrcData$rescreening$total_cat
   fhcrcData$prtx$Age <- as.double(fhcrcData$prtx$Age)
@@ -367,6 +372,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                   .Call("callFhcrc",
                         parms=list(n=as.integer(length(chunk)),
                             firstId=ns[i],
+                            panel=panel, # bool
                             cohort=as.double(chunk),
                             parameter=unlist(parameter[pind]),
                             otherParameters=parameter[!pind],

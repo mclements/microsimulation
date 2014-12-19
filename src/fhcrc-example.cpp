@@ -106,7 +106,7 @@ namespace {
   NumericVector cost_parameters, utility_estimates, utility_duration;
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
-  bool includePSArecords;
+  bool includePSArecords, panel;
 
   class cMessageUtilityChange : public cMessage {
   public:
@@ -383,7 +383,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("beta2",beta2);
       psarecord.record("Z",Z);
     }
-    add_costs("InvitationCost");
+    if (organised) {
+      add_costs("InvitationCost");
+      add_costs(panel ? "FormalPSABiomarkerCost" : "FormalPSACost");
+    } else { // opportunistic
+      // TODO: use PSA tests to a certain time and then introduce the panel
+      add_costs(panel ? "OpportunisticPSABiomarkerCost" : "OpportunisticPSACost");
+    }
     // scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
     // scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
     // 	       new cMessageUtilityChange(utility_estimates["InvitationUtility"]));
@@ -733,6 +739,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
   screen = as<int>(otherParameters["screen"]);
+  panel = as<bool>(parms["panel"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
 
@@ -756,7 +763,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   costs.setPartition(ages);
 
   // main loop
-  for (int i = 0; i < n; ++i) {
+  for (int i = 0; i < n; ++i) { 
     person = FhcrcPerson(i+firstId,cohort[i]);
     Sim::create_process(&person);
     Sim::run_simulation();
