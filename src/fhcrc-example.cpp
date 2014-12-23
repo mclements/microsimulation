@@ -70,6 +70,10 @@ namespace {
     RNGScope scope;
     return wrap(R::rllogis(as<double>(shape),as<double>(scale)));
   }
+  RcppExport SEXP rllogis_trunc_(SEXP shape, SEXP scale, SEXP left) {
+    RNGScope scope;
+    return wrap(R::rllogis_trunc(as<double>(shape),as<double>(scale),as<double>(left)));
+  }
 
   //typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
   //typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
@@ -238,16 +242,32 @@ void FhcrcPerson::init() {
     case stockholm3_goteborg:
     case stockholm3_risk_stratified:
     case screenUptake: {
-      // screening participation increases with time
-      double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.01; 
-      double shape = 3.81;
-      double scale = cohort>1960.0 ? 19.4 : 19.4*17.0/(1977.0 - cohort);
-      double start_age = cohort>1960.0 ? 35.0 : 1995.0 - cohort;
-      double first_screen = start_age+R::rllogis(shape,scale);
-      double u = R::runif(0.0,1.0);
-      if (u<pscreening)
+      // Assume: 
+      // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
+      // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
+      // (iii) intermediate cohorts are a weighted mixture of (i) and (ii) 
+      double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03; 
+      double shapeA = 3.8;
+      double scaleA = 15.0;
+      double shapeT = 2.0;
+      double scaleT = 10.0;
+      double uscreening = R::runif(0.0,1.0);
+      double first_screen;
+      if (cohort > 1960.0) {
+	first_screen = 35.0 + R::rllogis(shapeA,scaleA); // (i) age
+      } else if (cohort < 1945.0) {
+	first_screen = (1995.0 - cohort) + R::rllogis(shapeT,scaleT); // (ii) period
+      } else {
+	double age0 = 1995.0 - cohort;
+	double u = R::runif(0.0,1.0);
+	if ((age0 - 35.0)/15.0 < u) // (iii) mixture
+	  first_screen = age0 + R::rllogis_trunc(shapeA,scaleA,age0-35.0);
+	else first_screen = age0 + R::rllogis(shapeT,scaleT);
+	// Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,u=%f,age0=%f,first_screen=%f)\n",cohort,pscreening,uscreening,u,age0,first_screen);      
+      }
+      if (uscreening<pscreening)
 	scheduleAt(first_screen, toScreen);
-      // Rprintf("(cohort=%f,pscreening=%f,u=%f,start_age=%f,first_screen=%f)\n",cohort,pscreening,u,start_age,first_screen);
+      // Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
       // for re-screening patterns: see handleMessage()
     } break;
     default:

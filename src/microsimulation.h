@@ -974,6 +974,7 @@ namespace R {
      @brief rllogis function for a random covariate from a log-logistic distribution with shape and scale.
   */
   double rllogis(double shape, double scale);
+  double rllogis_trunc(double shape, double scale, double left);
 
 }
 

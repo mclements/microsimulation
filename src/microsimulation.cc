@@ -103,4 +103,10 @@ namespace R {
     return scale*exp(log(1.0/u-1.0)/shape);
   }
 
+  double rllogis_trunc(double shape, double scale, double left) {
+    double S0 = 1.0/(1.0+exp(log(left/scale)*shape));
+    double u = R::runif(0.0,1.0);
+    return scale*exp(log(1.0/(u*S0)-1.0)/shape);
+  }
+
 }
