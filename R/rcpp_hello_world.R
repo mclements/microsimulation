@@ -160,6 +160,8 @@ FhcrcParameters <- list(
     sebeta2=c(0.0913,0.3968),
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
+    c_benefit_value = 10.0,
+    sxbenefit = 1.0,
     screeningCompliance = 0.75,
     biopsyCompliance = 0.858,
     biopsySensitivity = 0.8,
@@ -275,7 +277,7 @@ rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40,
 1.29524623033074, 1.02176143186057, 0.673175882772333))
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE, includePSArecords=FALSE, flatPop = FALSE, tables = IHE, mc.cores=1) {
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE, includePSArecords=FALSE, flatPop = FALSE, tables = IHE, debug=FALSE, mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -373,6 +375,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                         parms=list(n=as.integer(length(chunk)),
                             firstId=ns[i],
                             panel=panel, # bool
+                            debug=debug, # bool
                             cohort=as.double(chunk),
                             parameter=unlist(parameter[pind]),
                             otherParameters=parameter[!pind],
@@ -440,11 +443,50 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
 
 ## R --slave -e "options(width=200); require(microsimulation); callFhcrc(100,nLifeHistories=1e5,screen=\"screen50\")[[\"parameters\"]]"
 
+summary.fhcrc <- function(obj) {
+    with(obj,
+         list(LE=sum(summary$pt$pt)/n,
+              QALE=sum(summary$ut$ut)/n,
+              costs=sum(costs$costs)/n))
+}
+
+ICER <- function(object1, object2, ...)
+    UseMethod("ICER")
+
+ICER.fhcrc <- function(obj1,obj2,...) {
+    summary1 <- summary(obj1,...)
+    summary2 <- summary(obj2,...)
+    list(ICER.LE=(summary1$costs-summary2$costs)/(summary1$LE-summary2$LE),
+         ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE))
+}
 
 print.fhcrc <- function(obj,...)
     cat(sprintf("FHCRC prostate cancer model with %i individual(s) under scenario '%s'.\n",
                 obj$n, obj$screen),
         ...)
+
+plot.fhcrc <- function(obj,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
+    type <- match.arg(type)
+    event_types <- switch(type,
+                          incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
+                          cancerdeath="toCancerDeath")
+    if (require(dplyr)) {
+        pt <- obj$summary$pt %>%
+            group_by(age) %>%
+                summarise(pt=sum(pt))
+        events <- obj$summary$events %>%
+            filter(event %in% event_types) %>%
+                group_by(age) %>%
+                    summarise(n=sum(n))
+        out <- left_join(pt,events,by="age") %>% mutate(rate = ifelse(is.na(n), 0, n/pt))
+        if (!add) plot(rate~age, data=out, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=out,  ...)
+    } else error("dplyr is not available for plotting")
+}
+
+lines.fhcrc <- function(obj,...) {
+    plot(obj, ..., add=TRUE)
+}
+
 
 ## utility - not exported
 assignList <- function(lst,...)

@@ -11,4 +11,4 @@ Depends: Rcpp (>= 0.10.2), methods, BH
 Imports: parallel
 LinkingTo: Rcpp, BH
 LazyData: true
-Suggests: sqldf
+Suggests: sqldf, dplyr

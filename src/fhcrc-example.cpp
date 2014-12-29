@@ -148,6 +148,8 @@ namespace {
       id(id), cohort(cohort), utility(1.0) { };
     double ymean(double t);
     double y(double t);
+    treatment_t calculate_treatment(double u, double age, double year);    
+    double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
     void init();
     void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
@@ -175,6 +177,36 @@ namespace {
   */
   void FhcrcPerson::add_costs(string item) {
     costs.add(CostKey(item,cohort),now(),cost_parameters[item]);
+  }
+
+  treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) { // also:
+      TablePrtx::key_type key = 
+	TablePrtx::key_type(bounds<double>(age,50.0,79.0),
+			    bounds<double>(year,1973.0,2004.0),
+			    int(grade));
+      double pCM = prtxCM(key);
+      double pRP = prtxRP(key);
+      treatment_t tx = (u<pCM) ? CM :
+	           (u<pCM+pRP) ? RP : RT;
+      if (debug) Rprintf("id=%i, Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%i, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",id,age,year,state,grade,(int)tx,u,pCM,pRP);
+      return tx;
+  }
+
+  double FhcrcPerson::calculate_survival(double u, double age_diag, double age_c, treatment_t tx) { // also: tc, tm, tmc, grade, now()
+    double age_d = -1.0;        // age at death (output)
+    double age_m = tm + 35.0;   // age at onset of metastatic cancer
+    bool localised = (age_diag < age_m); 
+    double txhaz = (localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
+    double lead_time = age_c - age_diag;
+    double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
+    double ustar = pow(u,1/(parameter["c_baseline_specific"]*txbenefit*parameter["sxbenefit"]));
+    if (localised) 
+      age_d = age_c + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(age_diag,50.0,80.0)),grade)].invert(-log(ustar));
+    else
+      age_d = age_c + H_dist[grade].invert(-log(ustar));
+    if (debug) Rprintf("id=%i, lead_time=%f, tx=%i, txbenefit=%f, u=%f, ustar=%f, age_diag=%f, age_m=%f, age_c=%f, age_d=%f\n",
+		       id,lead_time,(int)tx,txbenefit,u,ustar,age_diag,age_m,age_c,age_d);
+    return age_d;
   }
 
 
@@ -534,6 +566,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toTreatment: {
+    rngTreatment->set();
+    double u_tx = R::runif(0.0,1.0);
+    double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
       add_costs("MetastaticCancerCost");
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
@@ -541,52 +576,32 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       // 		 new cMessageUtilityChange(utility_estimates["MetastaticCancerUtility"]));
     }
     else { // Localised
-      rngTreatment->set();
-      TablePrtx::key_type key = 
-	TablePrtx::key_type(bounds<double>(now(),50.0,79.0),
-			    bounds<double>(year,1973.0,2004.0),
-			    int(grade));
-      double pCM = prtxCM(key);
-      double pRP = prtxRP(key);
-      double u = R::runif(0.0,1.0);
-      tx = (u<pCM)?CM:((u<pCM+pRP)?RP:RT);
-      if (debug) Rprintf("Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%d, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",now(),year,state,grade,tx,u,pCM,pRP);
-      if (tx == CM)
-	scheduleAt(now(), toCM);
-      if (tx == RP)
-	scheduleAt(now(), toRP);
-      if (tx == RT)
-	scheduleAt(now(), toRT);
+      tx = calculate_treatment(u_tx,now(),year);
+      if (tx == CM) scheduleAt(now(), toCM);
+      if (tx == RP) scheduleAt(now(), toRP);
+      if (tx == RT) scheduleAt(now(), toRT);
       // check for ADT
       double pADT = 
 	pradt(TablePradt::key_type(tx,
 				   bounds<double>(now(),50,79),
 				   bounds<double>(year,1973,2004),
 				   grade));
-      u = R::runif(0.0,1.0);
-      if (u < pADT)  {
+      if (u_adt < pADT)  {
 	adt = true;
 	scheduleAt(now(), toADT);
       }
-      if (debug) Rprintf("adt=%d, u=%8.6f, pADT=%8.6f\n",adt,u,pADT);
+      if (debug) Rprintf("id=%i, adt=%d, u=%8.6f, pADT=%8.6f\n",id,adt,u_adt,pADT);
     }
-    // reset the stream
+    // reset the random number stream
     rngNh->set();
     // calculate survival
-    txhaz = (state == Localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
-    double sxbenefit = 1;
-    double u = R::runif(0.0,1.0);
-    u = pow(u,1/parameter["c_baseline_specific"]); // global improvement to baseline survival
-    double lead_time = (tc+35.0) - now();
-    double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
-    if (debug) Rprintf("lead_time=%f, txbenefit=%f, u=%f, ustar=%f\n",lead_time,txbenefit,u,pow(u,1/(txbenefit*sxbenefit)));
-    u = pow(u,1/(txbenefit*sxbenefit));
-    // TODO: calculate survival
-    double age_cancer_death = -1.0;
-    if (state == Localised)
-      age_cancer_death = tc + 35.0 + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(now(),50.0,80.0)),grade)].invert(-log(u));
-    if (state == Metastatic)
-      age_cancer_death = tmc + 35.0 + H_dist[grade].invert(-log(u));
+    double u_surv = R::runif(0.0,1.0);
+    double age_c = (state == Localised) ? tc + 35.0 : tmc + 35.0;
+    double lead_time = age_c - now();
+    double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
+    double age_sd = calculate_survival(u_surv,now(),age_c,tx);
+    double weight = exp(-parameter["c_benefit_value"]*lead_time);
+    double age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
     scheduleAt(age_cancer_death, toCancerDeath);
     // IHE: Metastatic cancer cf. MISCAN: Palliative treatment
     // Localised -> Metastatic (36/12) -> Cancer death
@@ -607,7 +622,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       scheduleAt(now(),
 		 new cMessageUtilityChange(-utility_estimates["PalliativeUtility"]+utility_estimates["MetastaticCancerUtility"]));
       
-    if (debug) Rprintf("SurvivalTime=%f, u=%f\n",age_cancer_death -now(), u);
   } break;
 
   case toRP:
@@ -750,16 +764,17 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     it_sl->second.prepare();
   // now we can use: H_local[H_local_t::key_type(*H_local_age_set.lower_bound(age),grade)].invert(-log(u))
 
-  if (debug) {
-    Rprintf("SurvTime: %f\n",exp(-H_local[H_local_t::key_type(65.0,0)].approx(63.934032)));
-    Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
-    Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
-    Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
-  }
+  // if (debug) {
+  //   Rprintf("SurvTime: %f\n",exp(-H_local[H_local_t::key_type(65.0,0)].approx(63.934032)));
+  //   Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
+  //   Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
+  //   Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
+  // }
   
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
   screen = as<int>(otherParameters["screen"]);
   panel = as<bool>(parms["panel"]);
+  debug = as<bool>(parms["debug"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
 
@@ -778,8 +793,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   lifeHistories.clear();
   psarecord.clear();
 
-  report.discountRate = 0.03;
+  report.discountRate = 0.00;
   report.setPartition(ages);
+  report.discountRate = 0.00;
   costs.setPartition(ages);
 
   // main loop
