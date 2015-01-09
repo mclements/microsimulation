@@ -133,6 +133,7 @@ namespace {
   {
   public:
     double beta0, beta1, beta2;
+    double beta0star, beta1star, beta2star;
     double t0, y0, tm, tc, tmc;
     state_t state;
     diagnosis_t dx;
@@ -148,11 +149,14 @@ namespace {
       id(id), cohort(cohort), utility(1.0) { };
     double ymean(double t);
     double y(double t);
+    double BPmean(double t);
+    double BP(double t);
     treatment_t calculate_treatment(double u, double age, double year);    
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
     void init();
     void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
+    void scheduleUtilityChange(double at, std::string category, double sign = -1.0);
   };
 
   /** 
@@ -161,6 +165,12 @@ namespace {
   double FhcrcPerson::ymean(double t) {
     if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
     double yt = t<t0 ? exp(beta0+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
+    return yt;
+  }
+
+  double FhcrcPerson::BPmean(double t) {
+    if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
+    double yt = t<t0 ? exp(beta0star+beta1star*t) : exp(beta0star+beta1star*t+beta2star*(t-t0));
     return yt;
   }
       
@@ -172,11 +182,26 @@ namespace {
       return yt;
     }
 
+  double FhcrcPerson::BP(double t) {
+    double yt = FhcrcPerson::BPmean(t)*exp(R::rnorm(0.0, sqrt(double(parameter["tau2"]))));
+      return yt;
+    }
+
   /** 
       Report on costs for a given item
   */
   void FhcrcPerson::add_costs(string item) {
     costs.add(CostKey(item,cohort),now(),cost_parameters[item]);
+  }
+
+  /**
+     Schedule a transient utility change.
+     Default: sign = -1
+   **/
+  void FhcrcPerson::scheduleUtilityChange(double at, std::string category, double sign) {
+    scheduleAt(at, new cMessageUtilityChange(sign*utility_estimates[category]));
+    scheduleAt(at + utility_duration[category], 
+	       new cMessageUtilityChange(-sign*utility_estimates[category]));
   }
 
   treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) { // also:
@@ -209,6 +234,33 @@ namespace {
     return age_d;
   }
 
+  typedef std::pair<double,double> Double;
+  Double rbinorm(Double mean, Double sd, double rho) {
+    double z1 = R::rnorm(0.0,1.0);
+    double z2 = R::rnorm(0.0,1.0);
+    z2 = rho*z1+sqrt(1-rho*rho)*z2;
+    return Double(z1*sd.first+mean.first, mean.second+sd.second*z2);
+  }
+  Double rbinormPos(Double mean, Double sd, double rho, Double lbound = Double(0.0,0.0)) {
+    Double out;
+    do {
+      out = rbinorm(mean,sd,rho);
+    } while (out.first<lbound.first || out.second<lbound.second);
+    return out;
+  }
+  RcppExport SEXP rbinorm_test() {
+    RNGScope rng;
+    Double x = rbinorm(Double(1.0,1.0), Double(2.0,2.0), 0.62);
+    vector<double> v; v.push_back(x.first); v.push_back(x.second); 
+    return wrap(v);
+  }
+  RcppExport SEXP rbinormPos_test() {
+    RNGScope rng;
+    Double x = rbinormPos(Double(1.0,1.0), Double(2.0,2.0), 0.62);
+    vector<double> v; v.push_back(x.first); v.push_back(x.second); 
+    return wrap(v);
+  }
+    
 
 /** 
     Initialise a simulation run for an individual
@@ -225,9 +277,22 @@ void FhcrcPerson::init() {
   rngNh->set();
   t0 = sqrt(2*R::rexp(1.0)/parameter["g0"]);
   grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
-  beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]); 
-  beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]); 
-  beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]); 
+  Double Beta0 = rbinorm(Double(parameter["mubeta0"],parameter["mubeta0"]),
+			 Double(parameter["sebeta0"],parameter["sebeta0"]),
+			 parameter["beta.rho"]); 
+  Double Beta1 = rbinormPos(Double(parameter["mubeta1"],parameter["mubeta1"]),
+			    Double(parameter["sebeta1"],parameter["sebeta1"]),
+			    parameter["beta.rho"]); 
+  Double Beta2 = rbinormPos(Double(mubeta2[grade],mubeta2[grade]*parameter["mubeta2.scale"]),
+			    Double(sebeta2[grade],sebeta2[grade]),
+			    parameter["beta.rho"]); 
+  beta0 = Beta0.first;
+  beta1 = Beta1.first;
+  beta2 = Beta2.first;
+  beta0star = Beta0.second;
+  beta1star = Beta1.second;
+  beta2star = Beta2.second;
+  
   y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
@@ -331,6 +396,9 @@ void FhcrcPerson::init() {
     outParameters.record("beta0",beta0);
     outParameters.record("beta1",beta1);
     outParameters.record("beta2",beta2);
+    outParameters.record("beta0star",beta0star);
+    outParameters.record("beta1star",beta1star);
+    outParameters.record("beta2star",beta2star);
     outParameters.record("t0",t0);
     outParameters.record("tm",tm);
     outParameters.record("tc",tc);
@@ -352,6 +420,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   
   // declarations
   double psa = y(now()-35.0);
+  double biomarker = BP(now() - 35.0);
+  // double test = panel ? biomarker : psa;
   double Z = ymean(now()-35.0);
   double age = now();
   double year = age + cohort;
@@ -371,9 +441,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-    add_costs("DeathCost"); // cost for death, should this be zero???
+    add_costs("Death"); // cost for death, should this be zero???
     // change in utility for terminal illness at the end of palliative therapy
-    // utility -= utility_duration["PalliativeDuration"]*(utility_estimates["MetastaticCancerUtility"]-utility_estimates["PalliativeUtility"]);
+    // utility -= utility_duration["PalliativeDuration"]*(utility_estimates["MetastaticCancer"]-utility_estimates["Palliative"]);
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
       outParameters.revise("pca_death",1.0);
@@ -382,7 +452,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toOtherDeath:
-    add_costs("DeathCost"); // cost for death, should this be zero???
+    add_costs("Death"); // cost for death, should this be zero???
     
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
@@ -420,7 +490,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toBiopsyFollowUpScreen:
-  case toScreen:
+  case toScreen: {
     if (includePSArecords) {
       psarecord.record("id",id);
       psarecord.record("state",state);
@@ -429,36 +499,26 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("dx",dx);
       psarecord.record("age",age);
       psarecord.record("psa",psa);
+      psarecord.record("biomarker",biomarker);
       psarecord.record("t0",t0);
       psarecord.record("beta0",beta0);
       psarecord.record("beta1",beta1);
       psarecord.record("beta2",beta2);
+      psarecord.record("beta0star",beta0star);
+      psarecord.record("beta1star",beta1star);
+      psarecord.record("beta2star",beta2star);
       psarecord.record("Z",Z);
     }
     if (organised) {
-      add_costs("InvitationCost");
-      add_costs(panel ? "FormalPSABiomarkerCost" : "FormalPSACost");
+      add_costs("Invitation");
+      add_costs(panel && psa>=1.0 ? "FormalPSABiomarker" : "FormalPSA");
+      scheduleUtilityChange(now(), "FormalPSA");
     } else { // opportunistic
       // TODO: use PSA tests to a certain time and then introduce the panel
-      add_costs(panel ? "OpportunisticPSABiomarkerCost" : "OpportunisticPSACost");
+      add_costs(panel ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
+      scheduleUtilityChange(now(), "OpportunisticPSA");
     }
-    // scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["InvitationUtility"]));
-    // scheduleAt(now() + utility_duration["InvitationUtilityDuration"], 
-    // 	       new cMessageUtilityChange(utility_estimates["InvitationUtility"]));
-    if (organised) {
-      if (screen == stockholm3_risk_stratified && psa>=1.0) 
-	add_costs("FormalPSABiomarkerCost");
-      else
-	add_costs("FormalPSACost");
-      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
-      scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
-		 new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
-    } else { // opportunistic
-      add_costs("OpportunisticPSACost"); //cost for opportunistic PSA test
-      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["OpportunisticPSAUtility"]));
-      scheduleAt(now() + utility_duration["OpportunisticPSAUtilityDuration"], 
-		   new cMessageUtilityChange(utility_estimates["OpportunisticPSAUtility"]));
-    }
+    // scheduleUtilityChange(now(), "Invitation");
     if (!everPSA) {
       if (id<nLifeHistories) {
 	outParameters.revise("age_psa",now());
@@ -466,14 +526,17 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       everPSA = true;
     }
     // Other threshold here
-    compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,7.0),
+    compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
 							   bounds<double>(age,55,75)));
-    if (msg->kind == toScreen && psa >= parameter["psaThreshold"] && R::runif(0.0,1.0) < compliance) {
+    bool positive_test = 
+      (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
+      ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
+      (!panel && msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
+      ( panel && msg->kind == toBiopsyFollowUpScreen && biomarker >= parameter["BPThresholdBiopsyFollowUp"]) ? true :
+      false;
+    if (positive_test && R::runif(0.0,1.0) < compliance) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
-    } 
-    else if (msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"] && R::runif(0.0,1.0) < compliance) {
-      	scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy, assuming similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
-    }
+    } // assumes similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
     else { // re-screening schedules
       rngScreen->set();
       if (organised) { // NB: currently assumes 100% compliance?
@@ -485,14 +548,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	    scheduleAt(now() + 2.0, toScreen);
 	  break;
 	case stockholm3_risk_stratified:
-	  if (psa>=1.0)
-	    add_costs("FormalPSABiomarkerCost");
-	  else
-	    add_costs("FormalPSACost");
-	  scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["FormalPSAUtility"]));
-	  scheduleAt(now() + utility_duration["FormalPSAUtilityDuration"], 
-		     new cMessageUtilityChange(utility_estimates["FormalPSAUtility"]));
-
 	  if (psa<1.0)
 	    scheduleAt(now() + 8.0, toScreen);
 	  else 
@@ -525,7 +580,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	}
       rngNh->set();
     }
-    break;
+  } break;
     
   case toScreenDiagnosis:
     dx = ScreenDiagnosis;
@@ -539,17 +594,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
-    add_costs("BiopsyCost");
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["BiopsyUtility"]));
-    scheduleAt(now() + utility_duration["BiopsyUtilityDuration"], 
-	       new cMessageUtilityChange(utility_estimates["BiopsyUtility"]));
+    add_costs("Biopsy");
+    scheduleUtilityChange(now(), "Biopsy");
     break;
 
   case toScreenInitiatedBiopsy:
-    add_costs("BiopsyCost");
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["BiopsyUtility"]));
-    scheduleAt(now() + utility_duration["BiopsyUtilityDuration"], 
-	       new cMessageUtilityChange(utility_estimates["BiopsyUtility"]));
+    add_costs("Biopsy");
+    scheduleUtilityChange(now(), "Biopsy");
 
     if (state == Healthy) {
       previousNegativeBiopsy = true;
@@ -570,10 +621,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_tx = R::runif(0.0,1.0);
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
-      add_costs("MetastaticCancerCost");
-      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
-      // scheduleAt(now() + utility_duration["MetastaticCancerUtilityDuration"], 
-      // 		 new cMessageUtilityChange(utility_estimates["MetastaticCancerUtility"]));
+      add_costs("MetastaticCancer");
+      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
+      // scheduleAt(now() + utility_duration["MetastaticCancer"], 
+      // 		 new cMessageUtilityChange(utility_estimates["MetastaticCancer"]));
     }
     else { // Localised
       tx = calculate_treatment(u_tx,now(),year);
@@ -606,56 +657,45 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     // IHE: Metastatic cancer cf. MISCAN: Palliative treatment
     // Localised -> Metastatic (36/12) -> Cancer death
     if (state == Localised) {
-      if (age_cancer_death>now()+utility_duration["MetastaticCancerUtilityDuration"]+utility_duration["PalliativeUtilityDuration"])
-	scheduleAt(age_cancer_death - utility_duration["MetastaticCancerUtilityDuration"] - utility_duration["PalliativeUtilityDuration"], 
-		   new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
+      if (age_cancer_death>now()+utility_duration["MetastaticCancer"]+utility_duration["Palliative"])
+	scheduleAt(age_cancer_death - utility_duration["MetastaticCancer"] - utility_duration["Palliative"], 
+		   new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
       else // cancer death within 36 months of diagnosis/treatment
 	scheduleAt(now(),
-		   new cMessageUtilityChange(-utility_estimates["MetastaticCancerUtility"]));
+		   new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
     }
     // IHE: Palliative care cf. MISCAN: Terminal care
     // Metastatic -> Palliative (6/12) -> cancer death
-    if (age_cancer_death>now()+utility_duration["PalliativeUtilityDuration"])
-      scheduleAt(age_cancer_death - utility_duration["PalliativeUtilityDuration"], 
-		 new cMessageUtilityChange(-utility_estimates["PalliativeUtility"]+utility_estimates["MetastaticCancerUtility"]));
+    if (age_cancer_death>now()+utility_duration["Palliative"])
+      scheduleAt(age_cancer_death - utility_duration["Palliative"], 
+		 new cMessageUtilityChange(-utility_estimates["Palliative"]+utility_estimates["MetastaticCancer"]));
     else // cancer death within six months of diagnosis/treatment
       scheduleAt(now(),
-		 new cMessageUtilityChange(-utility_estimates["PalliativeUtility"]+utility_estimates["MetastaticCancerUtility"]));
+		 new cMessageUtilityChange(-utility_estimates["Palliative"]+utility_estimates["MetastaticCancer"]));
       
   } break;
 
   case toRP:
-    add_costs("ProstatectomyCost");
+    add_costs("Prostatectomy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["ProstatectomyUtilityPart1"]));
-    scheduleAt(now() + utility_duration["ProstatectomyUtilityDurationPart1"], 
-	       new cMessageUtilityChange(utility_estimates["ProstatectomyUtilityPart1"]));
+    scheduleUtilityChange(now(), "ProstatectomyPart1"); 
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleAt(now() + utility_duration["ProstatectomyUtilityDurationPart1"], 
-	       new cMessageUtilityChange(-utility_estimates["ProstatectomyUtilityPart2"]));
-    scheduleAt(now() + utility_duration["ProstatectomyUtilityDurationPart2"],
-	       new cMessageUtilityChange(utility_estimates["ProstatectomyUtilityPart2"]));
+    scheduleUtilityChange(now() + utility_duration["ProstatectomyPart1"], 
+			  "ProstatectomyPart2");
     break;
 
   case toRT:
-    add_costs("RadiationTherapyCost");
+    add_costs("RadiationTherapy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["RadiationTherapyUtilityPart1"]));
-    scheduleAt(now() + utility_duration["RadiationTherapyUtilityDurationPart1"], 
-	       new cMessageUtilityChange(utility_estimates["RadiationTherapyUtilityPart1"]));
+    scheduleUtilityChange(now(), "RadiationTherapyPart1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleAt(now() + utility_duration["RadiationTherapyUtilityDurationPart1"], 
-	       new cMessageUtilityChange(-utility_estimates["RadiationTherapyUtilityPart2"]));
-    scheduleAt(now() + utility_duration["RadiationTherapyUtilityDurationPart2"],
-	       new cMessageUtilityChange(utility_estimates["RadiationTherapyUtilityPart2"]));
+    scheduleUtilityChange(now() + utility_duration["RadiationTherapyPart1"], 
+			  "RadiationTherapyPart2");
     break;
 
   case toCM:
-    add_costs("ActiveSurveillanceCost");
-    scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["ActiveSurveillanceUtility"]));
-    scheduleAt(now() + utility_duration["ActiveSurveillanceUtilityDuration"], 
-	       new cMessageUtilityChange(utility_estimates["ActiveSurveillanceUtility"]));
-
+    add_costs("ActiveSurveillance"); // expand here
+    scheduleUtilityChange(now(), "ActiveSurveillance");
     break; 
 
   case toADT:
@@ -707,6 +747,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   List tables = parms["tables"];
   parameter = parms["parameter"];
   List otherParameters = parms["otherParameters"];
+  debug = as<bool>(parms["debug"]);
   mubeta2 = as<NumericVector>(otherParameters["mubeta2"]);
   sebeta2 = as<NumericVector>(otherParameters["sebeta2"]);
   NumericVector mu0 = as<NumericVector>(otherParameters["mu0"]);
@@ -764,17 +805,18 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     it_sl->second.prepare();
   // now we can use: H_local[H_local_t::key_type(*H_local_age_set.lower_bound(age),grade)].invert(-log(u))
 
-  // if (debug) {
-  //   Rprintf("SurvTime: %f\n",exp(-H_local[H_local_t::key_type(65.0,0)].approx(63.934032)));
-  //   Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
-  //   Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
-  //   Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
-  // }
+  if (debug) {
+    Rprintf("SurvTime: %f\n",exp(-H_local[H_local_t::key_type(65.0,0)].approx(63.934032)));
+    Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
+    Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
+    Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
+    Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(pair<double,double>(bounds<double>(1.0,4.0,10.0),
+							   bounds<double>(100.0,55,75))));
+  }
   
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
   screen = as<int>(otherParameters["screen"]);
   panel = as<bool>(parms["panel"]);
-  debug = as<bool>(parms["debug"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 
 
@@ -793,9 +835,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   lifeHistories.clear();
   psarecord.clear();
 
-  report.discountRate = 0.00;
+  report.discountRate = parameter["discountRate.effectiveness"];
   report.setPartition(ages);
-  report.discountRate = 0.00;
+  costs.discountRate = parameter["discountRate.costs"];
   costs.setPartition(ages);
 
   // main loop

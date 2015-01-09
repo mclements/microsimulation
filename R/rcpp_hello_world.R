@@ -16,6 +16,15 @@ rcpp_hello_world <- function(){
 unsigned <- function(seed) ifelse(seed < 0, seed + 2^32, seed)
 signed <- function(seed) ifelse(seed>2^31, seed-2^32, seed)
 
+rnormPos <- function(n,mean=0,sd=1,lbound=0) {
+    if (length(mean)<n) mean <- rep(mean,length=n)
+    if (length(sd)<n) sd <- rep(sd,length=n)
+    x <- rnorm(n,mean,sd)
+    while(any(i <- which(x<lbound)))
+        x[i] <- rnorm(length(i),mean[i],sd[i])
+    x
+}
+
 set.user.Random.seed <- function (seed) {
   seed <- as.double(unsigned(seed))
   if (length(seed) == 1) seed <- rep(seed,6)
@@ -158,6 +167,7 @@ FhcrcParameters <- list(
     sebeta1=0.0430,
     mubeta2=c(0.0397,0.1678),
     sebeta2=c(0.0913,0.3968),
+    mubeta2.scale=2.1, beta.rho=0.62,
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
     c_benefit_value = 10.0,
@@ -169,8 +179,11 @@ FhcrcParameters <- list(
     nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,
     psaThresholdBiopsyFollowUp = 4.0,
+    BPThreshold=4.69,
+    BPThresholdBiopsyFollowUp=4.69,
     c_low_grade_slope=-0.006,
-    discountRate = 0.035,
+    discountRate.effectiveness = 0.035,
+    discountRate.costs = 0.035,
     mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
         0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
         0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
@@ -187,44 +200,44 @@ FhcrcParameters <- list(
         0.240339, 0.256215, 0.275103, 0.314157, 0.345252, 0.359275, 0.41768, 
         0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538, 
         0.782609),
-    cost_parameters = c(InvitationCost = 50,
-        FormalPSACost = 130,
-        OpportunisticPSACost = 1910, #Is this one used?
-        FormalPSABiomarkerCost = 730,
-        OpportunisticPSABiomarkerCost = 2510, #N.B. This one is new and should be used
-        BiopsyCost = 12348,
-        ProstatectomyCost = 117171,
-        RadiationTherapyCost = 117171,
-        ActiveSurveillanceCost = 141358,
-        MetastaticCancerCost = 585054, #This appears not to be used any more
-        DeathCost = 0),
+    cost_parameters = c(Invitation = 50,
+        FormalPSA = 130,
+        OpportunisticPSA = 1910, #Is this one used?
+        FormalPSABiomarker = 730,
+        OpportunisticPSABiomarker = 2510, #N.B. This one is new and should be used
+        Biopsy = 12348,
+        Prostatectomy = 117171,
+        RadiationTherapy = 117171,
+        ActiveSurveillance = 141358,
+        MetastaticCancer = 585054, #This appears not to be used any more
+        Death = 0),
     ## IHE doesn't use the postrecovery period (as reported in the Heijnsdijk 2012 reference), should we?
-    utility_estimates = 1 - c(InvitationUtility = 1,
-        FormalPSAUtility = 0.99,
-        FormalPSABiomarkerUtility = 0.90,
-        BiopsyUtility = 0.90,
-        OpportunisticPSAUtility = 0.99,
-        ProstatectomyUtilityPart1 = 0.67,
-        ProstatectomyUtilityPart2 = 0.77,
-        RadiationTherapyUtilityPart1 = 0.73,
-        RadiationTherapyUtilityPart2 = 0.78,
-        ActiveSurveillanceUtility = 0.97,
-        MetastaticCancerUtility = 0.60,
-        PalliativeUtility = 0.40,
-        DeathUtility = 0.00),
+    utility_estimates = 1 - c(Invitation = 1,
+        FormalPSA = 0.99,
+        FormalPSABiomarker = 0.90,
+        Biopsy = 0.90,
+        OpportunisticPSA = 0.99,
+        ProstatectomyPart1 = 0.67,
+        ProstatectomyPart2 = 0.77,
+        RadiationTherapyPart1 = 0.73,
+        RadiationTherapyPart2 = 0.78,
+        ActiveSurveillance = 0.97,
+        MetastaticCancer = 0.60,
+        Palliative = 0.40,
+        Death = 0.00),
     ## Utility duration is given in years.
-    utility_duration = c(InvitationUtilityDuration = 0.0,
-        FormalPSAUtilityDuration = 1/52,
-        FormalPSABiomarkerUtilityDuration = 3/52,
-        BiopsyUtilityDuration = 3/52,
-        OpportunisticPSAUtilityDuration = 1/52,
-        ProstatectomyUtilityDurationPart1 = 2/12,
-        ProstatectomyUtilityDurationPart2 = 10/12,
-        RadiationTherapyUtilityDurationPart1 = 2/12,
-        RadiationTherapyUtilityDurationPart2 = 10/12,
-        ActiveSurveillanceUtilityDuration = 7,
-        MetastaticCancerUtilityDuration = 30/12,
-        PalliativeUtilityDuration = 6/12)
+    utility_duration = c(Invitation = 0.0,
+        FormalPSA = 1/52,
+        FormalPSABiomarker = 3/52,
+        Biopsy = 3/52,
+        OpportunisticPSA = 1/52,
+        ProstatectomyPart1 = 2/12,
+        ProstatectomyPart2 = 10/12,
+        RadiationTherapyPart1 = 2/12,
+        RadiationTherapyPart2 = 10/12,
+        ActiveSurveillance = 7,
+        MetastaticCancer = 30/12,
+        Palliative = 6/12)
     )
 IHE <- list(prtx=data.frame(Age=50.0,DxY=1973.0,G=1:2,CM=0.6,RP=0.26,RT=0.14)) ## assumed constant across ages and periods
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
@@ -275,36 +288,41 @@ rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40,
 1.4543783566239, 1.01084363142901, 0.644940081254986, 1.29365253055963, 
 1.4079170674224, 1.03720449704243, 0.643101192871478, 1.08541958643012, 
 1.29524623033074, 1.02176143186057, 0.673175882772333))
+pop1 <- data.frame(cohort=2012:1900,
+                   pop=c(rep(17239,9), 16854, 16085, 15504, 15604, 16381, 16705, 
+                       16762, 16853, 15487, 14623, 14066, 13568, 13361, 13161, 13234, 
+                       13088, 12472, 12142, 12062, 12078, 11426, 12027, 11963, 12435, 
+                       12955, 13013, 13125, 13065, 12249, 11103, 9637, 9009, 8828, 
+                       8350, 7677, 7444, 7175, 6582, 6573, 6691, 6651, 6641, 6268, 
+                       6691, 6511, 6857, 7304, 7308, 7859, 7277, 8323, 8561, 7173, 
+                       6942, 7128, 6819, 5037, 6798, rep(6567,46)))
+## these enum strings should be moved to C++
+screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
+             "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
+             "stockholm3_risk_stratified")
+stateT <- c("Healthy","Localised","Metastatic")
+gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
+eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
+            "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
+            "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
+            "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toChangeUtility","toAgeUtility")
+diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
+treatmentT <- c("CM","RP","RT")
+psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 
-callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE, includePSArecords=FALSE, flatPop = FALSE, tables = IHE, debug=FALSE, mc.cores=1) {
+callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=0.75,
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
+                      includePSArecords=FALSE, flatPop = FALSE, tables = IHE, debug=FALSE,
+                      discountRate = 0.035,
+                      mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
   RNGkind("user")
   set.user.Random.seed(seed)
   ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
-  pop1 <- data.frame(cohort=2012:1900, pop=c(rep(17239,9), 16854, 16085, 15504, 15604, 16381, 16705, 
-    16762, 16853, 15487, 14623, 14066, 13568, 13361, 13161, 13234, 
-    13088, 12472, 12142, 12062, 12078, 11426, 12027, 11963, 12435, 
-    12955, 13013, 13125, 13065, 12249, 11103, 9637, 9009, 8828, 
-    8350, 7677, 7444, 7175, 6582, 6573, 6691, 6651, 6641, 6268, 
-    6691, 6511, 6857, 7304, 7308, 7859, 7277, 8323, 8561, 7173, 
-    6942, 7128, 6819, 5037, 6798, rep(6567,46)))
-  ## these enum strings should be moved to C++
-  screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
-               "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
-               "stockholm3_risk_stratified")
-  stateT <- c("Healthy","Localised","Metastatic")
-  gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
-  eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
-              "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
-              "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
-              "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toChangeUtility","toAgeUtility")
-  diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
-  treatmentT <- c("CM","RP","RT")
-  psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
   ## check the input arguments
+  screen <- match.arg(screen)
   stopifnot(screen %in% screenT)
   stopifnot(is.na(n) || is.integer(as.integer(n)))
   stopifnot(is.integer(as.integer(nLifeHistories)))
@@ -361,7 +379,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                            screeningCompliance=screeningCompliance,
                            studyParticipation=studyParticipation,
                            psaThreshold=psaThreshold,
-                           screen=as.integer(screenIndex))
+                           screen=as.integer(screenIndex),
+                           discountRate.costs=discountRate,
+                           discountRate.effectiveness=discountRate)
   parameter <- FhcrcParameters
   for (name in names(updateParameters))
       parameter[[name]] <- updateParameters[[name]]
@@ -436,7 +456,8 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
               ## prev=summary$prev, pt=summary$pt, events=summary$events)
-              summary=summary,costs=costs, psarecord=psarecord, cohort=data.frame(table(cohort)))
+              summary=summary,costs=costs, psarecord=psarecord, cohort=data.frame(table(cohort)),
+              discountRate = discountRate)
   class(out) <- "fhcrc"
   out
 }
@@ -444,20 +465,34 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
 ## R --slave -e "options(width=200); require(microsimulation); callFhcrc(100,nLifeHistories=1e5,screen=\"screen50\")[[\"parameters\"]]"
 
 summary.fhcrc <- function(obj) {
+    newobj <- obj[c("n","screen","discountRate")]
     with(obj,
-         list(LE=sum(summary$pt$pt)/n,
-              QALE=sum(summary$ut$ut)/n,
-              costs=sum(costs$costs)/n))
+         structure(.Data=c(newobj,
+                       with(obj, list(
+                           LE=sum(summary$pt$pt)/n,
+                           QALE=sum(summary$ut$ut)/n,
+                           costs=sum(costs$costs)/n))),
+                   class="summary.fhcrc"))
 }
+print.summary.fhcrc <- function(obj) 
+    cat(sprintf("Screening scenario: \t%s
+Life expectancy: \t%f
+Discounted QALE: \t%f
+Discounted costs: \t%f
+Discounted rate: \t%f
+",obj$screen,obj$LE,obj$QALE,obj$costs,obj$discountRate))
 
 ICER <- function(object1, object2, ...)
     UseMethod("ICER")
 
 ICER.fhcrc <- function(obj1,obj2,...) {
+    stopifnot(obj1$discountRate == obj2$discountRate)
     summary1 <- summary(obj1,...)
     summary2 <- summary(obj2,...)
-    list(ICER.LE=(summary1$costs-summary2$costs)/(summary1$LE-summary2$LE),
-         ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE))
+    out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE))
+    if (obj1$discountRate == 0)
+        out$ICER.LE <- (summary1$costs-summary2$costs)/(summary1$LE-summary2$LE)
+    out
 }
 
 print.fhcrc <- function(obj,...)

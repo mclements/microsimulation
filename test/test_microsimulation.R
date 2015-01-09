@@ -53,6 +53,21 @@ with(subset(deaths,state=="Localised"),plot(density(death-dx,from=0)))
 deaths <- sqldf("select t1.id, t1.end as dx, t2.end as death, t2.event, t1.state, t1.ext_grade from life as t1 inner join life as t2 on t1.id=t2.id where t1.event='toClinicalDiagnosis' and t2.event in ('toOtherDeath','toCancerDeath')")
 xtabs(~event+pmin(85,floor(death/5)*5),deaths,subset=(state=="Localised"))
 
+refresh
+require(microsimulation)
+model <- function(..., mc.cores=3) callFhcrc(..., mc.cores=mc.cores)
+model0.0 <- model(1e6,discountRate=0)
+model0 <- model(1e6)
+model2 <- model(1e6,screen="twoYearlyScreen50to70")
+model2.0 <- model(1e6,screen="twoYearlyScreen50to70",discountRate=0)
+model4 <- model(1e6,screen="fourYearlyScreen50to70")
+ICER(model0.0,model2.0)
+ICER(model0,model2)
+ICER(model0,model4)
+ICER(model2,model4)
+
+
+
 
 refresh
 require(rstpm2)
@@ -143,17 +158,19 @@ rnormPos <- function(n,mean=0,sd=1,lbound=0) {
     if (length(mean)<n) mean <- rep(mean,length=n)
     if (length(sd)<n) sd <- rep(sd,length=n)
     x <- rnorm(n,mean,sd)
-    while(any(i <- (x<lbound)))
+    while(any(i <- which(x<lbound)))
         x[i] <- rnorm(sum(i),mean[i],sd[i])
     x
 }
+## onset ho(t) = g0 * t
 p <- list(mubeta0=-1.609,
           sebeta0=0.2384,
           mubeta1=0.04463,
           sebeta1=0.0430,
           mubeta2=c(0.0397,0.1678),
           sebeta2=c(0.0913,0.3968),
-          tau2=0.0829)
+          tau2=0.0829,
+          g0=0.0005)
 n <- nrow(temp2)
 correlatedValue <- function(y,mu,se=NULL,rho) {
     residual <- y - mu 
@@ -257,6 +274,177 @@ with(reports, mean( PSAposAdvanced <= BBPposAdvanced))
 with(reports, plot(table( PSAposAdvanced - BBPposAdvanced)))
 with(reports, plot(density(pBiopsy)))
 with(reports, plot(PSAposAdvanced - BBPposAdvanced,pBiopsy))
+
+
+p <- list(mubeta0=-1.609,
+          sebeta0=0.2384,
+          mubeta1=0.04463,
+          sebeta1=0.0430,
+          mubeta2=c(0.0397,0.1678),
+          sebeta2=c(0.0913,0.3968),
+          tau2=0.0829,
+          g0=0.0005)
+## onset ho(t) = g0 * t, Ho(t) = g0/2*t*t = -logU => t=sqrt(-2*log(U)/g0)
+set.seed(12345)
+n <- 1e6
+age_o <- 35+sqrt(-2*log(runif(n))/p$g0)
+grade <- rep(1:2,c(0.9*n,0.1*n))
+beta0 <- with(p, rnorm(n,mubeta0,sebeta0))
+beta1 <- with(p, rnormPos(n,mubeta1,sebeta1))
+beta2 <- with(p, rnormPos(n,mubeta2[grade],sebeta2[grade]))
+eps <- with(p, rnorm(n,0,tau2))
+lpsa <- pmin(log(20),beta0+beta1*(50-35)+beta2*pmax(0,50-age_o)+eps)
+plot(density(exp(lpsa)),xlim=c(0,20))
+i <- 1
+for (age in seq(55,80,by=5)) {
+    lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps)
+    lines(density(exp(lpsa)),col=i)
+    i <- i+1
+}
+
+p <- list(mubeta0=-1.609,
+          sebeta0=0.2384,
+          mubeta1=0.04463,
+          sebeta1=0.0430,
+          mubeta2=c(0.0397,0.1678),
+          sebeta2=c(0.0913,0.3968),
+          tau2=0.0829,
+          g0=0.0005)
+psaSim <- function(n,age=50,grade=NULL) {
+    age_o <- 35+sqrt(-2*log(runif(n))/p$g0)
+    if (is.null(grade)) grade <- rep(1:2,c(0.9*n,0.1*n))
+    grade <- rep(grade,length=n)
+    beta0 <- with(p, rnorm(n,mubeta0,sebeta0))
+    beta1 <- with(p, rnormPos(n,mubeta1,sebeta1))
+    beta2 <- with(p, rnormPos(n,mubeta2[grade],sebeta2[grade]))
+    eps <- with(p, rnorm(n,0,tau2))
+    lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps)
+    psa <- exp(lpsa)
+    as.data.frame(as.list(environment()))
+}
+set.seed(12345)
+psaSim(11)
+
+refresh
+require(microsimulation)
+y <- t(replicate(1000,.Call("rbinormPos_test",package="microsimulation")))
+cor(y)
+plot(y)
+
+## Correlated PSA values
+refresh
+require(microsimulation)
+require(mvtnorm)
+require(dplyr)
+p <- list(mubeta0=-1.609,
+          sebeta0=0.2384,
+          mubeta1=0.04463,
+          sebeta1=0.0430,
+          mubeta2=c(0.0397,0.1678),
+          sebeta2=c(0.0913,0.3968),
+          tau2=0.0829,
+          g0=0.0005)
+rmvnormPos <- function(n,mean=0,sigma=matrix(1),lbound=0) {
+    x <- rmvnorm(n,mean,sigma)
+    while(any(i <- which(apply(x,1,min) < lbound)))
+        x[i,] <- rmvnorm(length(i),mean,sigma)
+    x
+}
+## rmvnormPos(10,c(0,0),matrix(c(1,0,0,1),2))
+prob_grade7 <- fhcrcData$prob_grade7 %>% "names<-"(c("x","y")) %>% approxfun()
+psaSimCor <- function(n,age=50,rho=0.62,max.psa=50,mubeta2.scale) {
+    age_o <- 35+sqrt(-2*log(runif(n))/p$g0)
+    grade <- ifelse(runif(n)>=1+FhcrcParameters$c_low_grade_slope*(age_o-35),8,7)
+    cor0 <- cor1 <- cor2 <- matrix(c(1,rho,rho,1),2)
+    beta0 <- with(p, rmvnorm(n,c(mubeta0,mubeta0),sebeta0^2*cor0))
+    beta1 <- with(p, rmvnorm(n,c(mubeta1,mubeta1),sebeta1^2*cor1))
+    beta2 <- matrix(NA,n,2)
+    for (gradei in 7:8) {
+        i <- which(grade == gradei)
+        index <- if(gradei==7) 1 else 2
+        if (any(i)) {
+            x <- with(p, rmvnorm(length(i),c(mubeta2[index],mubeta2.scale*mubeta2[index]),sebeta2[index]^2*cor2))
+            beta2[i,1] <- x[,1]
+            beta2[i,2] <- x[,2]
+        }
+    }
+    ext_grade <- ifelse(grade==7,
+                        ifelse(runif(n)<prob_grade7(beta2),7,6),
+                        8)
+    eps <- with(p, cbind(rnorm(n,0,tau2),rnorm(n,0,tau2)))
+    lpsa <- t(apply(beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps, 1, pmin, log(max.psa)))
+    ## psa <- exp(lpsa)
+    data.frame(age=age,
+               cancer=age_o<age,
+               advCancer=age_o<age & ext_grade>=7,
+               lpsa=lpsa[,1],
+               lbp=lpsa[,2],
+               psa=exp(lpsa[,1]),
+               bp=exp(lpsa[,2]),
+               age_o=age_o,
+               grade=grade,
+               ext_grade=ext_grade)
+}
+dAgg <- function(data,threshold1,threshold2)
+    mutate(data,posPSA=psa>=threshold1,posBP=bp>=threshold2) %>% group_by(advCancer,posPSA,posBP) %>% summarize(freq=n())
+rTPF <- function(data) {
+    a <- filter(data,advCancer & posPSA & posBP)$freq
+    b <- filter(data,advCancer & !posPSA & posBP)$freq
+    c <- filter(data,advCancer & posPSA & !posBP)$freq
+    (a+b)/(a+c)
+}
+rFPF <- function(data) {
+    e <- filter(data,!advCancer & posPSA & posBP)$freq
+    f <- filter(data,!advCancer & !posPSA & posBP)$freq
+    g <- filter(data,!advCancer & posPSA & !posBP)$freq
+    (e+f)/(e+g)
+}
+rBiopsy <- function(data) 
+    sum(filter(data,posBP)$freq)/sum(filter(data,posPSA)$freq)
+RNGkind("Mersenne-Twister")
+set.seed(12345)
+d <- psaSimCor(10000,age=70,mubeta2.scale=2.1,rho=0.62)
+plot(log(bp) ~ log(psa), data=d)
+cor(subset(d,select=c(lpsa,lbp)))
+## dAgg(d,3,3)
+dAgg(d,3,3) %>% rTPF()
+dAgg(d,3,3) %>% rFPF()
+
+uniroot1 <- uniroot(function(x) dAgg(d,3,x) %>% rTPF()-1, interval=c(1,20))
+uniroot1
+## dAgg(d,3,uniroot1$root)
+dAgg(d,3,uniroot1$root) %>% rTPF()
+dAgg(d,3,uniroot1$root) %>% rFPF()
+dAgg(d,3,uniroot1$root) %>% rBiopsy()
+
+## Random draw from a bivariate normal distribution
+rho <- 0.62
+Sigma <- matrix(c(1,rho,rho,1),2)
+A <- chol(Sigma)
+z <- matrix(rnorm(2*1e5),nrow=1e5)
+y <- cbind(z[,1],z[,1]*rho+z[,2]*sqrt(1-rho*rho))
+## y <- z %*% A
+cor(y)
+apply(y,2,mean)
+apply(y,2,sd)
+
+
+
+
+lpsa1 <- psaSimCor(1e5,age=70,rho=0.0)
+lpsa2 <- apply(lpsa1,1,mean)
+## lpsa2 <- apply(lpsa1,1,function(x) sum(x*c(0.3,0.7)))
+cor(lpsa1[,1],lpsa2) # cor>=0.71
+
+
+plot(density(psaSim(1e4)$psa),xlim=c(0,20))
+i <- 1
+for (age in seq(55,80,by=5)) {
+    lines(density(psaSim(1e5,age=age)$psa),col=i)
+    i <- i+1
+}
+
+
 
 
 
