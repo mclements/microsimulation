@@ -312,7 +312,7 @@ psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 
 callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=0.75,
                       seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
-                      includePSArecords=FALSE, flatPop = FALSE, tables = IHE, debug=FALSE,
+                      includePSArecords=FALSE, flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
                       discountRate = 0.035,
                       mc.cores=1) {
   ## save the random number state for resetting later
@@ -329,15 +329,18 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   stopifnot(is.double(as.double(screeningCompliance)))
   screenIndex <- which(screen == screenT) - 1
   ## NB: sample() calls the random number generator (!)
+  if (is.vector(pop))
+      pop <- data.frame(cohort=pop,pop=1)
   if (is.na(n)) {
     cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
     n <- length(cohort)
-  } else
+  } else {
       if (flatPop) {
           cohort <- rep(pop1$cohort,each=ceiling(n/nrow(pop1))) #Need ceiling so int n=!0
           n <- ceiling(n/nrow(pop1)) * nrow(pop1) #To get the chunks right
       } else
           cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
+  }
   cohort <- sort(cohort)
   ## now separate the data into chunks
   chunks <- tapply(cohort, sort((0:(n-1)) %% mc.cores), I)

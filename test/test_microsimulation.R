@@ -331,6 +331,21 @@ y <- t(replicate(1000,.Call("rbinormPos_test",package="microsimulation")))
 cor(y)
 plot(y)
 
+refresh
+require(microsimulation)
+require(sqldf)
+load("~/Downloads/IHEdata.RData")
+ls()
+model0 <- callFhcrc(1e5,screen="noScreening",mc.cores=3,pop=1995-50)
+model0 <- callFhcrc(1e5,screen="screenUptake",mc.cores=3,pop=1995-50)
+model0 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
+costs <- model0$costs
+pt <- model0$summary$pt
+pop1 <- sqldf("select age, sum(pt) as pop from pt group by age")
+costs1 <- sqldf("select age, item, sum(costs) as costs from costs group by age, item")
+sqldf("select item, sum(costs/pop*IHE/1e6) as adj from pop1 natural join costs1 natural join IHEpop group by item")
+
+
 ## Correlated PSA values
 refresh
 require(microsimulation)

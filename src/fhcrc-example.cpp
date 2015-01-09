@@ -850,6 +850,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     rngOther->nextSubstream();
     rngScreen->nextSubstream();
     rngTreatment->nextSubstream();
+    R_CheckUserInterrupt();  /* be polite -- did the user hit ctrl-C? */
   }
 
   // tidy up
