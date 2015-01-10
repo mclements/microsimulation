@@ -173,17 +173,22 @@ FhcrcParameters <- list(
     c_benefit_value = 10.0,
     sxbenefit = 1.0,
     screeningCompliance = 0.75,
+    rescreeningCompliance = 0.95,
     biopsyCompliance = 0.858,
     biopsySensitivity = 0.8,
     studyParticipation = 35.0/260.0,
     nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,
     psaThresholdBiopsyFollowUp = 4.0,
-    BPThreshold=4.69,
-    BPThresholdBiopsyFollowUp=4.69,
+    ## BPThreshold=3.47,
+    ## BPThresholdBiopsyFollowUp=3.47,
+    ## BPThreshold=4.69,
+    ## BPThresholdBiopsyFollowUp=4.69,
+    BPThreshold=5.16,
+    BPThresholdBiopsyFollowUp=5.16,
     c_low_grade_slope=-0.006,
-    discountRate.effectiveness = 0.035,
-    discountRate.costs = 0.035,
+    discountRate.effectiveness = 0.03,
+    discountRate.costs = 0.03,
     mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
         0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
         0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
@@ -222,8 +227,9 @@ FhcrcParameters <- list(
         RadiationTherapyPart1 = 0.73,
         RadiationTherapyPart2 = 0.78,
         ActiveSurveillance = 0.97,
-        MetastaticCancer = 0.60,
-        Palliative = 0.40,
+        PalliativeTherapy = 0.60,
+        TerminalIllness = 0.40,
+        MetastaticCancer = 0.85,
         Death = 0.00),
     ## Utility duration is given in years.
     utility_duration = c(Invitation = 0.0,
@@ -236,12 +242,16 @@ FhcrcParameters <- list(
         RadiationTherapyPart1 = 2/12,
         RadiationTherapyPart2 = 10/12,
         ActiveSurveillance = 7,
-        MetastaticCancer = 30/12,
-        Palliative = 6/12)
+        PalliativeTherapy = 30/12,
+        TerminalIllness = 6/12)
     )
 IHE <- list(prtx=data.frame(Age=50.0,DxY=1973.0,G=1:2,CM=0.6,RP=0.26,RT=0.14)) ## assumed constant across ages and periods
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
+swedenOpportunisticBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
+                                compliance=c(0.7, 0.75, 0.6, 0.7, 0.4, 0.5))
+swedenFormalBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
+                                compliance=0.9)
 rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40, 
 40, 40, 45, 45, 45, 45, 50, 50, 50, 50, 55, 55, 55, 55, 60, 60, 
 60, 60, 65, 65, 65, 65, 70, 70, 70, 70, 75, 75, 75, 75, 80, 80, 
@@ -299,13 +309,14 @@ pop1 <- data.frame(cohort=2012:1900,
 ## these enum strings should be moved to C++
 screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
              "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
-             "stockholm3_risk_stratified")
+             "stockholm3_risk_stratified", "goteborg", "risk_stratified")
 stateT <- c("Healthy","Localised","Metastatic")
 gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
 eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
             "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
             "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
-            "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toChangeUtility","toAgeUtility")
+            "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toUtilityChange","toUtility",
+            "toSTHLM3")
 diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
 treatmentT <- c("CM","RP","RT")
 psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
@@ -313,7 +324,7 @@ psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=0.75,
                       seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
                       includePSArecords=FALSE, flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
-                      discountRate = 0.035,
+                      discountRate = 0.03, updateParameters = NULL,
                       mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
@@ -329,17 +340,19 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   stopifnot(is.double(as.double(screeningCompliance)))
   screenIndex <- which(screen == screenT) - 1
   ## NB: sample() calls the random number generator (!)
-  if (is.vector(pop))
+  if (is.vector(pop)) {
+      flatPop <- TRUE
       pop <- data.frame(cohort=pop,pop=1)
+  }
   if (is.na(n)) {
-    cohort <- pop1$cohort[rep.int(1:nrow(pop1),times=pop1$pop)]
+    cohort <- pop$cohort[rep.int(1:nrow(pop),times=pop$pop)]
     n <- length(cohort)
   } else {
       if (flatPop) {
-          cohort <- rep(pop1$cohort,each=ceiling(n/nrow(pop1))) #Need ceiling so int n=!0
-          n <- ceiling(n/nrow(pop1)) * nrow(pop1) #To get the chunks right
+          cohort <- rep(pop$cohort,each=ceiling(n/nrow(pop))) #Need ceiling so int n=!0
+          n <- ceiling(n/nrow(pop)) * nrow(pop) #To get the chunks right
       } else
-          cohort <- sample(pop1$cohort,n,prob=pop1$pop/sum(pop1$pop),replace=TRUE)
+          cohort <- sample(pop$cohort,n,prob=pop$pop/sum(pop$pop),replace=TRUE)
   }
   cohort <- sort(cohort)
   ## now separate the data into chunks
@@ -367,9 +380,11 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   fhcrcData$pradt$Grade <- fhcrcData$pradt$Grade - 1L
   fhcrcData$pradt$Age <- as.double(fhcrcData$pradt$Age)
   fhcrcData$pradt$DxY <- as.double(fhcrcData$pradt$DxY)
-  fhcrcData$biopsyComplianceTable <-
-      data.frame(expand.grid(psa=c(4,7,10),age=seq(55,75,by=5)),
-                 compliance=unlist(fhcrcData$biopsy_frequency[,-(1:2),]))
+  ## fhcrcData$biopsyComplianceTable <-
+  ##     data.frame(expand.grid(psa=c(4,7,10),age=seq(55,75,by=5)),
+  ##                compliance=unlist(fhcrcData$biopsy_frequency[,-(1:2),]))
+  fhcrcData$biopsyOpportunisticComplianceTable <- swedenOpportunisticBiopsyCompliance 
+  fhcrcData$biopsyFormalComplianceTable <- swedenFormalBiopsyCompliance 
   fhcrcData$survival_local <-
       with(fhcrcData$survival_local,
            data.frame(Age=as.double(AgeLow),Grade=Grade,Time=as.double(Time),
@@ -378,13 +393,14 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
       with(fhcrcData$survival_dist,
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
-  updateParameters <- list(nLifeHistories=as.integer(nLifeHistories),
-                           screeningCompliance=screeningCompliance,
-                           studyParticipation=studyParticipation,
-                           psaThreshold=psaThreshold,
-                           screen=as.integer(screenIndex),
-                           discountRate.costs=discountRate,
-                           discountRate.effectiveness=discountRate)
+  updateParameters <- c(updateParameters,
+                        list(nLifeHistories=as.integer(nLifeHistories),
+                             screeningCompliance=screeningCompliance,
+                             studyParticipation=studyParticipation,
+                             psaThreshold=psaThreshold,
+                             screen=as.integer(screenIndex),
+                             discountRate.costs=discountRate,
+                             discountRate.effectiveness=discountRate))
   parameter <- FhcrcParameters
   for (name in names(updateParameters))
       parameter[[name]] <- updateParameters[[name]]
@@ -492,9 +508,13 @@ ICER.fhcrc <- function(obj1,obj2,...) {
     stopifnot(obj1$discountRate == obj2$discountRate)
     summary1 <- summary(obj1,...)
     summary2 <- summary(obj2,...)
-    out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE))
+    out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE),
+                delta.QALE=summary1$QALE-summary2$QALE,
+                delta.costs=summary1$costs-summary2$costs)
     if (obj1$discountRate == 0)
-        out$ICER.LE <- (summary1$costs-summary2$costs)/(summary1$LE-summary2$LE)
+        out <- c(out,
+                 list(ICER.LE = (summary1$costs-summary2$costs)/(summary1$LE-summary2$LE),
+                      delta.LE = summary1$LE-summary2$LE))
     out
 }
 

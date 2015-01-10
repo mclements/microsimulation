@@ -22,10 +22,10 @@ namespace {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen, 
-		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility };
+		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility, toSTHLM3 };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
-		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified};
+		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified, goteborg, risk_stratified};
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
@@ -94,7 +94,7 @@ namespace {
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
   TablePrtx prtxCM, prtxRP;
   TablePradt pradt;
-  TableBiopsyCompliance tableBiopsyCompliance;
+  TableBiopsyCompliance tableOpportunisticBiopsyCompliance, tableFormalBiopsyCompliance;
   TableDDD rescreen_shape, rescreen_scale, rescreen_cure;
   NumericInterpolate interp_prob_grade7;
   H_dist_t H_dist;
@@ -156,7 +156,8 @@ namespace {
     void init();
     void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
-    void scheduleUtilityChange(double at, std::string category, double sign = -1.0);
+    void scheduleUtilityChange(double at, std::string category, bool transient = true, 
+			       double sign = -1.0);
   };
 
   /** 
@@ -198,10 +199,12 @@ namespace {
      Schedule a transient utility change.
      Default: sign = -1
    **/
-  void FhcrcPerson::scheduleUtilityChange(double at, std::string category, double sign) {
+  void FhcrcPerson::scheduleUtilityChange(double at, std::string category, bool transient, double sign) {
     scheduleAt(at, new cMessageUtilityChange(sign*utility_estimates[category]));
-    scheduleAt(at + utility_duration[category], 
-	       new cMessageUtilityChange(-sign*utility_estimates[category]));
+    if (transient) {
+      scheduleAt(at + utility_duration[category], 
+		 new cMessageUtilityChange(-sign*utility_estimates[category]));
+    }
   }
 
   treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) { // also:
@@ -315,25 +318,33 @@ void FhcrcPerson::init() {
     case noScreening:
       break; // no screening
     case randomScreen50to70:
+      organised = true;
       scheduleAt(R::runif(50.0,70.0),toScreen);
       break;
     case twoYearlyScreen50to70:
+      organised = true;
       for (double start = 50.0; start<=70.0; start += 2.0) {
 	scheduleAt(start, toScreen);
       }
       break;
     case fourYearlyScreen50to70: // 50,54,58,62,66,70
+      organised = true;
       for (double start = 50.0; start<=70.0; start += 4.0) {
 	scheduleAt(start, toScreen);
       }
       break;
     case screen50:
+    case goteborg:
+    case risk_stratified:
+      organised = true;
       scheduleAt(50.0,toScreen);
       break;
     case screen60:
+      organised = true;
       scheduleAt(60.0,toScreen);
       break;
     case screen70:
+      organised = true;
       scheduleAt(70.0,toScreen);
       break;
     case stockholm3_goteborg:
@@ -343,6 +354,7 @@ void FhcrcPerson::init() {
       // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
       // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
       // (iii) intermediate cohorts are a weighted mixture of (i) and (ii) 
+      organised = false;
       double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03; 
       double shapeA = 3.8;
       double scaleA = 15.0;
@@ -360,11 +372,11 @@ void FhcrcPerson::init() {
 	if ((age0 - 35.0)/15.0 < u) // (iii) mixture
 	  first_screen = age0 + R::rllogis_trunc(shapeA,scaleA,age0-35.0);
 	else first_screen = age0 + R::rllogis(shapeT,scaleT);
-	// Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,u=%f,age0=%f,first_screen=%f)\n",cohort,pscreening,uscreening,u,age0,first_screen);      
       }
       if (uscreening<pscreening)
 	scheduleAt(first_screen, toScreen);
-      // Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
+      if (debug)
+	Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
       // for re-screening patterns: see handleMessage()
     } break;
     default:
@@ -375,7 +387,7 @@ void FhcrcPerson::init() {
   if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
       ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
       (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
-    scheduleAt(R::runif(2013.0,2015.0) - cohort, toOrganised);
+    scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
   }
 
   rngNh->set();
@@ -469,21 +481,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toMetastatic:
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
-    RemoveKind(toUtility);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
     break;
     
-  case toClinicalDiagnosis:
-    dx = ClinicalDiagnosis;
-    RemoveKind(toMetastatic); // competing events
-    RemoveKind(toScreen);
-    scheduleAt(now(), toClinicalDiagnosticBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
-    scheduleAt(now(), toClinicalDiagnosticBiopsy);
-    scheduleAt(now(), toClinicalDiagnosticBiopsy);
-    scheduleAt(now(), toTreatment);
-    break;
-
   case toOrganised:
+  case toSTHLM3:
     organised = true;
     RemoveKind(toScreen); // remove other screens
     scheduleAt(now(), toScreen); // now start organised screening
@@ -525,9 +527,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       }
       everPSA = true;
     }
-    // Other threshold here
-    compliance = tableBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
-							   bounds<double>(age,55,75)));
+    compliance = organised ? 
+      tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
+						bounds<double>(age,55,75))) :
+      tableOpportunisticBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
+						bounds<double>(age,55,75))); 
+
     bool positive_test = 
       (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
       ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
@@ -539,24 +544,39 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     } // assumes similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
     else { // re-screening schedules
       rngScreen->set();
-      if (organised) { // NB: currently assumes 100% compliance?
-	switch (screen) {
-	case stockholm3_goteborg:
-	  if (psa<1.0)
-	    scheduleAt(now() + 4.0, toScreen);
-	  else
-	    scheduleAt(now() + 2.0, toScreen);
-	  break;
-	case stockholm3_risk_stratified:
-	  if (psa<1.0)
-	    scheduleAt(now() + 8.0, toScreen);
-	  else 
-	    scheduleAt(now() + 4.0, toScreen);
-	  break;
-	default:
-	  REprintf("Organised screening state not matched: %s\n",screen);
-	  break;
-	}
+      if (organised) {
+	if (R::runif(0.0,1.0)<parameter["rescreeningCompliance"]) {
+	  switch (screen) {
+	  case stockholm3_goteborg:
+	  case goteborg:
+	    if (now() < 70.0) {
+	      if (psa<1.0)
+		scheduleAt(now() + 4.0, toScreen);
+	      else
+		scheduleAt(now() + 2.0, toScreen);
+	    }
+	    break;
+	  case stockholm3_risk_stratified:
+	  case risk_stratified:
+	    if (now() < 70.0) {
+	      if (psa<1.0)
+		scheduleAt(now() + 8.0, toScreen);
+	      else 
+		scheduleAt(now() + 4.0, toScreen);
+	    }
+	    break;
+	  case randomScreen50to70:
+	  case twoYearlyScreen50to70:
+	  case fourYearlyScreen50to70: // 50,54,58,62,66,70
+	  case screen50:
+	  case screen60:
+	  case screen70:
+	    break;
+	  default:
+	    REprintf("Organised screening state not matched: %s\n",screen);
+	    break;
+	  }
+      }
       } else  // opportunistic screening - move to a separate function?
 	switch(screen) {
 	case screenUptake:
@@ -572,8 +592,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  if (u<prescreened) {
 	    scheduleAt(t, toScreen);
 	  }
-	}
-	  break;
+	} break;
 	default:
 	  // do not schedule any other screens
 	  break;
@@ -582,6 +601,16 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
   } break;
     
+  case toClinicalDiagnosis:
+    dx = ClinicalDiagnosis;
+    RemoveKind(toMetastatic); // competing events
+    RemoveKind(toScreen);
+    scheduleAt(now(), toClinicalDiagnosticBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
+    scheduleAt(now(), toClinicalDiagnosticBiopsy);
+    scheduleAt(now(), toClinicalDiagnosticBiopsy);
+    scheduleAt(now(), toTreatment);
+    break;
+
   case toScreenDiagnosis:
     dx = ScreenDiagnosis;
     RemoveKind(toMetastatic); // competing events
@@ -622,9 +651,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
       add_costs("MetastaticCancer");
+      RemoveKind(toUtility);
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
-      // scheduleAt(now() + utility_duration["MetastaticCancer"], 
-      // 		 new cMessageUtilityChange(utility_estimates["MetastaticCancer"]));
     }
     else { // Localised
       tx = calculate_treatment(u_tx,now(),year);
@@ -654,25 +682,27 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double weight = exp(-parameter["c_benefit_value"]*lead_time);
     double age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
     scheduleAt(age_cancer_death, toCancerDeath);
-    // IHE: Metastatic cancer cf. MISCAN: Palliative treatment
-    // Localised -> Metastatic (36/12) -> Cancer death
-    if (state == Localised) {
-      if (age_cancer_death>now()+utility_duration["MetastaticCancer"]+utility_duration["Palliative"])
-	scheduleAt(age_cancer_death - utility_duration["MetastaticCancer"] - utility_duration["Palliative"], 
-		   new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
-      else // cancer death within 36 months of diagnosis/treatment
-	scheduleAt(now(),
-		   new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
+    // Disutilities prior to a cancer death
+    double age_palliative = age_cancer_death - utility_duration["PalliativeTherapy"] - utility_duration["TerminalIllness"];
+    double age_terminal = age_cancer_death - utility_duration["TerminalIllness"];
+    // Reset utilities for those in with a Metatatic diagnosis
+    if (state == Metastatic) {
+      if (age_palliative > now())
+	scheduleUtilityChange(age_palliative, "MetastaticCancer",false);
+      else
+	scheduleUtilityChange(now(), "MetastaticCancer", false);
     }
-    // IHE: Palliative care cf. MISCAN: Terminal care
-    // Metastatic -> Palliative (6/12) -> cancer death
-    if (age_cancer_death>now()+utility_duration["Palliative"])
-      scheduleAt(age_cancer_death - utility_duration["Palliative"], 
-		 new cMessageUtilityChange(-utility_estimates["Palliative"]+utility_estimates["MetastaticCancer"]));
-    else // cancer death within six months of diagnosis/treatment
-      scheduleAt(now(),
-		 new cMessageUtilityChange(-utility_estimates["Palliative"]+utility_estimates["MetastaticCancer"]));
-      
+    if (age_palliative>now()) { // cancer death more than 36 months after diagnosis
+      scheduleUtilityChange(age_palliative, "PalliativeTherapy"); 
+      scheduleUtilityChange(age_terminal, "TerminalIllness");
+    } 
+    else if (age_terminal>now()) { // cancer death between 36 and 6 months of diagnosis
+      scheduleUtilityChange(now(), "PalliativeTherapy",false, -1.0);
+      scheduleUtilityChange(age_terminal, "PalliativeTherapy", false, 1.0); // reset
+      scheduleUtilityChange(age_terminal,"TerminalIllness");
+    } 
+    else // cancer death within 6 months of diagnosis/treatment
+      scheduleUtilityChange(now(), "TerminalIllness");
   } break;
 
   case toRP:
@@ -765,7 +795,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
-  tableBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyComplianceTable"]),
+  tableOpportunisticBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyOpportunisticComplianceTable"]),
+						"psa","age","compliance");
+  tableFormalBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyFormalComplianceTable"]),
 						"psa","age","compliance");
   rescreen_shape = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "shape");
   rescreen_scale = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "scale");
@@ -810,8 +842,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
     Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
     Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
-    Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(pair<double,double>(bounds<double>(1.0,4.0,10.0),
-							   bounds<double>(100.0,55,75))));
+    // Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(pair<double,double>(bounds<double>(1.0,4.0,10.0), bounds<double>(100.0,55,75))));
   }
   
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);

@@ -331,19 +331,69 @@ y <- t(replicate(1000,.Call("rbinormPos_test",package="microsimulation")))
 cor(y)
 plot(y)
 
+
 refresh
 require(microsimulation)
 require(sqldf)
 load("~/Downloads/IHEdata.RData")
-ls()
-model0 <- callFhcrc(1e5,screen="noScreening",mc.cores=3,pop=1995-50)
-model0 <- callFhcrc(1e5,screen="screenUptake",mc.cores=3,pop=1995-50)
+n <- 1e6
+model0 <- callFhcrc(n,screen="noScreening",mc.cores=3,pop=1995-50)
+model1 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50)
+model1p <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
+model2 <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50)
+model2p <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
+model50 <- callFhcrc(n,screen="screen50",mc.cores=3,pop=1995-50)
+model60 <- callFhcrc(n,screen="screen60",mc.cores=3,pop=1995-50)
+model70 <- callFhcrc(n,screen="screen70",mc.cores=3,pop=1995-50)
+modelUptake <- callFhcrc(n,screen="screenUptake",mc.cores=3)
+## modelUptake1900 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1900)
+modelUptake1915 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1915)
+modelUptake1930 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1930)
+modelUptake1945 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1995-50)
+modelUptake1960 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1960)
+modelUptake2000 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=2000)
+
+modelUptake1950 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1950)
+
+
+temp <- data.frame(t(sapply(list(model0,model1,model1p,model2,model2p,model50,model60,model70,modelUptake,modelUptake1915,modelUptake1930,modelUptake1945,modelUptake1960,modelUptake1950),
+                                                 function(obj) unlist(ICER(obj,model0)))),
+                   model=c("No screening","2-yearly","2-yearly+BP","4-yearly","4 yearly+BP","50 only","60 only","70 only","Uptake 2012 pop","Uptake 1915","Uptake 1930","Uptake 1945","Uptake 1960","Uptake 1950"))
+with(temp,
+     plot(delta.costs,
+          delta.QALE,
+          xlim=c(0,max(delta.costs)*1.2),
+          ylim=c(0,max(delta.QALE)*1.1),
+          xlab="Costs (SEK)",
+          ylab="Effectiveness (QALY)"))
+with(temp, text(delta.costs,delta.QALE, labels=model, pos=4))
+
+## check cost calculations
 model0 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
-costs <- model0$costs
-pt <- model0$summary$pt
+model1 <- callFhcrc(1e5,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
+costs <- model1$costs
+pt <- model1$summary$pt
 pop1 <- sqldf("select age, sum(pt) as pop from pt group by age")
 costs1 <- sqldf("select age, item, sum(costs) as costs from costs group by age, item")
 sqldf("select item, sum(costs/pop*IHE/1e6) as adj from pop1 natural join costs1 natural join IHEpop group by item")
+
+## find the frontier
+frontier<-function(x,y)
+  {
+    require(grDevices)
+    ichull <- grDevices::chull(cbind(x,y)) # convex hull
+    ichull <- ichull[order(x[ichull])]     # order by x
+    xi <- x[ichull]
+    yi <- y[ichull]          # subset to convex hull
+    include <- sapply(1:length(ichull),
+                      function(i)       # establish the frontier
+                      all(yi[i]<yi[-i]) | any(yi[xi[-i]<xi[i]]>yi[i]))
+    ichull[include]
+  }
+effect <- temp$delta.QALE
+cost <- temp$delta.costs
+ifrontier <- frontier(effect,cost) # reversed arguments
+lines(cost[ifrontier],effect[ifrontier],pch=19,type="b")
 
 
 ## Correlated PSA values
@@ -391,7 +441,8 @@ psaSimCor <- function(n,age=50,rho=0.62,max.psa=50,mubeta2.scale) {
     ## psa <- exp(lpsa)
     data.frame(age=age,
                cancer=age_o<age,
-               advCancer=age_o<age & ext_grade>=7,
+               ## advCancer=age_o<age & ext_grade>=7,
+               advCancer=age_o<age, ### !!!!!!!
                lpsa=lpsa[,1],
                lbp=lpsa[,2],
                psa=exp(lpsa[,1]),
@@ -425,6 +476,7 @@ cor(subset(d,select=c(lpsa,lbp)))
 dAgg(d,3,3) %>% rTPF()
 dAgg(d,3,3) %>% rFPF()
 
+## uniroot1 <- uniroot(function(x) dAgg(d,3,x) %>% rBiopsy()-1, interval=c(1,20))
 uniroot1 <- uniroot(function(x) dAgg(d,3,x) %>% rTPF()-1, interval=c(1,20))
 uniroot1
 ## dAgg(d,3,uniroot1$root)
