@@ -25,7 +25,8 @@ namespace {
 		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility, toSTHLM3 };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
-		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified, goteborg, risk_stratified};
+		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified, 
+		 goteborg, risk_stratified, formal_test_management, mixed_screening};
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
@@ -78,6 +79,7 @@ namespace {
   //typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
   //typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
   EventReport<FullState::Type,short,double> report;
+  EventReport<int,short,double> shortReport;
   typedef pair<string,double> CostKey;
   CostReport<CostKey> costs;
   vector<LifeHistory::Type> lifeHistories;
@@ -153,6 +155,7 @@ namespace {
     double BP(double t);
     treatment_t calculate_treatment(double u, double age, double year);    
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
+    void opportunistic_rescreening(double psa);
     void init();
     void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
@@ -235,6 +238,18 @@ namespace {
     if (debug) Rprintf("id=%i, lead_time=%f, tx=%i, txbenefit=%f, u=%f, ustar=%f, age_diag=%f, age_m=%f, age_c=%f, age_d=%f\n",
 		       id,lead_time,(int)tx,txbenefit,u,ustar,age_diag,age_m,age_c,age_d);
     return age_d;
+  }
+
+  void FhcrcPerson::opportunistic_rescreening(double psa) {
+    TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
+    double prescreened = 1.0 - rescreen_cure(key); 
+    double shape = rescreen_shape(key);
+    double scale = rescreen_scale(key);
+    double u = R::runif(0.0,1.0);
+    double t = now() + R::rweibull(shape,scale);
+    if (u<prescreened) {
+      scheduleAt(t, toScreen);
+    }
   }
 
   typedef std::pair<double,double> Double;
@@ -322,18 +337,8 @@ void FhcrcPerson::init() {
       organised = true;
       scheduleAt(R::runif(50.0,70.0),toScreen);
       break;
-    case twoYearlyScreen50to70:
-      organised = true;
-      for (double start = 50.0; start<=70.0; start += 2.0) {
-	scheduleAt(start, toScreen);
-      }
-      break;
     case fourYearlyScreen50to70: // 50,54,58,62,66,70
-      organised = true;
-      for (double start = 50.0; start<=70.0; start += 4.0) {
-	scheduleAt(start, toScreen);
-      }
-      break;
+    case twoYearlyScreen50to70:  // 50,52, ..., 68,70
     case screen50:
     case goteborg:
     case risk_stratified:
@@ -348,6 +353,8 @@ void FhcrcPerson::init() {
       organised = true;
       scheduleAt(70.0,toScreen);
       break;
+    case mixed_screening:
+    case formal_test_management:
     case stockholm3_goteborg:
     case stockholm3_risk_stratified:
     case screenUptake: {
@@ -355,7 +362,7 @@ void FhcrcPerson::init() {
       // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
       // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
       // (iii) intermediate cohorts are a weighted mixture of (i) and (ii) 
-      organised = false;
+      organised = (screen == mixed_screening || screen == formal_test_management) ? true : false;
       double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03; 
       double shapeA = 3.8;
       double scaleA = 15.0;
@@ -378,6 +385,9 @@ void FhcrcPerson::init() {
 	scheduleAt(first_screen, toScreen);
       if (debug)
 	Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
+      if (screen == mixed_screening) {
+	scheduleAt(50.0, toOrganised);
+      }
       // for re-screening patterns: see handleMessage()
     } break;
     default:
@@ -431,6 +441,9 @@ void FhcrcPerson::init() {
  */
 void FhcrcPerson::handleMessage(const cMessage* msg) {
   
+  // by default, use the natural history RNG
+  rngNh->set();
+
   // declarations
   double psa = y(now()-35.0);
   double biomarker = BP(now() - 35.0);
@@ -441,13 +454,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double compliance;
 
   // record information
-  report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
+  if (parameter["full_report"] == 1.0)
+    report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
+  shortReport.add(1, msg->kind, previousEventTime, age, utility);
 
   if (id<nLifeHistories) { // only record up to the first n individuals
     lifeHistories.push_back(LifeHistory::Type(id,state,ext_grade,dx,msg->kind,previousEventTime,age,year,psa));
   }
-  // by default, use the natural history RNG
-  rngNh->set();
 
   // handle messages by kind
 
@@ -492,6 +505,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toBiopsyFollowUpScreen:
   case toScreen: {
+    rngScreen->set();
     if (includePSArecords) {
       psarecord.record("id",id);
       psarecord.record("state",state);
@@ -510,6 +524,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("beta2star",beta2star);
       psarecord.record("Z",Z);
     }
+    if (!everPSA) {
+      if (id<nLifeHistories) {
+	outParameters.revise("age_psa",now());
+      }
+      everPSA = true;
+    }
     if (organised) {
       // TODO: mix organised and opportunistic testing
       add_costs("Invitation");
@@ -518,13 +538,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     } else { // opportunistic
       add_costs(panel && psa>=1.0 ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
       scheduleUtilityChange(now(), "OpportunisticPSA");
-    }
-    // scheduleUtilityChange(now(), "Invitation");
-    if (!everPSA) {
-      if (id<nLifeHistories) {
-	outParameters.revise("age_psa",now());
-      }
-      everPSA = true;
     }
     compliance = organised ? 
       tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
@@ -552,31 +565,43 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } // assumes similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
     else { // re-screening schedules
-      rngScreen->set();
-      if (organised) {
-	if (R::runif(0.0,1.0)<parameter["rescreeningCompliance"]) {
+      if (R::runif(0.0,1.0)<parameter["rescreeningCompliance"]) {
+	if (organised) {
 	  switch (screen) {
+	  case mixed_screening:
 	  case stockholm3_goteborg:
 	  case goteborg:
-	    if (now() < 70.0) {
+	    if (50.0 <= now() && now() < 70.0 ) {
 	      if (psa<1.0)
 		scheduleAt(now() + 4.0, toScreen);
 	      else
 		scheduleAt(now() + 2.0, toScreen);
+	    } else { // aged <50 or 70+ (including the 70 year formal screen)
+	      if (screen == mixed_screening)
+		opportunistic_rescreening(psa);
 	    }
 	    break;
 	  case stockholm3_risk_stratified:
 	  case risk_stratified:
-	    if (now() < 70.0) {
+	    if (50.0 <= now() && now() < 70.0) {
 	      if (psa<1.0)
 		scheduleAt(now() + 8.0, toScreen);
 	      else 
 		scheduleAt(now() + 4.0, toScreen);
 	    }
 	    break;
-	  case randomScreen50to70:
+	  case formal_test_management:
+	    opportunistic_rescreening(psa);
+	    break;
 	  case twoYearlyScreen50to70:
-	  case fourYearlyScreen50to70: // 50,54,58,62,66,70
+	    if (50.0 <= now() && now() < 70.0) 
+	      scheduleAt(now() + 2.0, toScreen);
+	    break;
+	  case fourYearlyScreen50to70:
+	    if (50.0 <= now() && now() < 70.0) 
+	      scheduleAt(now() + 4.0, toScreen);
+	    break;
+	  case randomScreen50to70:
 	  case screen50:
 	  case screen60:
 	  case screen70:
@@ -585,29 +610,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	    REprintf("Organised screening state not matched: %s\n",screen);
 	    break;
 	  }
+	} else 
+	  opportunistic_rescreening(psa);
       }
-      } else  // opportunistic screening - move to a separate function?
-	switch(screen) {
-	case screenUptake:
-	case stockholm3_goteborg:
-	case stockholm3_risk_stratified: {
-	  TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
-	  double prescreened = 1.0 - rescreen_cure(key); 
-	  double shape = rescreen_shape(key);
-	  double scale = rescreen_scale(key);
-	  double u = R::runif(0.0,1.0);
-	  double t = now() + R::rweibull(shape,scale);
-	  // Rprintf("(prescreened=%f,u=%f,shape=%f,scale=%f,t=%f)\n",prescreened,u,shape,scale,t);
-	  if (u<prescreened) {
-	    scheduleAt(t, toScreen);
-	  }
-	} break;
-	default:
-	  // do not schedule any other screens
-	  break;
-	}
-      rngNh->set();
     }
+    rngNh->set();
   } break;
     
   case toClinicalDiagnosis:
@@ -637,9 +644,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toScreenInitiatedBiopsy:
+    rngScreen->set();
     add_costs("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
-
+    
     if (state == Healthy) {
       previousNegativeBiopsy = true;
       // Here we want 20% to opportunistic and 80% to re-screen in 12 months with threshold of 4. N.B. also the false negative 6 rows below.
@@ -652,6 +660,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
       }
     }
+    rngNh->set();
     break;
 
   case toTreatment: {
@@ -869,6 +878,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   // re-set the output objects
   report.clear();
+  shortReport.clear();
   costs.clear();
   outParameters.clear();
   lifeHistories.clear();
@@ -876,6 +886,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   report.discountRate = parameter["discountRate.effectiveness"];
   report.setPartition(ages);
+  shortReport.discountRate = parameter["discountRate.effectiveness"];
+  shortReport.setPartition(ages);
   costs.discountRate = parameter["discountRate.costs"];
   costs.setPartition(ages);
 
@@ -902,9 +914,10 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // TODO: clean up these objects in C++ (cf. R)
   return List::create(_("costs") = costs.wrap(),                // CostReport
 		      _("summary") = report.wrap(),             // EventReport 
+		      _("shortSummary") = shortReport.wrap(),   // EventReport 
 		      _("lifeHistories") = wrap(lifeHistories), // vector<LifeHistory::Type>
 		      _("parameters") = outParameters.wrap(),   // SimpleReport<double>
-		      _("psarecord")=psarecord.wrap()            // SimpleReport<double>
+		      _("psarecord")=psarecord.wrap()           // SimpleReport<double>
 		      );
 }
 

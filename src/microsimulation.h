@@ -522,7 +522,8 @@ inline double discountedInterval(double start, double end, double discountRate) 
  }
  SEXP wrap() {
    using namespace Rcpp;
-   if (outputUtilities)
+   if (_events.size() == 0) return List::create();
+     else if (outputUtilities)
      return List::create(_("pt") = wrap_map(_pt,"age","pt"),
 			 _("ut") = wrap_map(_ut,"age","utility"),
 			 _("events") = wrap_map(_events,"event","age","number"),

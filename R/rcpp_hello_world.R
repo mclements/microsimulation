@@ -191,6 +191,7 @@ FhcrcParameters <- list(
     c_low_grade_slope=-0.006,
     discountRate.effectiveness = 0.03,
     discountRate.costs = 0.03,
+    full_report = 1.0,
     mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
         0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
         0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
@@ -311,7 +312,7 @@ pop1 <- data.frame(cohort=2012:1900,
 ## these enum strings should be moved to C++
 screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
              "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
-             "stockholm3_risk_stratified", "goteborg", "risk_stratified")
+             "stockholm3_risk_stratified", "goteborg", "risk_stratified", "formal_test_management", "mixed_screening")
 stateT <- c("Healthy","Localised","Metastatic")
 gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
 eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
@@ -336,7 +337,6 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   ## birth cohorts that should give approximately the number of men alive in Stockholm in 2012
   ## check the input arguments
   screen <- match.arg(screen)
-  stopifnot(screen %in% screenT)
   stopifnot(is.na(n) || is.integer(as.integer(n)))
   stopifnot(is.integer(as.integer(nLifeHistories)))
   stopifnot(is.double(as.double(screeningCompliance)))
@@ -453,16 +453,20 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   }
   ## grab all of the pt, prev, ut, events from summary
   ## pt <- lapply(out, function(obj) obj$summary$pt)
-  summary <- lapply(seq_along(out[[1]]$summary),
-                    function(i) do.call("rbind",
-                                        lapply(out, function(obj) reader(obj$summary[[i]]))))
-  names(summary) <- names(out[[1]]$summary)
-  states <- c("state","grade","dx","psa","cohort")
-  names(summary$prev) <- c(states,"age","count")
-  names(summary$pt) <- c(states,"age","pt")
-  names(summary$ut) <- c(states,"age","ut")
-  names(summary$events) <- c(states,"event","age","n")
-  summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
+  if (length(out[[1]]$summary) == 0) summary <- list()
+  else {
+      summary <- lapply(seq_along(out[[1]]$summary),
+                        function(i) do.call("rbind",
+                                            lapply(out, function(obj) reader(obj$summary[[i]]))))
+      names(summary) <- names(out[[1]]$summary)
+      states <- c("state","grade","dx","psa","cohort")
+      names(summary$prev) <- c(states,"age","count")
+      names(summary$pt) <- c(states,"age","pt")
+      names(summary$ut) <- c(states,"age","ut")
+      names(summary$events) <- c(states,"event","age","n")
+      summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
+      enum(summary$events$event) <- eventT
+}
   ## map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]]) 
   map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
@@ -472,7 +476,6 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs)))
   names(costs) <- c("item","cohort","age","costs")
   names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
-  enum(summary$events$event) <- eventT
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT

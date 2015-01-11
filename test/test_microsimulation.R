@@ -353,26 +353,32 @@ lines.frontier <- function(x,y,pch=19,type="b",...) {
     index <- frontier(x,y)
     lines(x[index],y[index],pch=pch,type=type,...)
 }
-n <- 1e5
-model0 <- callFhcrc(n,screen="noScreening",mc.cores=3,pop=1995-50)
-model1 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50)
-model1p <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
-model2 <- callFhcrc(n,screen="fourYearlyScreen50to70",pop=1995-50)
-model2p <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
-model50 <- callFhcrc(n,screen="screen50",mc.cores=3,pop=1995-50)
-model60 <- callFhcrc(n,screen="screen60",mc.cores=3,pop=1995-50)
-model70 <- callFhcrc(n,screen="screen70",mc.cores=3,pop=1995-50)
-modelUptake1915 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1915)
+n <- 1e4
+model0 <- callFhcrc(n,screen="noScreening",mc.cores=3,pop=1960)
+model1 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1960)
+model1p <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1960,panel=TRUE)
+model2 <- callFhcrc(n,screen="fourYearlyScreen50to70",pop=1960)
+model2p <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1960,panel=TRUE)
+model50 <- callFhcrc(n,screen="screen50",mc.cores=3,pop=1960)
+model60 <- callFhcrc(n,screen="screen60",mc.cores=3,pop=1960)
+model70 <- callFhcrc(n,screen="screen70",mc.cores=3,pop=1960)
+## modelUptake1915 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1915)
 modelUptake1930 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1930)
-modelUptake1945 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1995-50)
+## modelUptake1945 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1945)
 modelUptake1960 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1960)
-modelUptake2000 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=2000)
-modelGoteborg <- callFhcrc(n,screen="goteborg",mc.cores=3,pop=1945)
-modelRiskStratified <- callFhcrc(n,screen="risk_stratified",mc.cores=3,pop=1945)
+## modelUptake2000 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=2000)
+modelGoteborg <- callFhcrc(n,screen="goteborg",mc.cores=3,pop=1960)
+modelRiskStratified <- callFhcrc(n,screen="risk_stratified",mc.cores=3,pop=1960)
+modelMixedScreening <- callFhcrc(n,screen="mixed_screening",mc.cores=3,pop=1960)
+modelFormalTestManagement <- callFhcrc(n,screen="formal_test_management",mc.cores=3,pop=1960)
 
-temp <- data.frame(t(sapply(list(model0,model1,model1p,model2,model2p,model50,model60,model70,modelUptake1930,modelUptake1945,modelUptake1960,modelGoteborg,modelRiskStratified),
+temp <- data.frame(t(sapply(list(model0,model1,model1p,model2,model2p,model50,model60,model70,
+                                 modelUptake1930,modelUptake1960,modelGoteborg,
+                                 modelRiskStratified,modelMixedScreening,modelFormalTestManagement),
                                                  function(obj) unlist(ICER(obj,model0)))),
-                   model=c("No screening","2-yearly","2-yearly+BP","4-yearly","4 yearly+BP","50 only","60 only","70 only","Uptake 1930","Uptake 1945","Uptake 1960","Göteborg","Risk stratified"))
+                   model=c("No screening","2-yearly","2-yearly+BP","4-yearly","4 yearly+BP","50 only","60 only","70 only","Uptake 1930","Uptake 1960","Göteborg","Risk stratified",
+                       "Mixed screening","Uptake 1960 + formal management"),
+                   pos=c(4,1,4,4,4,4,4,4,4,4,4,4,3,4))
 with(temp,
      plot(delta.costs,
           delta.QALE,
@@ -380,13 +386,39 @@ with(temp,
           ylim=c(0,max(delta.QALE)*1.1),
           xlab="Costs (SEK)",
           ylab="Effectiveness (QALY)"))
-with(temp, text(delta.costs,delta.QALE, labels=model, pos=4))
+with(temp, text(delta.costs,delta.QALE, labels=model, pos=pos))
 lines.frontier(temp$delta.costs,temp$delta.QALE)
 
 
 plot(model0,type="incidence")
-lines(modelUptake,type="incidence",col="red")
+lines(model2,type="incidence",col="blue")
+lines(modelMixedScreening,type="incidence",col="red")
+lines(modelGoteborg,type="incidence",col="green")
+lines(model1,type="incidence",col="orange")
+lines(modelUptake1960,type="incidence",col="pink")
 
+
+mubeta2 <- c(0.0397,0.1678)
+p <- 0.9
+p1 <- 0.6
+fun <- function(par,a,b) {
+    alpha <- par[1]
+    beta <- par[2]
+    (exp(alpha+beta*b)-exp(alpha+beta*a))/(b-a)/beta
+}
+objective <- function(par) {
+    alpha <- par[1]
+    beta <- par[2]
+    (mubeta2[1]-fun(par,0,p))^2+
+    (mubeta2[2]-fun(par,p,1))^2
+}
+fit <- optim(c(1,1),objective)
+fun(fit$par, 0, p1)
+fun(fit$par, p1, p)
+with(list(x=seq(0,1,length=301)),
+     plot(x,sapply(x,function(xi) exp(fit$par[1]+fit$par[2]*xi)), type="l"))
+abline(v=p,lty=2)
+abline(v=p1, lty=2)
 
 ## check cost calculations
 model0 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
