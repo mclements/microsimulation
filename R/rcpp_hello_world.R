@@ -186,6 +186,8 @@ FhcrcParameters <- list(
     ## BPThresholdBiopsyFollowUp=4.69,
     BPThreshold=5.16,
     BPThresholdBiopsyFollowUp=5.16,
+    rTPF=1.0,
+    rFPF=0.8,
     c_low_grade_slope=-0.006,
     discountRate.effectiveness = 0.03,
     discountRate.costs = 0.03,
@@ -214,7 +216,7 @@ FhcrcParameters <- list(
         Prostatectomy = 117171,
         RadiationTherapy = 117171,
         ActiveSurveillance = 141358,
-        MetastaticCancer = 585054, #This appears not to be used any more
+        CancerDeath = 585054, 
         Death = 0),
     ## IHE doesn't use the postrecovery period (as reported in the Heijnsdijk 2012 reference), should we?
     utility_estimates = 1 - c(Invitation = 1,
@@ -405,6 +407,9 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   for (name in names(updateParameters))
       parameter[[name]] <- updateParameters[[name]]
   pind <- sapply(parameter,class)=="numeric" & sapply(parameter,length)==1
+  ## check some parameters for sanity
+  if (panel && parameter["rTPF"]>1) stop("Panel: rTPF>1 (not currently implemented)")
+  if (panel && parameter["rFPF"]>1) stop("Panel: rFPF>1 (not currently implemented)")
   ## now run the chunks separately
   print(system.time(out <- parallel::mclapply(1:mc.cores,
                 function(i) {

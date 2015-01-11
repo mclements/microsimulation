@@ -316,6 +316,7 @@ void FhcrcPerson::init() {
   if (R::runif(0.0,1.0)<parameter["screeningCompliance"]) {
     switch(screen) {
     case noScreening:
+      organised = false;
       break; // no screening
     case randomScreen50to70:
       organised = true;
@@ -453,9 +454,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-    add_costs("Death"); // cost for death, should this be zero???
-    // change in utility for terminal illness at the end of palliative therapy
-    // utility -= utility_duration["PalliativeDuration"]*(utility_estimates["MetastaticCancer"]-utility_estimates["Palliative"]);
+    add_costs("CancerDeath"); // cost for death, should this be zero???
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
       outParameters.revise("pca_death",1.0);
@@ -512,12 +511,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("Z",Z);
     }
     if (organised) {
+      // TODO: mix organised and opportunistic testing
       add_costs("Invitation");
       add_costs(panel && psa>=1.0 ? "FormalPSABiomarker" : "FormalPSA");
       scheduleUtilityChange(now(), "FormalPSA");
     } else { // opportunistic
-      // TODO: use PSA tests to a certain time and then introduce the panel
-      add_costs(panel ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
+      add_costs(panel && psa>=1.0 ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
       scheduleUtilityChange(now(), "OpportunisticPSA");
     }
     // scheduleUtilityChange(now(), "Invitation");
@@ -532,13 +531,23 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 						bounds<double>(age,55,75))) :
       tableOpportunisticBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
 						bounds<double>(age,55,75))); 
-
+    // bool positive_test = 
+    //   (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
+    //   ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
+    //   (!panel && msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
+    //   ( panel && msg->kind == toBiopsyFollowUpScreen && biomarker >= parameter["BPThresholdBiopsyFollowUp"]) ? true :
+    //   false;
     bool positive_test = 
-      (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
-      ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
-      (!panel && msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
-      ( panel && msg->kind == toBiopsyFollowUpScreen && biomarker >= parameter["BPThresholdBiopsyFollowUp"]) ? true :
+      (msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
+      (msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
       false;
+    // reduce false positives wrt Gleason 7+ by 20%
+    if (panel && positive_test && (now()-35.0<t0 || ext_grade == ext::Gleason_le_6)) {
+      if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"]) positive_test = false;
+    }
+    if (panel && !positive_test && t0<now()-35.0 && ext_grade > ext::Gleason_le_6) {
+      if (R::runif(0.0,1.0) < 1.0-parameter["rTPF"]) positive_test = true;
+    }
     if (positive_test && R::runif(0.0,1.0) < compliance) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } // assumes similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
@@ -650,7 +659,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_tx = R::runif(0.0,1.0);
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
-      add_costs("MetastaticCancer");
       RemoveKind(toUtility);
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
     }

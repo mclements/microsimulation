@@ -336,48 +336,7 @@ refresh
 require(microsimulation)
 require(sqldf)
 load("~/Downloads/IHEdata.RData")
-n <- 1e6
-model0 <- callFhcrc(n,screen="noScreening",mc.cores=3,pop=1995-50)
-model1 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50)
-model1p <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
-model2 <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50)
-model2p <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
-model50 <- callFhcrc(n,screen="screen50",mc.cores=3,pop=1995-50)
-model60 <- callFhcrc(n,screen="screen60",mc.cores=3,pop=1995-50)
-model70 <- callFhcrc(n,screen="screen70",mc.cores=3,pop=1995-50)
-modelUptake <- callFhcrc(n,screen="screenUptake",mc.cores=3)
-## modelUptake1900 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1900)
-modelUptake1915 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1915)
-modelUptake1930 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1930)
-modelUptake1945 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1995-50)
-modelUptake1960 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1960)
-modelUptake2000 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=2000)
-
-modelUptake1950 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1950)
-
-
-temp <- data.frame(t(sapply(list(model0,model1,model1p,model2,model2p,model50,model60,model70,modelUptake,modelUptake1915,modelUptake1930,modelUptake1945,modelUptake1960,modelUptake1950),
-                                                 function(obj) unlist(ICER(obj,model0)))),
-                   model=c("No screening","2-yearly","2-yearly+BP","4-yearly","4 yearly+BP","50 only","60 only","70 only","Uptake 2012 pop","Uptake 1915","Uptake 1930","Uptake 1945","Uptake 1960","Uptake 1950"))
-with(temp,
-     plot(delta.costs,
-          delta.QALE,
-          xlim=c(0,max(delta.costs)*1.2),
-          ylim=c(0,max(delta.QALE)*1.1),
-          xlab="Costs (SEK)",
-          ylab="Effectiveness (QALY)"))
-with(temp, text(delta.costs,delta.QALE, labels=model, pos=4))
-
-## check cost calculations
-model0 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
-model1 <- callFhcrc(1e5,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
-costs <- model1$costs
-pt <- model1$summary$pt
-pop1 <- sqldf("select age, sum(pt) as pop from pt group by age")
-costs1 <- sqldf("select age, item, sum(costs) as costs from costs group by age, item")
-sqldf("select item, sum(costs/pop*IHE/1e6) as adj from pop1 natural join costs1 natural join IHEpop group by item")
-
-## find the frontier
+## find the concave frontier
 frontier<-function(x,y)
   {
     require(grDevices)
@@ -387,13 +346,56 @@ frontier<-function(x,y)
     yi <- y[ichull]          # subset to convex hull
     include <- sapply(1:length(ichull),
                       function(i)       # establish the frontier
-                      all(yi[i]<yi[-i]) | any(yi[xi[-i]<xi[i]]>yi[i]))
+                      all(yi[i] >= yi[ xi<xi[i] ]))
     ichull[include]
   }
-effect <- temp$delta.QALE
-cost <- temp$delta.costs
-ifrontier <- frontier(effect,cost) # reversed arguments
-lines(cost[ifrontier],effect[ifrontier],pch=19,type="b")
+lines.frontier <- function(x,y,pch=19,type="b",...) {
+    index <- frontier(x,y)
+    lines(x[index],y[index],pch=pch,type=type,...)
+}
+n <- 1e5
+model0 <- callFhcrc(n,screen="noScreening",mc.cores=3,pop=1995-50)
+model1 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50)
+model1p <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
+model2 <- callFhcrc(n,screen="fourYearlyScreen50to70",pop=1995-50)
+model2p <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,panel=TRUE)
+model50 <- callFhcrc(n,screen="screen50",mc.cores=3,pop=1995-50)
+model60 <- callFhcrc(n,screen="screen60",mc.cores=3,pop=1995-50)
+model70 <- callFhcrc(n,screen="screen70",mc.cores=3,pop=1995-50)
+modelUptake1915 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1915)
+modelUptake1930 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1930)
+modelUptake1945 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1995-50)
+modelUptake1960 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1960)
+modelUptake2000 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=2000)
+modelGoteborg <- callFhcrc(n,screen="goteborg",mc.cores=3,pop=1945)
+modelRiskStratified <- callFhcrc(n,screen="risk_stratified",mc.cores=3,pop=1945)
+
+temp <- data.frame(t(sapply(list(model0,model1,model1p,model2,model2p,model50,model60,model70,modelUptake1930,modelUptake1945,modelUptake1960,modelGoteborg,modelRiskStratified),
+                                                 function(obj) unlist(ICER(obj,model0)))),
+                   model=c("No screening","2-yearly","2-yearly+BP","4-yearly","4 yearly+BP","50 only","60 only","70 only","Uptake 1930","Uptake 1945","Uptake 1960","Göteborg","Risk stratified"))
+with(temp,
+     plot(delta.costs,
+          delta.QALE,
+          xlim=c(0,max(delta.costs)*1.2),
+          ylim=c(0,max(delta.QALE)*1.1),
+          xlab="Costs (SEK)",
+          ylab="Effectiveness (QALY)"))
+with(temp, text(delta.costs,delta.QALE, labels=model, pos=4))
+lines.frontier(temp$delta.costs,temp$delta.QALE)
+
+
+plot(model0,type="incidence")
+lines(modelUptake,type="incidence",col="red")
+
+
+## check cost calculations
+model0 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
+model1 <- callFhcrc(1e5,screen="fourYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)
+costs <- model1$costs
+pt <- model1$summary$pt
+pop1 <- sqldf("select age, sum(pt) as pop from pt group by age")
+costs1 <- sqldf("select age, item, sum(costs) as costs from costs group by age, item")
+sqldf("select item, sum(costs/pop*IHE/1e6) as adj from pop1 natural join costs1 natural join IHEpop group by item")
 
 
 ## Correlated PSA values
