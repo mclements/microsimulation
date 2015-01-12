@@ -336,66 +336,129 @@ refresh
 require(microsimulation)
 require(sqldf)
 load("~/Downloads/IHEdata.RData")
-## find the concave frontier
-frontier<-function(x,y)
-  {
-    require(grDevices)
-    ichull <- grDevices::chull(cbind(x,y)) # convex hull
-    ichull <- ichull[order(x[ichull])]     # order by x
-    xi <- x[ichull]
-    yi <- y[ichull]          # subset to convex hull
-    include <- sapply(1:length(ichull),
-                      function(i)       # establish the frontier
-                      all(yi[i] >= yi[ xi<xi[i] ]))
-    ichull[include]
-  }
-lines.frontier <- function(x,y,pch=19,type="b",...) {
-    index <- frontier(x,y)
-    lines(x[index],y[index],pch=pch,type=type,...)
-}
-n <- 1e4
-model0 <- callFhcrc(n,screen="noScreening",mc.cores=3,pop=1960)
-model1 <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1960)
-model1p <- callFhcrc(n,screen="twoYearlyScreen50to70",mc.cores=3,pop=1960,panel=TRUE)
-model2 <- callFhcrc(n,screen="fourYearlyScreen50to70",pop=1960)
-model2p <- callFhcrc(n,screen="fourYearlyScreen50to70",mc.cores=3,pop=1960,panel=TRUE)
-model50 <- callFhcrc(n,screen="screen50",mc.cores=3,pop=1960)
-model60 <- callFhcrc(n,screen="screen60",mc.cores=3,pop=1960)
-model70 <- callFhcrc(n,screen="screen70",mc.cores=3,pop=1960)
-## modelUptake1915 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1915)
-modelUptake1930 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1930)
-## modelUptake1945 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1945)
-modelUptake1960 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=1960)
-## modelUptake2000 <- callFhcrc(n,screen="screenUptake",mc.cores=3,pop=2000)
-modelGoteborg <- callFhcrc(n,screen="goteborg",mc.cores=3,pop=1960)
-modelRiskStratified <- callFhcrc(n,screen="risk_stratified",mc.cores=3,pop=1960)
-modelMixedScreening <- callFhcrc(n,screen="mixed_screening",mc.cores=3,pop=1960)
-modelFormalTestManagement <- callFhcrc(n,screen="formal_test_management",mc.cores=3,pop=1960)
+load("~/work/icer_20150111.RData")
 
-temp <- data.frame(t(sapply(list(model0,model1,model1p,model2,model2p,model50,model60,model70,
+model <- function(screen, ..., parms=NULL, n=1e5, mc.cores=3, pop=1960) {
+    newparms <- list(c_benefit_value=10, # as per the default
+                     formal_compliance=0,
+                     formal_costs=0)
+    if (!is.null(parms))
+        for (name in names(parms))
+            newparms[[name]] <- parms[[name]]
+    callFhcrc(n, screen=screen, mc.cores=mc.cores, pop=pop, discountRate=0.0, parms=newparms, ...)
+}
+model0 <- model("noScreening")
+model1 <- model("twoYearlyScreen50to70")
+## model1p <- model("twoYearlyScreen50to70",panel=TRUE)
+model2 <- model("fourYearlyScreen50to70")
+## model2p <- model("fourYearlyScreen50to70",panel=TRUE)
+model50 <- model("screen50")
+model60 <- model("screen60")
+model70 <- model("screen70")
+## modelUptake1915 <- model("screenUptake",pop=1915)
+modelUptake1930 <- model("screenUptake",pop=1930)
+## modelUptake1945 <- model("screenUptake",pop=1945)
+modelUptake1960 <- model("screenUptake")
+## modelUptake2000 <- model("screenUptake",pop=2000)
+modelGoteborg <- model("goteborg")
+modelRiskStratified <- model("risk_stratified")
+modelMixedScreening <- model("mixed_screening")
+modelFormalTestManagement <- model("screenUptake",parms=list(formal_compliance=1,formal_costs=1))
+cat("NOTE: Processing completed.\n")
+
+temp <- data.frame(t(sapply(list(model0,model1,model2,model50,model60,model70,
                                  modelUptake1930,modelUptake1960,modelGoteborg,
                                  modelRiskStratified,modelMixedScreening,modelFormalTestManagement),
                                                  function(obj) unlist(ICER(obj,model0)))),
-                   model=c("No screening","2-yearly","2-yearly+BP","4-yearly","4 yearly+BP","50 only","60 only","70 only","Uptake 1930","Uptake 1960","Göteborg","Risk stratified",
+                   model=c("No screening","2-yearly","4-yearly","50 only","60 only","70 only","Uptake 1930","Uptake 1960","Göteborg","Risk stratified",
                        "Mixed screening","Uptake 1960 + formal management"),
-                   pos=c(4,1,4,4,4,4,4,4,4,4,4,4,3,4))
+                   pos=c(4,4,4,4,4,4,4,4,4,4,4,4))
 with(temp,
      plot(delta.costs,
           delta.QALE,
-          xlim=c(0,max(delta.costs)*1.2),
+          xlim=c(0,max(delta.costs)*1.3),
           ylim=c(0,max(delta.QALE)*1.1),
           xlab="Costs (SEK)",
           ylab="Effectiveness (QALY)"))
 with(temp, text(delta.costs,delta.QALE, labels=model, pos=pos))
 lines.frontier(temp$delta.costs,temp$delta.QALE)
 
+with(temp,
+     plot(delta.costs,
+          delta.LE,
+          xlim=c(0,max(delta.costs)*1.3),
+          ylim=c(0,max(delta.LE)*1.1),
+          xlab="Costs (SEK)",
+          ylab="Effectiveness (LY)"))
+with(temp, text(delta.costs,delta.LE, labels=model, pos=c(4,4,4,4,4,4,4,4,4,3,4,4)))
+lines.frontier(temp$delta.costs,temp$delta.LE)
+
+## List of homogeneous elements
+List <- function(...) {
+    .Data <- list(...)
+    class.element <- class(.Data[[1]])
+    stopifnot(all(sapply(.Data, function(element) class(element)==class.element)))
+    structure(.Data=.Data,
+              element.class=class.element, # new attribute
+              names=names(.Data),
+              class = c("List","list"))
+}
+print.List <- function(obj,...) {
+    i <- 1
+    namess <- names(obj)
+    for (obji in obj) {
+        name <- if (is.null(namess)) sprintf("[[%i]]",i) else namess[i]
+        cat(name,"\n")
+        print(obji,...)
+        i <- i+1
+    }
+    invisible(obj)
+}
+getListFunction <- function(fun,obj,...) {
+    stopifnot(inherits(obj,"List"))
+    VALUE <- sprintf("%s.List.%s",
+                     deparse(substitute(fun)),
+                     attr(obj,"element.class"))
+    FUN <- tryCatch(get(VALUE,...))
+    if (inherits(FUN,"try-error")) stop(sprintf("%s is not defined.\n",VALUE))
+    FUN
+}
+plot.List <- function(obj,...) {
+    getListFunction(plot,obj)(obj,...)
+}
+plot.List.fhcrc <- function(obj,...) {
+    temp <- data.frame(t(sapply(obj,
+                                function(obji) unlist(ICER(obji,obj[[1]])))))
+    with(temp,
+         plot(delta.costs,
+              delta.QALE,
+              xlim=c(0,max(delta.costs)*1.3),
+              ylim=c(0,max(delta.QALE)*1.1),
+              xlab="Costs (SEK)",
+              ylab="Effectiveness (QALY)"))
+    lines.frontier(temp$delta.costs,temp$delta.QALE)
+    invisible(obj)
+}
+plot(List(model0,model1,model2,model50,model60,model70,
+          modelUptake1930,modelUptake1960,modelGoteborg,
+          modelRiskStratified,modelMixedScreening,modelFormalTestManagement))
+List(model0,model1,model2,model50,model60,model70,
+     modelUptake1930,modelUptake1960,modelGoteborg,
+     modelRiskStratified,modelMixedScreening,modelFormalTestManagement)
+
 
 plot(model0,type="incidence")
 lines(model2,type="incidence",col="blue")
 lines(modelMixedScreening,type="incidence",col="red")
 lines(modelGoteborg,type="incidence",col="green")
+lines(modelRiskStratified,type="incidence",col="lightblue")
 lines(model1,type="incidence",col="orange")
 lines(modelUptake1960,type="incidence",col="pink")
+
+## save(model0,model1,model1p,model2,model2p,model50,model60,model70,
+##      modelUptake1930,modelUptake1960,modelGoteborg,
+##      modelRiskStratified,modelMixedScreening,modelFormalTestManagement,
+##      file="~/work/icer_20150111.RData")
 
 
 mubeta2 <- c(0.0397,0.1678)

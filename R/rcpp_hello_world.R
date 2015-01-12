@@ -70,7 +70,24 @@ RNGstate <- function() {
   }
   list(oldseed = oldseed, reset = reset)
 }
-    
+
+## find the concave frontier
+frontier<-function(x,y)
+  {
+    ichull <- grDevices::chull(cbind(x,y)) # convex hull
+    ichull <- ichull[order(x[ichull])]     # order by x
+    xi <- x[ichull]
+    yi <- y[ichull]          # subset to convex hull
+    include <- sapply(1:length(ichull),
+                      function(i)       # establish the frontier
+                      all(yi[i] >= yi[ xi<xi[i] ]))
+    ichull[include]
+  }
+lines.frontier <- function(x,y,pch=19,type="b",...) {
+    index <- frontier(x,y)
+    lines(x[index],y[index],pch=pch,type=type,...)
+}
+
 
 callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
   state <- RNGstate(); on.exit(state$reset())
@@ -170,7 +187,7 @@ FhcrcParameters <- list(
     mubeta2.scale=2.1, beta.rho=0.62,
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
-    c_benefit_value = 10.0,
+    c_benefit_value = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
     sxbenefit = 1.0,
     screeningCompliance = 0.75,
     rescreeningCompliance = 0.95,
@@ -192,6 +209,11 @@ FhcrcParameters <- list(
     discountRate.effectiveness = 0.03,
     discountRate.costs = 0.03,
     full_report = 1.0,
+    formal_costs = 1.0,
+    formal_compliance = 1.0,
+    start_screening = 50.0, # start of organised screening
+    stop_screening = 70.0,  # end of organised screening
+    screening_interval = 2.0, # screening interval for regular_screening
     mu0=c(0.00219, 0.000304, 5.2e-05, 0.000139, 0.000141, 3.6e-05, 7.3e-05, 
         0.000129, 3.8e-05, 0.000137, 6e-05, 8.1e-05, 6.1e-05, 0.00012, 
         0.000117, 0.000183, 0.000185, 0.000397, 0.000394, 0.000585, 0.000448, 
@@ -312,14 +334,14 @@ pop1 <- data.frame(cohort=2012:1900,
 ## these enum strings should be moved to C++
 screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50",
              "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
-             "stockholm3_risk_stratified", "goteborg", "risk_stratified", "formal_test_management", "mixed_screening")
+             "stockholm3_risk_stratified", "goteborg", "risk_stratified", "mixed_screening","regular_screen","single_screen")
 stateT <- c("Healthy","Localised","Metastatic")
 gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
 eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
             "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
             "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
             "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toUtilityChange","toUtility",
-            "toSTHLM3")
+            "toSTHLM3", "toOpportunistic")
 diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
 treatmentT <- c("CM","RP","RT")
 psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
@@ -327,7 +349,7 @@ psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=0.75,
                       seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
                       includePSArecords=FALSE, flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
-                      discountRate = 0.03, updateParameters = NULL,
+                      discountRate = 0.03, parms = NULL,
                       mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
@@ -395,7 +417,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
       with(fhcrcData$survival_dist,
            data.frame(Grade=Grade,Time=as.double(Time),
                       Survival=Survival))
-  updateParameters <- c(updateParameters,
+  updateParameters <- c(parms,
                         list(nLifeHistories=as.integer(nLifeHistories),
                              screeningCompliance=screeningCompliance,
                              studyParticipation=studyParticipation,

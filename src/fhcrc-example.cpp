@@ -22,11 +22,12 @@ namespace {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
   
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen, 
-		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility, toSTHLM3 };
+		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility, toSTHLM3, toOpportunistic };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
 		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified, 
-		 goteborg, risk_stratified, formal_test_management, mixed_screening};
+		 goteborg, risk_stratified, mixed_screening,
+		 regular_screen, single_screen};
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
@@ -35,10 +36,6 @@ namespace {
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
     // string names[5] = {"state","ext_grade","dx","psa_ge_3","cohort"};
   }
-  // namespace PSArecord {
-  //   typedef boost::tuple<int,short,short,bool,short,double,double,double> Type;
-  //   enum Fields {id,state,ext_grade,organised,dx,age,ymean,beta0,beta1,beta2,t0};
-  // }
   namespace LifeHistory {
     typedef boost::tuple<int,short,short,int,short,double,double,double,double> Type;
     enum Fields {id,state,ext_grade,dx,event,begin,end,year,psa};
@@ -76,8 +73,6 @@ namespace {
     return wrap(R::rllogis_trunc(as<double>(shape),as<double>(scale),as<double>(left)));
   }
 
-  //typedef boost::tuple<short,short,short,bool,double> FullState; // (stage, ext_grade, dx, psa_ge_3, cohort)
-  //typedef boost::tuple<int,short,short,bool,short,double,double,double> PSArecord; // (id, state, ext_grade, organised, dx, age, ymean, y)
   EventReport<FullState::Type,short,double> report;
   EventReport<int,short,double> shortReport;
   typedef pair<string,double> CostKey;
@@ -113,6 +108,16 @@ namespace {
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
   bool includePSArecords, panel;
+
+  // an alternative approach to specifying costs and compliance (not currently used)
+  class cMessageScreen : public cMessage {
+  public:
+    cMessageScreen(bool formal_compliance = false, bool formal_costs = false) : 
+      cMessage(toScreen), 
+      formal_compliance(formal_compliance), 
+      formal_costs(formal_costs) { }
+    bool formal_compliance, formal_costs;
+  };
 
   class cMessageUtilityChange : public cMessage {
   public:
@@ -331,30 +336,28 @@ void FhcrcPerson::init() {
   if (R::runif(0.0,1.0)<parameter["screeningCompliance"]) {
     switch(screen) {
     case noScreening:
-      organised = false;
       break; // no screening
     case randomScreen50to70:
-      organised = true;
       scheduleAt(R::runif(50.0,70.0),toScreen);
+      break;
+    case single_screen:
+    case regular_screen: 
+    case goteborg:
+    case risk_stratified:
+      scheduleAt(parameter["start_screening"],toScreen);
       break;
     case fourYearlyScreen50to70: // 50,54,58,62,66,70
     case twoYearlyScreen50to70:  // 50,52, ..., 68,70
     case screen50:
-    case goteborg:
-    case risk_stratified:
-      organised = true;
       scheduleAt(50.0,toScreen);
       break;
     case screen60:
-      organised = true;
       scheduleAt(60.0,toScreen);
       break;
     case screen70:
-      organised = true;
       scheduleAt(70.0,toScreen);
       break;
     case mixed_screening:
-    case formal_test_management:
     case stockholm3_goteborg:
     case stockholm3_risk_stratified:
     case screenUptake: {
@@ -362,7 +365,6 @@ void FhcrcPerson::init() {
       // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
       // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
       // (iii) intermediate cohorts are a weighted mixture of (i) and (ii) 
-      organised = (screen == mixed_screening || screen == formal_test_management) ? true : false;
       double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03; 
       double shapeA = 3.8;
       double scaleA = 15.0;
@@ -386,7 +388,7 @@ void FhcrcPerson::init() {
       if (debug)
 	Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
       if (screen == mixed_screening) {
-	scheduleAt(50.0, toOrganised);
+	scheduleAt(parameter["start_screening"], toOrganised);
       }
       // for re-screening patterns: see handleMessage()
     } break;
@@ -397,7 +399,7 @@ void FhcrcPerson::init() {
   }
   if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
       ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
-      (2013.0-cohort>=50.0 && 2013.0-cohort<70.0)) {
+      (2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"])) {
     scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
   }
 
@@ -452,7 +454,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double age = now();
   double year = age + cohort;
   double compliance;
-
+  bool formal_costs = parameter["formal_costs"]==1.0 && (screen != mixed_screening || organised);
+  bool formal_compliance = parameter["formal_compliance"]==1.0 && (screen != mixed_screening || organised);
+  
   // record information
   if (parameter["full_report"] == 1.0)
     report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
@@ -510,7 +514,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("id",id);
       psarecord.record("state",state);
       psarecord.record("ext_grade",ext_grade);
-      psarecord.record("organised",organised);
+      psarecord.record("organised",organised); // only meaningful for mixed_screening
       psarecord.record("dx",dx);
       psarecord.record("age",age);
       psarecord.record("psa",psa);
@@ -530,16 +534,15 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       }
       everPSA = true;
     }
-    if (organised) {
-      // TODO: mix organised and opportunistic testing
+    if (formal_costs) {
       add_costs("Invitation");
       add_costs(panel && psa>=1.0 ? "FormalPSABiomarker" : "FormalPSA");
       scheduleUtilityChange(now(), "FormalPSA");
-    } else { // opportunistic
+    } else { // opportunistic costs
       add_costs(panel && psa>=1.0 ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
       scheduleUtilityChange(now(), "OpportunisticPSA");
     }
-    compliance = organised ? 
+    compliance = formal_compliance ?
       tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
 						bounds<double>(age,55,75))) :
       tableOpportunisticBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
@@ -566,54 +569,60 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     } // assumes similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
     else { // re-screening schedules
       if (R::runif(0.0,1.0)<parameter["rescreeningCompliance"]) {
-	if (organised) {
-	  switch (screen) {
-	  case mixed_screening:
-	  case stockholm3_goteborg:
-	  case goteborg:
-	    if (50.0 <= now() && now() < 70.0 ) {
-	      if (psa<1.0)
+	switch (screen) {
+	case mixed_screening:
+	case stockholm3_goteborg:
+	case goteborg:
+	  if (screen != mixed_screening || organised) {
+	    if (now() >= parameter["start_screening"] && now()<parameter["stop_screening"]) {
+	      if (psa<1.0 && now()+4.0<=parameter["stop_screening"])
 		scheduleAt(now() + 4.0, toScreen);
-	      else
+	      else if (psa>=1.0 && now()+2.0<=parameter["stop_screening"])
 		scheduleAt(now() + 2.0, toScreen);
-	    } else { // aged <50 or 70+ (including the 70 year formal screen)
-	      if (screen == mixed_screening)
-		opportunistic_rescreening(psa);
+	      else if (screen == mixed_screening) {
+		organised = false;
+		opportunistic_rescreening(psa); // start opportunistic rescreening
+	      }
 	    }
-	    break;
-	  case stockholm3_risk_stratified:
-	  case risk_stratified:
-	    if (50.0 <= now() && now() < 70.0) {
-	      if (psa<1.0)
-		scheduleAt(now() + 8.0, toScreen);
-	      else 
-		scheduleAt(now() + 4.0, toScreen);
-	    }
-	    break;
-	  case formal_test_management:
-	    opportunistic_rescreening(psa);
-	    break;
-	  case twoYearlyScreen50to70:
-	    if (50.0 <= now() && now() < 70.0) 
-	      scheduleAt(now() + 2.0, toScreen);
-	    break;
-	  case fourYearlyScreen50to70:
-	    if (50.0 <= now() && now() < 70.0) 
-	      scheduleAt(now() + 4.0, toScreen);
-	    break;
-	  case randomScreen50to70:
-	  case screen50:
-	  case screen60:
-	  case screen70:
-	    break;
-	  default:
-	    REprintf("Organised screening state not matched: %s\n",screen);
-	    break;
 	  }
-	} else 
-	  opportunistic_rescreening(psa);
-      }
-    }
+	  break;
+	case stockholm3_risk_stratified:
+	case risk_stratified:
+	  if (now() >= parameter["start_screening"]) {
+	    if (psa<1.0 && now()+8.0<=parameter["stop_screening"])
+	      scheduleAt(now() + 8.0, toScreen);
+	    if (psa>=1.0 && now()+4.0<=parameter["stop_screening"])
+	      scheduleAt(now() + 4.0, toScreen);
+	  }
+	  break;
+	case regular_screen:
+	  if (parameter["start_screening"] <= now() && 
+	      now()+parameter["screening_interval"] <= parameter["stop_screening"]) 
+	    scheduleAt(now() + parameter["screening_interval"], toScreen);
+	  break;
+	case twoYearlyScreen50to70:
+	  if (50.0 <= now() && now() < 70.0) 
+	    scheduleAt(now() + 2.0, toScreen);
+	  break;
+	case fourYearlyScreen50to70:
+	  if (50.0 <= now() && now() < 70.0) 
+	    scheduleAt(now() + 4.0, toScreen);
+	  break;
+	case screenUptake:
+	case randomScreen50to70:
+	case single_screen:
+	case screen50:
+	case screen60:
+	case screen70:
+	  break;
+	default:
+	  REprintf("Screening not matched: %s\n",screen);
+	  break;
+	}
+      } // rescreening compliance
+      if (screen == screenUptake || (screen == mixed_screening && !organised))
+	opportunistic_rescreening(psa);
+    } // rescreening
     rngNh->set();
   } break;
     
@@ -651,13 +660,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (state == Healthy) {
       previousNegativeBiopsy = true;
       // Here we want 20% to opportunistic and 80% to re-screen in 12 months with threshold of 4. N.B. also the false negative 6 rows below.
-      if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
+      if (now() < parameter["stop_screening"] && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
       // else schedule a routine future screen
     } else { // state != Healthy
       if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) {
 	scheduleAt(now(), toScreenDiagnosis);
       } else { // false negative biopsy
-	if (now() < 70.0 && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
+	if (now() < parameter["stop_screening"] && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
       }
     }
     rngNh->set();
