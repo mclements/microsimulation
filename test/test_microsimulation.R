@@ -336,62 +336,123 @@ refresh
 require(microsimulation)
 require(sqldf)
 load("~/Downloads/IHEdata.RData")
-load("~/work/icer_20150111.RData")
 
-model <- function(screen, ..., parms=NULL, n=1e5, mc.cores=3, pop=1960) {
-    newparms <- list(c_benefit_value=10, # as per the default
-                     formal_compliance=0,
-                     formal_costs=0)
-    if (!is.null(parms))
-        for (name in names(parms))
-            newparms[[name]] <- parms[[name]]
-    callFhcrc(n, screen=screen, mc.cores=mc.cores, pop=pop, discountRate=0.0, parms=newparms, ...)
+makeModel <- function(discountRate=0.03,
+                      formal_compliance=1,
+                      formal_costs=1,
+                      panel=TRUE) {
+    function(screen, ..., parms=NULL, n=1e6, mc.cores=3, pop=1960) {
+        newparms <- list(formal_compliance=formal_compliance,
+                         formal_costs=formal_costs)
+        if (!is.null(parms))
+            for (name in names(parms))
+                newparms[[name]] <- parms[[name]]
+        callFhcrc(n, screen=screen, mc.cores=mc.cores, pop=pop, discountRate=discountRate, parms=newparms, panel=panel, ...)
+    }
 }
-model0 <- model("noScreening")
-model1 <- model("twoYearlyScreen50to70")
-## model1p <- model("twoYearlyScreen50to70",panel=TRUE)
-model2 <- model("fourYearlyScreen50to70")
-## model2p <- model("fourYearlyScreen50to70",panel=TRUE)
-model50 <- model("screen50")
-model60 <- model("screen60")
-model70 <- model("screen70")
-## modelUptake1915 <- model("screenUptake",pop=1915)
-modelUptake1930 <- model("screenUptake",pop=1930)
-## modelUptake1945 <- model("screenUptake",pop=1945)
-modelUptake1960 <- model("screenUptake")
-## modelUptake2000 <- model("screenUptake",pop=2000)
-modelGoteborg <- model("goteborg")
-modelRiskStratified <- model("risk_stratified")
-modelMixedScreening <- model("mixed_screening")
-modelFormalTestManagement <- model("screenUptake",parms=list(formal_compliance=1,formal_costs=1))
-cat("NOTE: Processing completed.\n")
+modelSet <- function(model) {
+    model0 <- model("noScreening")
+    model2 <- model("twoYearlyScreen50to70")
+    model4 <- model("fourYearlyScreen50to70")
+    model50 <- model("screen50")
+    model60 <- model("screen60")
+    model70 <- model("screen70")
+    modelUptake1930 <- model("screenUptake",pop=1930)
+    modelUptake1960 <- model("screenUptake")
+    modelGoteborg <- model("goteborg")
+    modelRiskStratified <- model("risk_stratified")
+    modelMixedScreening <- model("mixed_screening")
+    cat("NOTE: Processing completed.\n")
+    models <- list(model0,model2,model4,model50,model60,model70,
+                   modelUptake1930,modelUptake1960,modelGoteborg,
+                   modelRiskStratified,modelMixedScreening)
+    names(models) <- c("No screening","2-yearly","4-yearly",
+                         "50 only","60 only","70 only","Uptake 1930",
+                         "Uptake 1960","Göteborg","Risk stratified",
+                         "Mixed screening")
+    models
+}
 
-temp <- data.frame(t(sapply(list(model0,model1,model2,model50,model60,model70,
-                                 modelUptake1930,modelUptake1960,modelGoteborg,
-                                 modelRiskStratified,modelMixedScreening,modelFormalTestManagement),
-                                                 function(obj) unlist(ICER(obj,model0)))),
-                   model=c("No screening","2-yearly","4-yearly","50 only","60 only","70 only","Uptake 1930","Uptake 1960","Göteborg","Risk stratified",
-                       "Mixed screening","Uptake 1960 + formal management"),
-                   pos=c(4,4,4,4,4,4,4,4,4,4,4,4))
-with(temp,
-     plot(delta.costs,
-          delta.QALE,
-          xlim=c(0,max(delta.costs)*1.3),
-          ylim=c(0,max(delta.QALE)*1.1),
-          xlab="Costs (SEK)",
-          ylab="Effectiveness (QALY)"))
-with(temp, text(delta.costs,delta.QALE, labels=model, pos=pos))
-lines.frontier(temp$delta.costs,temp$delta.QALE)
+modelSetA <- modelSet(makeModel(discount=0,formal_compliance=0,formal_costs=0,panel=FALSE))
+modelSetB <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=FALSE))
+modelSetC <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=FALSE))
+modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=TRUE))
 
-with(temp,
-     plot(delta.costs,
-          delta.LE,
-          xlim=c(0,max(delta.costs)*1.3),
-          ylim=c(0,max(delta.LE)*1.1),
-          xlab="Costs (SEK)",
-          ylab="Effectiveness (LY)"))
-with(temp, text(delta.costs,delta.LE, labels=model, pos=c(4,4,4,4,4,4,4,4,4,3,4,4)))
-lines.frontier(temp$delta.costs,temp$delta.LE)
+## save(modelSetA,file="~/work/modelSetA-20150112.RData")
+## save(modelSetB,file="~/work/modelSetB-20150112.RData")
+## save(modelSetC,file="~/work/modelSetC-20150112.RData")
+## save(modelSetD,file="~/work/modelSetD-20150112.RData")
+
+plot.scenarios <- function(models,
+                           costs="delta.costs",
+                           effects="delta.QALE",
+                           xlim=NULL, ylim=NULL,
+                           ylab="Effectiveness (QALY)",
+                           suffix="", prefix="",
+                           pos=rep(4,length(models))) {
+    s <- data.frame(t(sapply(models,
+                             function(obj) unlist(ICER(obj,models[[1]])))),
+                    model=sprintf("%s%s%s",prefix,names(models),suffix),
+                    pos=pos)
+    costs <- s[[costs]]
+    effects <- s[[effects]]
+    plot(costs,
+         effects,
+         xlim=if (is.null(xlim)) c(0,max(costs)*1.3) else xlim,
+         ylim=if (is.null(ylim)) c(0,max(effects)*1.1) else ylim,
+         xlab="Costs (SEK)",
+         ylab=ylab)
+    text(costs,effects, labels=s$model, pos=pos)
+    lines.frontier(costs,effects)
+}
+points.scenarios <- function(models,
+                             costs="delta.costs",
+                             effects="delta.QALE",
+                             suffix="",
+                             prefix="",
+                             pos=rep(4,length(models)), ...) {
+    s <- data.frame(t(sapply(models,
+                             function(obj) unlist(ICER(obj,models[[1]])))),
+                    model=sprintf("%s%s%s",prefix,names(models),suffix),
+                    pos=pos)
+    costs <- s[[costs]]
+    effects <- s[[effects]]
+    points(costs,
+          effects,
+          ...)
+    text(costs,effects, labels=s$model, pos=pos)
+}
+segments.scenarios <- function(modelsA,
+                               modelsB,
+                               costs="delta.costs",
+                               effects="delta.QALE",
+                               ...) {
+    sA <- data.frame(t(sapply(modelsA,
+                              function(obj) unlist(ICER(obj,modelsA[[1]])))))
+    sB <- data.frame(t(sapply(modelsB,
+                              function(obj) unlist(ICER(obj,modelsB[[1]])))))
+    costsA <- sA[[costs]]
+    effectsA <- sA[[effects]]
+    costsB <- sB[[costs]]
+    effectsB <- sB[[effects]]
+    segments(costsA,effectsA,
+             costsB,effectsB,
+             ...)
+}
+
+plot.scenarios(modelSetA,effects="delta.LE",ylab="Effectiveness (LY)")
+plot.scenarios(modelSetA)
+plot.scenarios(modelSetB)
+plot.scenarios(modelSetC)
+plot.scenarios(modelSetD)
+
+plot.scenarios(modelSetC,suffix="+formal",xlim=c(0,3000))
+points.scenarios(modelSetB)
+segments.scenarios(modelSetB, modelSetC, lty=2)
+
+plot.scenarios(modelSetD,suffix="+panel",xlim=c(0,3000))
+points.scenarios(modelSetC)
+segments.scenarios(modelSetC, modelSetD, lty=2)
 
 ## List of homogeneous elements
 List <- function(...) {
