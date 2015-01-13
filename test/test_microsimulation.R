@@ -407,7 +407,7 @@ plot.scenarios <- function(models,
                            xlim=NULL, ylim=NULL,
                            ylab="Effectiveness (QALY)",
                            suffix="", prefix="",
-                           textp=FALSE,
+                           textp=TRUE,
                            pos=rep(4,length(models)),
                            ...) {
     s <- data.frame(t(sapply(models,
@@ -425,7 +425,7 @@ plot.scenarios <- function(models,
          pch=19, cex=1.5,
          ...)
     if (textp) text(costs,effects, labels=s$model, pos=pos)
-    lines.frontier(costs,effects,type="c",lwd=2)
+    lines.frontier(costs,effects,type="c",lwd=2,col="grey")
 }
 points.scenarios <- function(models,
                              costs="delta.costs",
@@ -468,31 +468,34 @@ segments.scenarios <- function(modelsA,
     if (textp)
         text((costsA+costsB)/2,
              (effectsA+effectsB)/2,
-             labels=sA$model,
+             labels=names(modelsA),
              pos=pos)
 }
-
 summary.scenarios <- function(models) {
     data.frame(t(sapply(models,
                              function(obj) unlist(ICER(obj,models[[1]])))),
                     model=names(models))
 }
+
+## Tables of costs and effectiveness
 rbind(transform(summary.scenarios(modelSetB),set="B"),
       transform(summary.scenarios(modelSetC),set="C"),
       transform(summary.scenarios(modelSetD),set="D"))
 
-
+## individual plots
 plot.scenarios(modelSetA,effects="delta.LE",ylab="Effectiveness (LY)")
 plot.scenarios(modelSetA)
 plot.scenarios(modelSetB,col="red")
 plot.scenarios(modelSetC,col="orange")
 plot.scenarios(modelSetD,col="green")
 
+## sets B, C and D together
 plot.scenarios(modelSetC,col="orange",xlim=c(0,3000))
 points.scenarios(modelSetB,col="red")
 points.scenarios(modelSetD,col="green")
 legend("bottomright",legend=c("Panel + formal","PSA + formal","PSA + informal"),col=c("green","orange","red"),bty="n",pch=19,pt.cex=1.5)
 
+## labels
     c("1"="No screening",
       "2"="50 only",
       "3"="60 only",
@@ -503,21 +506,15 @@ legend("bottomright",legend=c("Panel + formal","PSA + formal","PSA + informal"),
       "8"="Mixed screening")
 
 plot.scenarios(modelSetC,xlim=c(0,3000),
-               pos=c(4,4,4,4,1,4,3,4),col="orange",textp=FALSE)
-points.scenarios(modelSetB,pos=c(4,1,4,3,4,4,4,4),col="red",textp=FALSE)
-segments.scenarios(modelSetB, modelSetC,textp=TRUE)
+               col="orange",textp=FALSE)
+points.scenarios(modelSetB,col="red",textp=FALSE)
+segments.scenarios(modelSetB, modelSetC,textp=TRUE,pos=c(4,1,4,4,1,3,2,1))
 legend("bottomright",legend=c("PSA + formal","PSA + informal"),col=c("orange","red"),bty="n",pch=19,pt.cex=1.5)
 
-plot.scenarios(modelSetD,xlim=c(0,3000),col="green")
-points.scenarios(modelSetC,col="orange",textp=FALSE)
-segments.scenarios(modelSetC, modelSetD)
-
-plot.scenarios(modelSetD,xlim=c(0,3000),col="blue")
-points.scenarios(modelSetC,col="red")
-segments.scenarios(modelSetC, modelSetD)
-
-## Tables of costs and effectiveness
-
+plot.scenarios(modelSetC,xlim=c(0,3000),col="orange",textp=FALSE)
+points.scenarios(modelSetD,col="green",textp=FALSE)
+segments.scenarios(modelSetC, modelSetD,textp=TRUE)
+legend("bottomright",legend=c("PSA + formal","Panel + informal"),col=c("orange","green"),bty="n",pch=19,pt.cex=1.5)
 
 
 ## List of homogeneous elements
