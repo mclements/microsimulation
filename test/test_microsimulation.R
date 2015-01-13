@@ -367,8 +367,9 @@ modelSet <- function(model) {
                    modelUptake1930,modelUptake1960,modelGoteborg,
                    modelRiskStratified,modelMixedScreening)
     names(models) <- c("No screening","2-yearly","4-yearly",
-                         "50 only","60 only","70 only","Uptake 1930",
-                         "Uptake 1960","Göteborg","Risk stratified",
+                       "50 only","60 only","70 only","Opportunistic 1930",
+                       "Opportunistic 1960+",
+                       "Göteborg","Risk stratified",
                          "Mixed screening")
     models
 }
@@ -382,6 +383,23 @@ modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1
 ## save(modelSetB,file="~/work/modelSetB-20150112.RData")
 ## save(modelSetC,file="~/work/modelSetC-20150112.RData")
 ## save(modelSetD,file="~/work/modelSetD-20150112.RData")
+load("~/work/modelSetA-20150112.RData")
+load("~/work/modelSetB-20150112.RData")
+load("~/work/modelSetC-20150112.RData")
+load("~/work/modelSetD-20150112.RData")
+post <- function(modelSet) {
+    i <- c(1,4,5,6,8:11)
+    names(modelSet) <- c("No screening","2-yearly","4-yearly",
+                       "50 only","60 only","70 only","Opportunistic 1930",
+                       "Opportunistic",
+                       "Göteborg","Risk stratified",
+                         "Mixed screening")
+    modelSet[i]
+}
+modelSetA <- post(modelSetA)
+modelSetB <- post(modelSetB)
+modelSetC <- post(modelSetC)
+modelSetD <- post(modelSetD)
 
 plot.scenarios <- function(models,
                            costs="delta.costs",
@@ -389,7 +407,9 @@ plot.scenarios <- function(models,
                            xlim=NULL, ylim=NULL,
                            ylab="Effectiveness (QALY)",
                            suffix="", prefix="",
-                           pos=rep(4,length(models))) {
+                           textp=FALSE,
+                           pos=rep(4,length(models)),
+                           ...) {
     s <- data.frame(t(sapply(models,
                              function(obj) unlist(ICER(obj,models[[1]])))),
                     model=sprintf("%s%s%s",prefix,names(models),suffix),
@@ -401,15 +421,18 @@ plot.scenarios <- function(models,
          xlim=if (is.null(xlim)) c(0,max(costs)*1.3) else xlim,
          ylim=if (is.null(ylim)) c(0,max(effects)*1.1) else ylim,
          xlab="Costs (SEK)",
-         ylab=ylab)
-    text(costs,effects, labels=s$model, pos=pos)
-    lines.frontier(costs,effects)
+         ylab=ylab,
+         pch=19, cex=1.5,
+         ...)
+    if (textp) text(costs,effects, labels=s$model, pos=pos)
+    lines.frontier(costs,effects,type="c",lwd=2)
 }
 points.scenarios <- function(models,
                              costs="delta.costs",
                              effects="delta.QALE",
                              suffix="",
                              prefix="",
+                             textp = TRUE,
                              pos=rep(4,length(models)), ...) {
     s <- data.frame(t(sapply(models,
                              function(obj) unlist(ICER(obj,models[[1]])))),
@@ -418,13 +441,16 @@ points.scenarios <- function(models,
     costs <- s[[costs]]
     effects <- s[[effects]]
     points(costs,
-          effects,
-          ...)
-    text(costs,effects, labels=s$model, pos=pos)
+           effects,
+           pch=19,cex=1.5,
+           ...)
+    if (textp) text(costs,effects, labels=s$model, pos=pos)
 }
 segments.scenarios <- function(modelsA,
                                modelsB,
                                costs="delta.costs",
+                               textp=FALSE,
+                               pos=rep(4,length(modelsA)),
                                effects="delta.QALE",
                                ...) {
     sA <- data.frame(t(sapply(modelsA,
@@ -437,22 +463,62 @@ segments.scenarios <- function(modelsA,
     effectsB <- sB[[effects]]
     segments(costsA,effectsA,
              costsB,effectsB,
+             lwd=2,
              ...)
+    if (textp)
+        text((costsA+costsB)/2,
+             (effectsA+effectsB)/2,
+             labels=sA$model,
+             pos=pos)
 }
+
+summary.scenarios <- function(models) {
+    data.frame(t(sapply(models,
+                             function(obj) unlist(ICER(obj,models[[1]])))),
+                    model=names(models))
+}
+rbind(transform(summary.scenarios(modelSetB),set="B"),
+      transform(summary.scenarios(modelSetC),set="C"),
+      transform(summary.scenarios(modelSetD),set="D"))
+
 
 plot.scenarios(modelSetA,effects="delta.LE",ylab="Effectiveness (LY)")
 plot.scenarios(modelSetA)
-plot.scenarios(modelSetB)
-plot.scenarios(modelSetC)
-plot.scenarios(modelSetD)
+plot.scenarios(modelSetB,col="red")
+plot.scenarios(modelSetC,col="orange")
+plot.scenarios(modelSetD,col="green")
 
-plot.scenarios(modelSetC,suffix="+formal",xlim=c(0,3000))
-points.scenarios(modelSetB)
-segments.scenarios(modelSetB, modelSetC, lty=2)
+plot.scenarios(modelSetC,col="orange",xlim=c(0,3000))
+points.scenarios(modelSetB,col="red")
+points.scenarios(modelSetD,col="green")
+legend("bottomright",legend=c("Panel + formal","PSA + formal","PSA + informal"),col=c("green","orange","red"),bty="n",pch=19,pt.cex=1.5)
 
-plot.scenarios(modelSetD,suffix="+panel",xlim=c(0,3000))
-points.scenarios(modelSetC)
-segments.scenarios(modelSetC, modelSetD, lty=2)
+    c("1"="No screening",
+      "2"="50 only",
+      "3"="60 only",
+      "4"="70 only",
+      "5"="Opportunistic",
+      "6"="Göteborg",
+      "7"="Risk stratified",
+      "8"="Mixed screening")
+
+plot.scenarios(modelSetC,xlim=c(0,3000),
+               pos=c(4,4,4,4,1,4,3,4),col="orange",textp=FALSE)
+points.scenarios(modelSetB,pos=c(4,1,4,3,4,4,4,4),col="red",textp=FALSE)
+segments.scenarios(modelSetB, modelSetC,textp=TRUE)
+legend("bottomright",legend=c("PSA + formal","PSA + informal"),col=c("orange","red"),bty="n",pch=19,pt.cex=1.5)
+
+plot.scenarios(modelSetD,xlim=c(0,3000),col="green")
+points.scenarios(modelSetC,col="orange",textp=FALSE)
+segments.scenarios(modelSetC, modelSetD)
+
+plot.scenarios(modelSetD,xlim=c(0,3000),col="blue")
+points.scenarios(modelSetC,col="red")
+segments.scenarios(modelSetC, modelSetD)
+
+## Tables of costs and effectiveness
+
+
 
 ## List of homogeneous elements
 List <- function(...) {
