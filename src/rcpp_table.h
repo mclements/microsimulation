@@ -42,6 +42,14 @@ class Interpolate {
   }
 };
 
+/** 
+    Class for numerical interpolation for x and y. 
+    Includes methods to read in x and y from a data-frame or from pairs of (x,y).
+    Includes methods for linear approximation (approx, x->y) and inversion of increasing (invert)
+    and decreasing (invert_decreasing) values (y->x).
+    Includes an operator for a stepwise, left continuous function x->y.
+ **/
+
 class NumericInterpolate {
  public:
   NumericVector x, y, slope;
@@ -79,7 +87,7 @@ class NumericInterpolate {
     int i = lower_bound(x.begin(), x.end(), xfind) - x.begin();
     return y[--i];
   }
-  double invert(double yfind) {
+  double invert(double yfind) { // assumes that the function is increasing
     int i;
     if (yfind<=y[0]) return x[0];
     else if (yfind>=y[n-1]) return x[n-1]+(yfind-y[n-1])/slope[n-2];
@@ -88,7 +96,7 @@ class NumericInterpolate {
       return x[i]+(yfind-y[i])/slope[i];
     }
   }
-  double invert_decreasing(double yfind) {
+  double invert_decreasing(double yfind) { // assumes that the function is decreasing
     int i;
     if (yfind>=y[0]) return x[0];
     else if (yfind<y[n-1]) return x[n-1]+(yfind-y[n-1])/slope[n-2];
