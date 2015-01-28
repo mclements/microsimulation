@@ -879,6 +879,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
     Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
     // Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(pair<double,double>(bounds<double>(1.0,4.0,10.0), bounds<double>(100.0,55,75))));
+    Rprintf("Interp for grade 6/7 (expecting approx 0.3): %f\n",interp_prob_grade7.approx(0.143));
   }
   
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
