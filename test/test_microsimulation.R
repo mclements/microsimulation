@@ -335,8 +335,8 @@ plot(y)
 refresh
 require(microsimulation)
 require(sqldf)
+require(dplyr)
 load("~/Downloads/IHEdata.RData")
-
 makeModel <- function(discountRate=0.03,
                       formal_compliance=1,
                       formal_costs=1,
@@ -373,34 +373,22 @@ modelSet <- function(model) {
                          "Mixed screening")
     models
 }
-
-modelSetA <- modelSet(makeModel(discount=0,formal_compliance=0,formal_costs=0,panel=FALSE))
-modelSetB <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=FALSE))
-modelSetC <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=FALSE))
-modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=TRUE))
-
-## save(modelSetA,file="~/work/modelSetA-20150112.RData")
-## save(modelSetB,file="~/work/modelSetB-20150112.RData")
-## save(modelSetC,file="~/work/modelSetC-20150112.RData")
-## save(modelSetD,file="~/work/modelSetD-20150112.RData")
-load("~/work/modelSetA-20150112.RData")
-load("~/work/modelSetB-20150112.RData")
-load("~/work/modelSetC-20150112.RData")
-load("~/work/modelSetD-20150112.RData")
-post <- function(modelSet) {
-    i <- c(1,4,5,6,8:11)
-    names(modelSet) <- c("No screening","2-yearly","4-yearly",
-                       "50 only","60 only","70 only","Opportunistic 1930",
-                       "Opportunistic",
-                       "Göteborg","Risk stratified",
-                         "Mixed screening")
-    modelSet[i]
+predict.fhcrc <-
+function (obj, type = c("incidence", "cancerdeath"))
+{
+    type <- match.arg(type)
+    event_types <- switch(type, incidence = c("toClinicalDiagnosis", 
+        "toScreenDiagnosis"), cancerdeath = "toCancerDeath")
+    if (require(dplyr)) {
+        pt <- obj$summary$pt %>% group_by(age) %>% summarise(pt = sum(pt))
+        events <- obj$summary$events %>% filter(event %in% event_types) %>% 
+            group_by(age) %>% summarise(n = sum(n))
+        out <- left_join(pt, events, by = "age") %>% mutate(rate = ifelse(is.na(n), 
+            0, n/pt))
+        return(with(out,data.frame(age=age,rate=rate,pt=pt,n=ifelse(is.na(n),0,n))))
+    }
+    else error("dplyr is not available for plotting")
 }
-modelSetA <- post(modelSetA)
-modelSetB <- post(modelSetB)
-modelSetC <- post(modelSetC)
-modelSetD <- post(modelSetD)
-
 plot.scenarios <- function(models,
                            costs="delta.costs",
                            effects="delta.QALE",
@@ -476,6 +464,40 @@ summary.scenarios <- function(models) {
                              function(obj) unlist(ICER(obj,models[[1]])))),
                     model=names(models))
 }
+modelSetA <- modelSet(makeModel(discount=0,formal_compliance=0,formal_costs=0,panel=FALSE))
+modelSetB <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=FALSE))
+modelSetC <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=FALSE))
+modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=TRUE))
+modelSetBD <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=TRUE))
+
+if (FALSE) {
+    save(modelSetA,file="~/work/modelSetA-20150112.RData")
+    save(modelSetB,file="~/work/modelSetB-20150112.RData")
+    save(modelSetC,file="~/work/modelSetC-20150112.RData")
+    save(modelSetD,file="~/work/modelSetD-20150112.RData")
+    save(modelSetBD,file="~/work/modelSetBD-20150112.RData")
+}
+if (FALSE) {
+    load("~/work/modelSetA-20150112.RData")
+    load("~/work/modelSetB-20150112.RData")
+    load("~/work/modelSetC-20150112.RData")
+    load("~/work/modelSetD-20150112.RData")
+    load("~/work/modelSetBD-20150112.RData")
+    post <- function(modelSet) {
+        i <- c(1,4,5,6,8:11)
+        names(modelSet) <- c("No screening","Göteborg","4-yearly",
+                             "50 only","60 only","70 only","Opportunistic 1930",
+                             "Opportunistic",
+                             "Risk stratified (2+4)","Risk stratified (4+8)",
+                             "Mixed screening")
+        modelSet[i]
+    }
+    modelSetA <- post(modelSetA)
+    modelSetB <- post(modelSetB)
+    modelSetC <- post(modelSetC)
+    modelSetD <- post(modelSetD)
+    modelSetBD <- post(modelSetBD)
+}
 
 ## Tables of costs and effectiveness
 rbind(transform(summary.scenarios(modelSetB),set="B"),
@@ -483,17 +505,25 @@ rbind(transform(summary.scenarios(modelSetB),set="B"),
       transform(summary.scenarios(modelSetD),set="D"))
 
 ## individual plots
+pdf("~/Downloads/cea-A-LY.pdf")
 plot.scenarios(modelSetA,effects="delta.LE",ylab="Effectiveness (LY)")
+dev.off()
+pdf("~/Downloads/cea-A-QALY.pdf")
 plot.scenarios(modelSetA)
+dev.off()
+pdf("~/Downloads/cea-B.pdf")
 plot.scenarios(modelSetB,col="red")
+dev.off()
+
 plot.scenarios(modelSetC,col="orange")
 plot.scenarios(modelSetD,col="green")
 
-## sets B, C and D together
+## sets B, BD, C and D together
 plot.scenarios(modelSetC,col="orange",xlim=c(0,3000))
 points.scenarios(modelSetB,col="red")
-points.scenarios(modelSetD,col="green")
-legend("bottomright",legend=c("Panel + formal","PSA + formal","PSA + informal"),col=c("green","orange","red"),bty="n",pch=19,pt.cex=1.5)
+points.scenarios(modelSetD,col="green",textp=FALSE)
+points.scenarios(modelSetBD,col="violet",textp=FALSE)
+legend("bottomright",legend=c("Panel + formal","PSA + formal","Panel + informal","PSA + informal"),col=c("green","orange","violet","red"),bty="n",pch=19,pt.cex=1.5)
 
 ## labels
     c("1"="No screening",
@@ -505,16 +535,52 @@ legend("bottomright",legend=c("Panel + formal","PSA + formal","PSA + informal"),
       "7"="Risk stratified",
       "8"="Mixed screening")
 
+pdf("~/Downloads/cea-BC.pdf")
 plot.scenarios(modelSetC,xlim=c(0,3000),
                col="orange",textp=FALSE)
 points.scenarios(modelSetB,col="red",textp=FALSE)
 segments.scenarios(modelSetB, modelSetC,textp=TRUE,pos=c(4,1,4,4,1,3,2,1))
 legend("bottomright",legend=c("PSA + formal","PSA + informal"),col=c("orange","red"),bty="n",pch=19,pt.cex=1.5)
+dev.off()
 
+pdf("~/Downloads/cea-CD.pdf")
 plot.scenarios(modelSetC,xlim=c(0,3000),col="orange",textp=FALSE)
 points.scenarios(modelSetD,col="green",textp=FALSE)
 segments.scenarios(modelSetC, modelSetD,textp=TRUE)
-legend("bottomright",legend=c("PSA + formal","Panel + informal"),col=c("orange","green"),bty="n",pch=19,pt.cex=1.5)
+legend("bottomright",legend=c("PSA + formal","Panel + formal"),col=c("orange","green"),bty="n",pch=19,pt.cex=1.5)
+dev.off()
+
+pdf("~/Downloads/cea-BDvD.pdf")
+plot.scenarios(modelSetD,xlim=c(0,3000),col="green",textp=FALSE)
+points.scenarios(modelSetBD,col="orange",textp=FALSE)
+segments.scenarios(modelSetBD, modelSetD,textp=TRUE)
+legend("bottomright",legend=c("Panel + informal","Panel + formal"),col=c("orange","green"),bty="n",pch=19,pt.cex=1.5)
+dev.off()
+
+pdf("~/Downloads/cea-incidence.pdf")
+plot(modelSetA[[1]],type="incidence",xlab="Age (years)", ylab="Incidence rate", lwd=2)
+for (i in 2:length(modelSetA))
+    lines(modelSetA[[i]],col=i,type="incidence", lwd=2)
+legend("bottomright",legend=names(modelSetA),lty=1,col=1:length(modelSetA),bty="n",lwd=2)
+dev.off()
+
+
+## Just compliance
+model <- makeModel(discount=0,formal_compliance=1,formal_costs=0,panel=FALSE)
+model0 <- model("noScreening")
+model2 <- model("twoYearlyScreen50to70")
+plot(model0,type="cancerdeath")
+comparison1 <- rbind(predict(model2,type="cancerdeath") %>% mutate(screen=1),
+                    predict(model0,type="cancerdeath") %>% mutate(screen=0)) %>%
+    filter(age >= 50 & age<70)
+require(splines)
+exp(coef(glm(n ~ offset(log(pt)) + ns(age) + screen, data=comparison1, family=poisson)))
+##
+comparison <-
+    inner_join(predict(model2,type="cancerdeath") %>% rename(rate2=rate) %>% select(age,rate2),
+               predict(model0,type="cancerdeath") %>% rename(rate0=rate) %>% select(age,rate0)) %>%
+    mutate(RR=rate2/rate0) %>% filter(age>=50 & age<90)
+plot(RR ~ age, data=comparison, type="l")
 
 
 ## List of homogeneous elements
@@ -586,8 +652,7 @@ lines(modelUptake1960,type="incidence",col="pink")
 
 
 mubeta2 <- c(0.0397,0.1678)
-p <- 0.9
-p1 <- 0.6
+p <- 0.9 
 fun <- function(par,a,b) {
     alpha <- par[1]
     beta <- par[2]
@@ -599,13 +664,40 @@ objective <- function(par) {
     (mubeta2[1]-fun(par,0,p))^2+
     (mubeta2[2]-fun(par,p,1))^2
 }
-fit <- optim(c(1,1),objective)
+fit <- optim(c(1,1),objective,control=list(abstol=1e-16,reltol=1e-16))
+fun(fit$par, p, 1)
+fun(fit$par, 0, p)
+p1 <- 0.6
 fun(fit$par, 0, p1)
 fun(fit$par, p1, p)
 with(list(x=seq(0,1,length=301)),
      plot(x,sapply(x,function(xi) exp(fit$par[1]+fit$par[2]*xi)), type="l"))
 abline(v=p,lty=2)
 abline(v=p1, lty=2)
+segments(0,mubeta2[1],p,mubeta2[1],lty=3)
+segments(p,mubeta2[2],1,mubeta2[2],lty=3)
+
+## Even width
+mubeta2 <- c(0.0397,0.1678)
+fun <- function(par,a,b) {
+    alpha <- par[1]
+    beta <- par[2]
+    (exp(alpha+beta*b)-exp(alpha+beta*a))/(b-a)/beta
+}
+objective <- function(par) {
+    alpha <- par[1]
+    beta <- par[2]
+    (mubeta2[1]-fun(par,6,8))^2+
+    (mubeta2[2]-fun(par,8,9))^2
+}
+fit <- optim(c(1,1),objective,control=list(abstol=1e-16,reltol=1e-16))
+fun(fit$par, 6, 8)
+fun(fit$par, 8, 9)
+fun(fit$par, 6, 7)
+fun(fit$par, 7, 8)
+with(list(x=seq(6,9,length=301)),
+     plot(x,sapply(x,function(xi) exp(fit$par[1]+fit$par[2]*xi)), type="l"))
+
 
 ## check cost calculations
 model0 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",mc.cores=3,pop=1995-50,discountRate=0)

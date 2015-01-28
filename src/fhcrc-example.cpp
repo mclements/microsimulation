@@ -79,7 +79,7 @@ namespace {
   CostReport<CostKey> costs;
   vector<LifeHistory::Type> lifeHistories;
   SimpleReport<double> outParameters;
-  SimpleReport<double> psarecord;
+  SimpleReport<double> psarecord, falsePositives;
 
   bool debug = false;
 
@@ -557,9 +557,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       (msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
       (msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
       false;
-    // reduce false positives wrt Gleason 7+ by 20%
+    // Important case: PSA<1 (to check)
+    // Reduce false positives wrt Gleason 7+ by 1-rFPF: which BPThreshold?
     if (panel && positive_test && (now()-35.0<t0 || ext_grade == ext::Gleason_le_6)) {
-      if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"]) positive_test = false;
+      // if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"]) positive_test = false;
+      if (includePSArecords) {
+	falsePositives.record("id",id);
+	falsePositives.record("psa",psa);
+	falsePositives.record("biomarker",biomarker);
+	falsePositives.record("age",now());
+	falsePositives.record("age0",t0+35.0);
+	falsePositives.record("ext_grade",ext_grade);
+      }
+      if (psa<parameter["PSAFalsePositiveThreshold"]) positive_test = false; // strong assumption
     }
     if (panel && !positive_test && t0<now()-35.0 && ext_grade > ext::Gleason_le_6) {
       if (R::runif(0.0,1.0) < 1.0-parameter["rTPF"]) positive_test = true;
@@ -892,6 +902,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   outParameters.clear();
   lifeHistories.clear();
   psarecord.clear();
+  falsePositives.clear();
 
   report.discountRate = parameter["discountRate.effectiveness"];
   report.setPartition(ages);
@@ -926,7 +937,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 		      _("shortSummary") = shortReport.wrap(),   // EventReport 
 		      _("lifeHistories") = wrap(lifeHistories), // vector<LifeHistory::Type>
 		      _("parameters") = outParameters.wrap(),   // SimpleReport<double>
-		      _("psarecord")=psarecord.wrap()           // SimpleReport<double>
+		      _("psarecord")=psarecord.wrap(),          // SimpleReport<double>
+		      _("falsePositives")=falsePositives.wrap() // SimpleReport<double>
 		      );
 }
 

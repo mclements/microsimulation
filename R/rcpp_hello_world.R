@@ -184,7 +184,8 @@ FhcrcParameters <- list(
     sebeta1=0.0430,
     mubeta2=c(0.0397,0.1678),
     sebeta2=c(0.0913,0.3968),
-    mubeta2.scale=2.1, beta.rho=0.62,
+    mubeta2.scale=1.0, # cf. 2.1
+    beta.rho=0.62,
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
     c_benefit_value = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
@@ -201,10 +202,11 @@ FhcrcParameters <- list(
     ## BPThresholdBiopsyFollowUp=3.47,
     ## BPThreshold=4.69,
     ## BPThresholdBiopsyFollowUp=4.69,
-    BPThreshold=5.16,
-    BPThresholdBiopsyFollowUp=5.16,
+    PSAFalsePositiveThreshold=4.2, # reduce the false positives by ~40%
+    BPThreshold=4.2, 
+    BPThresholdBiopsyFollowUp=4.2, 
     rTPF=1.0,
-    rFPF=0.8,
+    rFPF=0.6,
     c_low_grade_slope=-0.006,
     discountRate.effectiveness = 0.03,
     discountRate.costs = 0.03,
@@ -493,6 +495,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
+  falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
   costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs)))
@@ -506,7 +509,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
               ## prev=summary$prev, pt=summary$pt, events=summary$events)
               summary=summary,costs=costs, psarecord=psarecord, cohort=data.frame(table(cohort)),
-              discountRate = discountRate)
+              discountRate = discountRate, falsePositives=falsePositives)
   class(out) <- "fhcrc"
   out
 }
