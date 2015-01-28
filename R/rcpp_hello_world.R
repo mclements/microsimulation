@@ -578,6 +578,27 @@ lines.fhcrc <- function(obj,...) {
     plot(obj, ..., add=TRUE)
 }
 
+numberNeeded.fhcrc <- function(scenario, referenceScenario) {
+    if (require(dplyr)) {
+        pNNS <- function(thisScenario) { 
+            as.numeric(thisScenario$summary$events %>%
+                       filter(event=="toCancerDeath") %>%
+                       summarise(sumEvents=sum(n))/thisScenario$n)
+        }
+        pNND <- function(thisScenario) {
+            as.numeric(thisScenario$summary$events %>%
+                       filter(event=="toCancerDeath") %>%
+                       summarise(sumEvents=sum(n)) /
+                       thisScenario$summary$events %>%
+                       filter(is.element(event,c("toScreenDiagnosis","toClinicalDiagnosis"))) %>%
+                       summarise(sumEvents=sum(n)))
+        }
+        NNS <- 1 / (pNNS(referenceScenario) - pNNS(scenario)) #number needed to screen to prevent 1 PCa death
+        NND <- 1 / (pNND(referenceScenario) - pNND(scenario)) #number needed to detect to prevent 1 PCa death
+                                        # Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
+        return(list(NNS=round(NNS,2),NND=round(NND,2)))
+    } else error("dplyr is not available for plotting")
+}
 
 ## utility - not exported
 assignList <- function(lst,...)
