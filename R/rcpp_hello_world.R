@@ -234,7 +234,7 @@ FhcrcParameters <- list(
         0.782609),
     cost_parameters = c(Invitation = 50,
         FormalPSA = 130,
-        OpportunisticPSA = 1910, #Is this one used?
+        OpportunisticPSA = 1910,
         FormalPSABiomarker = 730,
         OpportunisticPSABiomarker = 2510, #N.B. This one is new and should be used
         Biopsy = 12348,
@@ -597,7 +597,7 @@ numberNeeded.fhcrc <- function(scenario, referenceScenario) {
         NND <- 1 / (pNND(referenceScenario) - pNND(scenario)) #number needed to detect to prevent 1 PCa death
                                         # Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
         return(list(NNS=round(NNS,2),NND=round(NND,2)))
-    } else error("dplyr is not available for plotting")
+    } else error("dplyr is not available for NNS an NND calculations")
 }
 
 ## utility - not exported
