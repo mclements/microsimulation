@@ -578,7 +578,15 @@ lines.fhcrc <- function(obj,...) {
     plot(obj, ..., add=TRUE)
 }
 
-numberNeeded.fhcrc <- function(scenario, referenceScenario) {
+
+
+## utility - not exported
+assignList <- function(lst,...)
+  for(i in 1:length(lst))
+    assign(names(lst)[i], lst[[i]], ...)
+## assignList(formals(callFhcrc),pos=1)
+
+NN.fhcrc <- function(obj, ref.obj) {
     if (require(dplyr)) {
         pNNS <- function(thisScenario) { 
             as.numeric(thisScenario$summary$events %>%
@@ -593,20 +601,36 @@ numberNeeded.fhcrc <- function(scenario, referenceScenario) {
                        filter(is.element(event,c("toScreenDiagnosis","toClinicalDiagnosis"))) %>%
                        summarise(sumEvents=sum(n)))
         }
-        NNS <- 1 / (pNNS(referenceScenario) - pNNS(scenario)) #number needed to screen to prevent 1 PCa death
-        NND <- 1 / (pNND(referenceScenario) - pNND(scenario)) #number needed to detect to prevent 1 PCa death
-                                        # Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
+        NNS <- 1 / (pNNS(ref.obj) - pNNS(obj)) #number needed to screen to prevent 1 PCa death
+        NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
+        ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
         return(list(NNS=round(NNS,2),NND=round(NND,2)))
-    } else error("dplyr is not available for NNS an NND calculations")
+    } else error("NN.fhcrc: require dplyr to calculate NNS and NND")
 }
 
-## utility - not exported
-assignList <- function(lst,...)
-  for(i in 1:length(lst))
-    assign(names(lst)[i], lst[[i]], ...)
-## assignList(formals(callFhcrc),pos=1)
-
-
+ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"), ...) {
+    type <- match.arg(type)
+    event_types <- switch(type,
+                          psa="toScreen",
+                          biopsies=c("toClinicalDiagnosticBiopsy","toScreenInitiatedBiopsy"),
+                          incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
+                          metastatic="toMetastatic",
+                          cancerdeath="toCancerDeath",
+                          alldeath=c("toCancerDeath","toOtherDeath"))
+    if(class(obj)!="list"){obj <- list(obj)}
+    if (require(ggplot2) & require(dplyr)) {
+        pt <- do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))) %>%
+            group_by(pattern,age) %>%
+                summarise(pt=sum(pt))
+        events <-  do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$events,pattern=obj$screen))) %>%
+            filter(is.element(event, event_types)) %>%
+                group_by(pattern,age) %>%
+                    summarise(n=sum(n))
+        out <- left_join(pt,events,by=c("pattern","age")) %>%
+            mutate(rate = ifelse(is.na(n), 0, n/pt))
+        ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
+    } else error("ggplot.fhcrc: require both ggplot2 and dplyr")
+}
 
 .testPackage <- function() {
   list(callSimplePerson(),

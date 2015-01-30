@@ -1562,3 +1562,38 @@ plotWeibull(2,10)
 muWeibull(2,3)
 sqrt(varWeibull(2,3))
 plotWeibull(2,3)
+
+
+#Use NNS and NND from subfunction in rcpp_hello_world.R
+require(microsimulation)
+n <- 1e5
+n.cores <- 3
+noScreening <- callFhcrc(n=n, screen="noScreening", mc.cores=n.cores)
+screenUptake <- callFhcrc(n=n, screen="screenUptake", mc.cores=n.cores)
+screen2p2 <- callFhcrc(n=n, screen="twoYearlyScreen50to70", mc.cores=n.cores)
+screenRisk <- callFhcrc(n=n, screen="risk_stratified", mc.cores=n.cores)
+
+#Use function from rcpp_hello_world.R
+NN.fhcrc(screen2p2, noScreening)
+NN.fhcrc(screen2p2, screenUptake)
+NN.fhcrc(screenRisk, noScreening)
+
+#Use ggplot.fhcrc from subfunction in rcpp_hello_world.R
+obj <- list(noScreening,screenUptake,screen2p2,screenRisk)
+ggplot.fhcrc(obj,"cancerdeath", list(xlim(c(40,90)),xlab("Age"),ylab("Prostate cancer mortality rate"),geom_line()))
+
+ggplot.fhcrc(obj,"cancerdeath", list(xlim(c(40,90)),ylim(c(-0.0001,0.008)),xlab("Age"),ylab("Prostate cancer mortality rate"),stat_smooth(size=1, se = F, method = "auto"), geom_line(alpha=0.3,aes(colour=pattern))))
+
+ggplot.fhcrc(obj,"incidence", list(xlim(c(40,90)),xlab("Age"),ylab("Prostate cancer incidence rate"),geom_line()))
+
+ggplot.fhcrc(screenUptake,"alldeath", list(xlim(c(40,90)),xlab("Age"),ylab("All-cause mortality rate"),geom_line()))
+
+ggplot.fhcrc(obj,"biopsies", list(xlim(c(40,90)),xlab("Age"),ylab("Biopsy rate"),geom_line()))
+
+ggplot.fhcrc(obj,"metastatic", list(xlim(c(40,90)),ylim(c(-0.0001,0.004)),xlab("Age"),ylab("Metastatic prostate cancer rate"),geom_line(),
+                                    scale_colour_discrete(name="Screening\nuptake pattern",
+                                                          breaks=c("noScreening", "screenUptake", "twoYearlyScreen50to70","risk_stratified"),
+                                                          labels=c("No screening", "Unorganised", "2 year rescreen","2+4 year rescreen"))))
+
+
+
