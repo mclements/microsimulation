@@ -471,18 +471,18 @@ modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1
 modelSetBD <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=TRUE))
 
 if (FALSE) {
-    save(modelSetA,file="~/work/modelSetA-20150112.RData")
-    save(modelSetB,file="~/work/modelSetB-20150112.RData")
-    save(modelSetC,file="~/work/modelSetC-20150112.RData")
-    save(modelSetD,file="~/work/modelSetD-20150112.RData")
-    save(modelSetBD,file="~/work/modelSetBD-20150112.RData")
+    save(modelSetA,file="~/work/modelSetA-20150201.RData")
+    save(modelSetB,file="~/work/modelSetB-20150201.RData")
+    save(modelSetC,file="~/work/modelSetC-20150201.RData")
+    save(modelSetD,file="~/work/modelSetD-20150201.RData")
+    save(modelSetBD,file="~/work/modelSetBD-20150201.RData")
 }
 if (FALSE) {
-    load("~/work/modelSetA-20150112.RData")
-    load("~/work/modelSetB-20150112.RData")
-    load("~/work/modelSetC-20150112.RData")
-    load("~/work/modelSetD-20150112.RData")
-    load("~/work/modelSetBD-20150112.RData")
+    load("~/work/modelSetA-20150201.RData")
+    load("~/work/modelSetB-20150201.RData")
+    load("~/work/modelSetC-20150201.RData")
+    load("~/work/modelSetD-20150201.RData")
+    load("~/work/modelSetBD-20150201.RData")
     post <- function(modelSet) {
         i <- c(1,4,5,6,8:11)
         names(modelSet) <- c("No screening","Göteborg","4-yearly",
@@ -536,25 +536,37 @@ legend("bottomright",legend=c("Panel + formal","PSA + formal","Panel + informal"
       "8"="Mixed screening")
 
 pdf("~/Downloads/cea-BC.pdf")
-plot.scenarios(modelSetC,xlim=c(0,3000),
-               col="orange",textp=FALSE)
+plot.scenarios(c(modelSetC,modelSetB),xlim=c(0,3000),
+               type="n",textp=FALSE)
+points.scenarios(modelSetC,col="orange",textp=FALSE)
 points.scenarios(modelSetB,col="red",textp=FALSE)
 segments.scenarios(modelSetB, modelSetC,textp=TRUE,pos=c(4,1,4,4,1,3,2,1))
 legend("bottomright",legend=c("PSA + formal","PSA + informal"),col=c("orange","red"),bty="n",pch=19,pt.cex=1.5)
 dev.off()
 
+pdf("~/Downloads/cea-BvCD.pdf")
+plot.scenarios(c(modelSetBD,modelSetB),xlim=c(0,3000),
+               type="n",textp=FALSE)
+points.scenarios(modelSetBD,col="purple",textp=FALSE)
+points.scenarios(modelSetB,col="red",textp=FALSE)
+segments.scenarios(modelSetB, modelSetBD,textp=TRUE,pos=c(4,1,4,4,1,3,2,1))
+legend("bottomright",legend=c("Panel + informal","PSA + informal"),col=c("purple","red"),bty="n",pch=19,pt.cex=1.5)
+dev.off()
+
 pdf("~/Downloads/cea-CD.pdf")
-plot.scenarios(modelSetC,xlim=c(0,3000),col="orange",textp=FALSE)
+plot.scenarios(c(modelSetC,modelSetD),xlim=c(0,3000),col="orange",textp=FALSE,type="n")
+points.scenarios(modelSetC,col="orange",textp=FALSE)
 points.scenarios(modelSetD,col="green",textp=FALSE)
 segments.scenarios(modelSetC, modelSetD,textp=TRUE)
 legend("bottomright",legend=c("PSA + formal","Panel + formal"),col=c("orange","green"),bty="n",pch=19,pt.cex=1.5)
 dev.off()
 
 pdf("~/Downloads/cea-BDvD.pdf")
-plot.scenarios(modelSetD,xlim=c(0,3000),col="green",textp=FALSE)
-points.scenarios(modelSetBD,col="orange",textp=FALSE)
+plot.scenarios(c(modelSetD,modelSetBD),xlim=c(0,3000),textp=FALSE,type="n")
+points.scenarios(modelSetD,col="green",textp=FALSE)
+points.scenarios(modelSetBD,col="purple",textp=FALSE)
 segments.scenarios(modelSetBD, modelSetD,textp=TRUE)
-legend("bottomright",legend=c("Panel + informal","Panel + formal"),col=c("orange","green"),bty="n",pch=19,pt.cex=1.5)
+legend("bottomright",legend=c("Panel + informal","Panel + formal"),col=c("purple","green"),bty="n",pch=19,pt.cex=1.5)
 dev.off()
 
 pdf("~/Downloads/cea-incidence.pdf")

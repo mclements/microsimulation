@@ -102,6 +102,7 @@ namespace {
   Rpexp rmu0;
 
   NumericVector parameter;
+  LogicalVector bparameter;
 
   // read in the parameters
   NumericVector cost_parameters, utility_estimates, utility_duration;
@@ -215,8 +216,15 @@ namespace {
     }
   }
 
-  treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) { // also:
-      TablePrtx::key_type key = 
+  treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) {
+    TablePrtx::key_type key;
+    if (bparameter["stockholmTreatment"])
+       key = 
+	 TablePrtx::key_type(bounds<double>(age,50.0,85.0),
+			     bounds<double>(year,2008.0,2012.0),
+			     int(ext_grade));
+    else // original FHCRC table prtx
+      key = 
 	TablePrtx::key_type(bounds<double>(age,50.0,79.0),
 			    bounds<double>(year,1973.0,2004.0),
 			    int(grade));
@@ -571,9 +579,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       }
       if (psa<parameter["PSAFalsePositiveThreshold"]) positive_test = false; // strong assumption
     }
-    if (panel && !positive_test && t0<now()-35.0 && ext_grade > ext::Gleason_le_6) {
-      if (R::runif(0.0,1.0) < 1.0-parameter["rTPF"]) positive_test = true;
-    }
+    // if (panel && !positive_test && t0<now()-35.0 && ext_grade > ext::Gleason_le_6) {
+    //   if (R::runif(0.0,1.0) < 1.0-parameter["rTPF"]) positive_test = true;
+    // }
     if (positive_test && R::runif(0.0,1.0) < compliance) {
       scheduleAt(now(), toScreenInitiatedBiopsy); // immediate biopsy
     } // assumes similar biopsy compliance, reasonable? An option to different psa-thresholds would be to use different biopsyCompliance. /AK
@@ -812,6 +820,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   List parms(parmsIn);
   List tables = parms["tables"];
   parameter = parms["parameter"];
+  bparameter = parms["bparameter"]; // scalar bools
   List otherParameters = parms["otherParameters"];
   debug = as<bool>(parms["debug"]);
   mubeta2 = as<NumericVector>(otherParameters["mubeta2"]);
@@ -827,7 +836,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   interp_prob_grade7 = 
     NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
   prtxCM = TablePrtx(as<DataFrame>(tables["prtx"]),
-			       "Age","DxY","G","CM"); // NB: Grade is now {0,1} coded cf {1,2}
+			       "Age","DxY","G","CM"); // NB: Grade is now {0,1[,2]} coded cf {1,2[,3]}
   prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");

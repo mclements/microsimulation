@@ -208,6 +208,7 @@ FhcrcParameters <- list(
     rTPF=1.0,
     rFPF=0.6,
     c_low_grade_slope=-0.006,
+    stockholmTreatment = TRUE,
     discountRate.effectiveness = 0.03,
     discountRate.costs = 0.03,
     full_report = 1.0,
@@ -279,6 +280,13 @@ swedenOpportunisticBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60
                                 compliance=c(0.7, 0.75, 0.6, 0.7, 0.4, 0.5))
 swedenFormalBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
                                 compliance=0.9)
+stockholmTreatment <-
+    data.frame(DxY=2008,
+               Age=c(50,50,50,55,55,55,60,60,60,65,65,65,70,70,70,75,75,75,80,80,80,85,85,85),
+               G=as.integer(c(6,7,8,6,7,8,6,7,8,6,7,8,6,7,8,6,7,8,6,7,8,6,7,8)-6),
+               CM=c(0.231023,0.044872,0.25,0.333333,0.09542,0.328358,0.409439,0.12825,0.348101,0.479167,0.178182,0.401639,0.689013,0.359143,0.56087,0.876543,0.744444,0.809524,1,0.970711,0.952096,0.9375,1,1),
+               RP=c(0.700623,0.815839,0.5,0.553592,0.740111,0.326226,0.49981,0.6866,0.291437,0.409879,0.552483,0.279235,0.210949,0.318374,0.179363,0.041152,0.058652,0.049689,0,0.009763,0.023952,0.0625,0,0),
+               RT=c(0.068354,0.13929,0.25,0.113074,0.164469,0.345416,0.090751,0.185151,0.360462,0.110954,0.269335,0.319126,0.100038,0.322482,0.259767,0.082305,0.196903,0.140787,0,0.019526,0.023952,0,0,0))
 rescreening <- data.frame(age5 = c(30, 30, 30, 30, 35, 35, 35, 35, 40, 40, 
 40, 40, 45, 45, 45, 45, 50, 50, 50, 50, 55, 55, 55, 55, 60, 60, 
 60, 60, 65, 65, 65, 65, 70, 70, 70, 70, 75, 75, 75, 75, 80, 80, 
@@ -410,7 +418,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   ##     data.frame(expand.grid(psa=c(4,7,10),age=seq(55,75,by=5)),
   ##                compliance=unlist(fhcrcData$biopsy_frequency[,-(1:2),]))
   fhcrcData$biopsyOpportunisticComplianceTable <- swedenOpportunisticBiopsyCompliance 
-  fhcrcData$biopsyFormalComplianceTable <- swedenFormalBiopsyCompliance 
+  fhcrcData$biopsyFormalComplianceTable <- swedenFormalBiopsyCompliance
   fhcrcData$survival_local <-
       with(fhcrcData$survival_local,
            data.frame(Age=as.double(AgeLow),Grade=Grade,Time=as.double(Time),
@@ -431,6 +439,9 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   for (name in names(updateParameters))
       parameter[[name]] <- updateParameters[[name]]
   pind <- sapply(parameter,class)=="numeric" & sapply(parameter,length)==1
+  bInd <- sapply(parameter,class)=="logical" & sapply(parameter,length)==1
+  if (parameter$stockholmTreatment)
+      fhcrcData$prtx <- stockholmTreatment
   ## check some parameters for sanity
   if (panel && parameter["rTPF"]>1) stop("Panel: rTPF>1 (not currently implemented)")
   if (panel && parameter["rFPF"]>1) stop("Panel: rFPF>1 (not currently implemented)")
@@ -446,7 +457,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
                             debug=debug, # bool
                             cohort=as.double(chunk),
                             parameter=unlist(parameter[pind]),
-                            otherParameters=parameter[!pind],
+                            bparameter=unlist(parameter[bInd]),
+                            otherParameters=parameter[!pind & !bInd],
                             tables=fhcrcData,
                             includePSArecords=includePSArecords),
                         PACKAGE="microsimulation")
