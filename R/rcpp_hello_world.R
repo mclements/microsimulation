@@ -620,7 +620,7 @@ NN.fhcrc <- function(obj, ref.obj) {
     } else error("NN.fhcrc: require dplyr to calculate NNS and NND")
 }
 
-ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"), ...) {
+ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"),ages=c(50,85), ...) {
     type <- match.arg(type)
     event_types <- switch(type,
                           psa="toScreen",
@@ -639,7 +639,9 @@ ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","c
                 group_by(pattern,age) %>%
                     summarise(n=sum(n))
         out <- left_join(pt,events,by=c("pattern","age")) %>%
-            mutate(rate = ifelse(is.na(n), 0, n/pt))
+            mutate(rate = 1000*ifelse(is.na(n), 0, n/pt)) %>%
+                filter(age >= min(ages),
+                       age <= max(ages))
         ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
     } else error("ggplot.fhcrc: require both ggplot2 and dplyr")
 }
