@@ -464,40 +464,59 @@ summary.scenarios <- function(models) {
                              function(obj) unlist(ICER(obj,models[[1]])))),
                     model=names(models))
 }
-modelSetA <- modelSet(makeModel(discount=0,formal_compliance=0,formal_costs=0,panel=FALSE))
-modelSetB <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=FALSE))
-modelSetC <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=FALSE))
-modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=TRUE))
-modelSetBD <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=TRUE))
-
+post <- function(modelSet) {
+    i <- c(1,4,5,6,8:11)
+    names(modelSet) <- c("No screening","Göteborg","4-yearly",
+                         "50 only","60 only","70 only","Opportunistic 1930",
+                         "Opportunistic",
+                         "Risk stratified (2+4)","Risk stratified (4+8)",
+                         "Mixed screening")
+    modelSet[i]
+}
 if (FALSE) {
+    modelSetA <- modelSet(makeModel(discount=0,formal_compliance=0,formal_costs=0,panel=FALSE))
+    modelSetB <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=FALSE))
+    modelSetC <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=FALSE))
+    modelSetD <- modelSet(makeModel(discount=0.03,formal_compliance=1,formal_costs=1,panel=TRUE))
+    modelSetBD <- modelSet(makeModel(discount=0.03,formal_compliance=0,formal_costs=0,panel=TRUE))
     save(modelSetA,file="~/work/modelSetA-20150201.RData")
     save(modelSetB,file="~/work/modelSetB-20150201.RData")
     save(modelSetC,file="~/work/modelSetC-20150201.RData")
     save(modelSetD,file="~/work/modelSetD-20150201.RData")
     save(modelSetBD,file="~/work/modelSetBD-20150201.RData")
 }
-if (FALSE) {
+doOnce <- TRUE
+if (doOnce) {
     load("~/work/modelSetA-20150201.RData")
     load("~/work/modelSetB-20150201.RData")
     load("~/work/modelSetC-20150201.RData")
     load("~/work/modelSetD-20150201.RData")
     load("~/work/modelSetBD-20150201.RData")
-    post <- function(modelSet) {
-        i <- c(1,4,5,6,8:11)
-        names(modelSet) <- c("No screening","Göteborg","4-yearly",
-                             "50 only","60 only","70 only","Opportunistic 1930",
-                             "Opportunistic",
-                             "Risk stratified (2+4)","Risk stratified (4+8)",
-                             "Mixed screening")
-        modelSet[i]
-    }
     modelSetA <- post(modelSetA)
     modelSetB <- post(modelSetB)
     modelSetC <- post(modelSetC)
     modelSetD <- post(modelSetD)
     modelSetBD <- post(modelSetBD)
+    doOnce <- FALSE
 }
+## ## labels
+##     c("1"="No screening",
+##       "2"="50 only",
+##       "3"="60 only",
+##       "4"="70 only",
+##       "5"="Opportunistic",
+##       "6"="Risk stratified (2+4)",
+##       "7"="Risk stratified (4+8)",
+##       "8"="Mixed screening")
+
+## modelSetBD0 <- modelSet(makeModel(discount=0,formal_compliance=0,formal_costs=0,panel=TRUE))
+## modelSetBD0 <- post(modelSetBD0)
+plot.scenarios(c(modelSetA,modelSetBD0),
+               type="n",textp=FALSE)
+points.scenarios(modelSetBD0,col="violet",textp=FALSE)
+points.scenarios(modelSetA,col="red",textp=FALSE)
+segments.scenarios(modelSetBD0, modelSetA,textp=TRUE,pos=c(4,1,4,4,1,3,2,1))
+legend("bottomright",legend=c("Panel + informal","PSA + informal"),col=c("violet","red"),bty="n",pch=19,pt.cex=1.5)
 
 ## Tables of costs and effectiveness
 rbind(transform(summary.scenarios(modelSetB),set="B"),
@@ -514,26 +533,20 @@ dev.off()
 pdf("~/Downloads/cea-B.pdf")
 plot.scenarios(modelSetB,col="red")
 dev.off()
-
+pdf("~/Downloads/cea-C.pdf")
 plot.scenarios(modelSetC,col="orange")
+dev.off()
+pdf("~/Downloads/cea-D.pdf")
 plot.scenarios(modelSetD,col="green")
+dev.off()
 
 ## sets B, BD, C and D together
-plot.scenarios(modelSetC,col="orange",xlim=c(0,3000))
+plot.scenarios(c(modelSetB,modelSetC,modelSetD,modelSetBD),type="n",textp=FALSE)
+points.scenarios(modelSetC,col="orange")
 points.scenarios(modelSetB,col="red")
 points.scenarios(modelSetD,col="green",textp=FALSE)
 points.scenarios(modelSetBD,col="violet",textp=FALSE)
 legend("bottomright",legend=c("Panel + formal","PSA + formal","Panel + informal","PSA + informal"),col=c("green","orange","violet","red"),bty="n",pch=19,pt.cex=1.5)
-
-## labels
-    c("1"="No screening",
-      "2"="50 only",
-      "3"="60 only",
-      "4"="70 only",
-      "5"="Opportunistic",
-      "6"="Göteborg",
-      "7"="Risk stratified",
-      "8"="Mixed screening")
 
 pdf("~/Downloads/cea-BC.pdf")
 plot.scenarios(c(modelSetC,modelSetB),xlim=c(0,3000),
@@ -547,10 +560,10 @@ dev.off()
 pdf("~/Downloads/cea-BvCD.pdf")
 plot.scenarios(c(modelSetBD,modelSetB),xlim=c(0,3000),
                type="n",textp=FALSE)
-points.scenarios(modelSetBD,col="purple",textp=FALSE)
+points.scenarios(modelSetBD,col="violet",textp=FALSE)
 points.scenarios(modelSetB,col="red",textp=FALSE)
 segments.scenarios(modelSetB, modelSetBD,textp=TRUE,pos=c(4,1,4,4,1,3,2,1))
-legend("bottomright",legend=c("Panel + informal","PSA + informal"),col=c("purple","red"),bty="n",pch=19,pt.cex=1.5)
+legend("bottomright",legend=c("Panel + informal","PSA + informal"),col=c("violet","red"),bty="n",pch=19,pt.cex=1.5)
 dev.off()
 
 pdf("~/Downloads/cea-CD.pdf")
@@ -564,9 +577,9 @@ dev.off()
 pdf("~/Downloads/cea-BDvD.pdf")
 plot.scenarios(c(modelSetD,modelSetBD),xlim=c(0,3000),textp=FALSE,type="n")
 points.scenarios(modelSetD,col="green",textp=FALSE)
-points.scenarios(modelSetBD,col="purple",textp=FALSE)
+points.scenarios(modelSetBD,col="violet",textp=FALSE)
 segments.scenarios(modelSetBD, modelSetD,textp=TRUE)
-legend("bottomright",legend=c("Panel + informal","Panel + formal"),col=c("purple","green"),bty="n",pch=19,pt.cex=1.5)
+legend("bottomright",legend=c("Panel + informal","Panel + formal"),col=c("violet","green"),bty="n",pch=19,pt.cex=1.5)
 dev.off()
 
 pdf("~/Downloads/cea-incidence.pdf")
@@ -594,6 +607,25 @@ comparison <-
     mutate(RR=rate2/rate0) %>% filter(age>=50 & age<90)
 plot(RR ~ age, data=comparison, type="l")
 
+## Treatment patterns
+treat <- with(stockholmTreatment,
+              data.frame(data.frame(year=DxY,Age=Age,G=factor(G+1,labels=c("Gleason 6","Gleason 7","Gleason 8+"))),
+                         Treatment=factor(rep(1:3,each=nrow(stockholmTreatment)),labels=c("CM","RP","RT")),
+                         Proportion=as.vector(cbind(CM,RP,RT))))
+require(ggplot2)
+pdf("~/work/treatment_patterns.pdf")
+ggplot(treat, aes(x=Age,y=Proportion,group=Treatment,fill=Treatment)) + facet_wrap(~G) + geom_area(position="fill") + xlab("Age (years)")
+dev.off()
+
+if (FALSE) {
+    plot(modelSetD[["No screening"]],type="incidence")
+    lines(modelSetD[[""]],type="incidence",col="blue")
+    lines(modelMixedScreening,type="incidence",col="red")
+    lines(modelGoteborg,type="incidence",col="green")
+    lines(modelRiskStratified,type="incidence",col="lightblue")
+    lines(model1,type="incidence",col="orange")
+    lines(modelUptake1960,type="incidence",col="pink")
+}
 
 ## List of homogeneous elements
 List <- function(...) {
@@ -649,13 +681,6 @@ List(model0,model1,model2,model50,model60,model70,
      modelRiskStratified,modelMixedScreening,modelFormalTestManagement)
 
 
-plot(model0,type="incidence")
-lines(model2,type="incidence",col="blue")
-lines(modelMixedScreening,type="incidence",col="red")
-lines(modelGoteborg,type="incidence",col="green")
-lines(modelRiskStratified,type="incidence",col="lightblue")
-lines(model1,type="incidence",col="orange")
-lines(modelUptake1960,type="incidence",col="pink")
 
 ## save(model0,model1,model1p,model2,model2p,model50,model60,model70,
 ##      modelUptake1930,modelUptake1960,modelGoteborg,
@@ -1574,38 +1599,3 @@ plotWeibull(2,10)
 muWeibull(2,3)
 sqrt(varWeibull(2,3))
 plotWeibull(2,3)
-
-
-#Use NNS and NND from subfunction in rcpp_hello_world.R
-require(microsimulation)
-n <- 1e5
-n.cores <- 3
-noScreening <- callFhcrc(n=n, screen="noScreening", mc.cores=n.cores)
-screenUptake <- callFhcrc(n=n, screen="screenUptake", mc.cores=n.cores)
-screen2p2 <- callFhcrc(n=n, screen="twoYearlyScreen50to70", mc.cores=n.cores)
-screenRisk <- callFhcrc(n=n, screen="risk_stratified", mc.cores=n.cores)
-
-#Use function from rcpp_hello_world.R
-NN.fhcrc(screen2p2, noScreening)
-NN.fhcrc(screen2p2, screenUptake)
-NN.fhcrc(screenRisk, noScreening)
-
-#Use ggplot.fhcrc from subfunction in rcpp_hello_world.R
-obj <- list(noScreening,screenUptake,screen2p2,screenRisk)
-ggplot.fhcrc(obj,"cancerdeath", list(xlim(c(40,90)),xlab("Age"),ylab("Prostate cancer mortality rate"),geom_line()))
-
-ggplot.fhcrc(obj,"cancerdeath", list(xlim(c(40,90)),ylim(c(-0.0001,0.008)),xlab("Age"),ylab("Prostate cancer mortality rate"),stat_smooth(size=1, se = F, method = "auto"), geom_line(alpha=0.3,aes(colour=pattern))))
-
-ggplot.fhcrc(obj,"incidence", list(xlim(c(40,90)),xlab("Age"),ylab("Prostate cancer incidence rate"),geom_line()))
-
-ggplot.fhcrc(screenUptake,"alldeath", list(xlim(c(40,90)),xlab("Age"),ylab("All-cause mortality rate"),geom_line()))
-
-ggplot.fhcrc(obj,"biopsies", list(xlim(c(40,90)),xlab("Age"),ylab("Biopsy rate"),geom_line()))
-
-ggplot.fhcrc(obj,"metastatic", list(xlim(c(40,90)),ylim(c(-0.0001,0.004)),xlab("Age"),ylab("Metastatic prostate cancer rate"),geom_line(),
-                                    scale_colour_discrete(name="Screening\nuptake pattern",
-                                                          breaks=c("noScreening", "screenUptake", "twoYearlyScreen50to70","risk_stratified"),
-                                                          labels=c("No screening", "Unorganised", "2 year rescreen","2+4 year rescreen"))))
-
-
-
