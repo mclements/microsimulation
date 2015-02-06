@@ -606,7 +606,7 @@ NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
                         summarise(sumEvents=sum(n))) / # divided by
                        (thisScenario$summary$prev %>%
                         filter(age==round(startAge)) %>%
-                        summarise(sumPop=sum(n))))
+                        summarise(sumPop=sum(count))))
         }
         pNND <- function(thisScenario) {
             as.numeric(thisScenario$summary$events %>%
