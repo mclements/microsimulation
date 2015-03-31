@@ -1,31 +1,19 @@
-TODO
+* TODO
+* TODO Start report (NO)
 * Profiling 
-** profile r! (AK)
-** profile valgrind! (NO) 
-
-* Start report! (NO)
-** Baseline profiling (AK)
-
++ profile R (AK)
++ profile valgrind (NO) 
++ Baseline profiling (AK)  
 * Easy solutions with omp critical
-** omp critical -> omp atomic write/update? (AK)
-** profile again
-
++ omp critical -> omp atomic write/update? (AK)
++ profile again
 * Misc tests
-** change from dynamic to static
-** if keep critical consider naming them (possible speedup) (AK)
-** what does nowait do? speedup? (NO)
- 
++ change from dynamic to static
++ if keep critical consider naming them (possible speedup) (AK)
++ what does nowait do? speedup? (NO)
 * Start testing on Povel
- 
 * Optimizing flags / compilers
-   
 * MPI? (if so on R-side, or?)
-
-
-
-
-
-
 * Instructions
 ** Build & compile
 Howto install and compile the R-package:
@@ -40,12 +28,46 @@ Howto install and compile the R-package:
 
 =shell: R CMD INSTALL path_to_microsimulation=
 
+** Project instructions from PDC
+*** For some application and HPC architecture of your choice:
++ Develop efficient program for non-trivial problem
++ Demonstrate and report how efficient it is.
++ 4.5 ECTS = 3 weeks of work incl. report writing
+*** The project is not about:
++ Substantial development of new code.
++ Scientific results obtained with code
+*** So:
++ Prioritize measurements and analysis/interpretation!
++ Demonstrate use of tools (profiling, ...) , and simple performance model.
++ NO TIME for development of new significant code.
+*** Examples:
++ Parallelize a code you know and/or work with; choose interesting part.
++ Write a simple code for key algorithm of bigger solution process
++ Write a simple code for a simple problem
+*** After the course
++ Start the work ASAP:
++ Finish the work; Get in touch with tutor
++ Submit report to tutor.
+  The report will be graded and sent back with comments; you may have to complete some parts and hand in again. We need email and paper mail address!
++ KTH students: LADOK
++ Other students: Certificate will be sent to you
+*** Now - during lab-afternoons
++ Discuss with instructors \& course participants, form groups of size G.
++ Define project and choose tutor: Michael, Jonathan, Erwin, Stefano
++ Write very short synopsis, check with supervisor
++ Submit synopsis to summer-info@pdc.kth.se before end of HPC course
+
 ** Run valgrind from R
 Howto run valgrind from shell:
 
-=R --vanilla -d "valgrind --tool=memcheck --track-origins=yes" < ~/src/ki/microsimulation/doc/RunSim.R=
+ =R --vanilla -d "valgrind --tool=memcheck --track-origins=yes" < ~/src/ki/microsimulation/doc/RunSim.R=
 
-=R --vanilla -d "valgrind --tool=memcheck --tool=callgrind" < ~/src/ki/microsimulation/doc/RunSim.R=
+ =R --vanilla -d "valgrind --tool=callgrind" < ~/src/ki/microsimulation/doc/RunSim.R=
 
-
-
+*** To explore and make callgrind readable:
++ https://github.com/jrfonseca/gprof2dot
+  + =gprof2dot -f callgrind < callgrind.out.18739 | dot -Tpng > profile.png= plot callgrind output
+  + =gprof2dot -f callgrind < callgrind.out.18503 | dot -Tpdf > profile.pdf= plot to pdf
+  + =gprof2dot -z callFhcrc -f callgrind < callgrind.out.4596 | dot -Tpdf > profile.pdf= set root function
+  + =gprof2dot -s -z callFhcrc -f callgrind < callgrind.out.9822 | dot -Tpdf > profile.pdf= skip arguments to functions
++ kCachgrind
