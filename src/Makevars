@@ -1,5 +1,5 @@
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"`
-PKG_CXXFLAGS = -std=c++11 -I. -DVERSION=\"1.7.6\" $(SHLIB_OPENMP_CXXFLAGS)
+PKG_CXXFLAGS = -std=c++0x -I. -DVERSION=\"1.7.6\" $(SHLIB_OPENMP_CXXFLAGS)
 PKG_CFLAGS = -I. $(SHLIB_OPENMP_CFLAGS)
 
 OBJECTS = microsimulation.o fhcrc-example.o RngStream.o ssim.o calibperson-r.o person-r.o simple-example.o simple-example2.o illness-death.o test.o
