@@ -64,6 +64,11 @@ Howto install and compile the R-package:
 
 =shell: R CMD INSTALL path_to_microsimulation=
 
+*** Makevars
+On Ferlin, the gcc compiler used for R is 4.6.0, which only has
+expereminetal support for C++11 standard. The flag to provide is
+-std=c++0x in lieu of -std=c++11.
+
 ** Project instructions from PDC
 *** For some application and HPC architecture of your choice:
 + Develop efficient program for non-trivial problem
