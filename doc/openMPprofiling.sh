@@ -1,4 +1,5 @@
-#!/bin/bash Rscript
+#!/bin/bash
+. ~/bin/setEnv.sh
 
 # Calls RunSim.R for 1,2,4 & 8 cores. The result is saved in a log file where "elapsed time" is the relevant measure.
 
