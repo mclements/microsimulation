@@ -3,3 +3,14 @@
 *.o
 /doc/RunSim.R~
 /doc/Rprofiling.R~
+.RData
+.Rhistory
+callgrind.out.14660
+callgrind.out.14681
+cmp.log
+doc/TODO.tex
+doc/report/introduction.log
+doc/report/report.aux
+doc/report/report.log
+doc/report/report.toc
+doc/report/images/texput.log
