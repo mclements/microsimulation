@@ -16,7 +16,7 @@
  * General Public License for more details at
  * http://www.gnu.org/copyleft/gpl.html
  *
- * @section DESCRIPTION 
+ * @section DESCRIPTION
 
  cMessage and cProcess classes, providing some compatability between
  SSIM and the OMNET++ API. This is specialised for use as an R package
@@ -43,7 +43,7 @@
 #include <string>
 
 // http://stackoverflow.com/questions/3611951/building-an-unordered-map-with-tuples-as-keys
-namespace boost { 
+namespace boost {
   namespace tuples { // fixed cf. the source URL
     namespace detail {
       template <class Tuple, size_t Index = length<Tuple>::value - 1>
@@ -83,13 +83,13 @@ namespace Rcpp {
   // vectors tuples: enumerated cases
   template <class T1, class T2>
     SEXP wrap(const std::vector<boost::tuple<T1,T2> > v);
-  
+
   template <class T1, class T2, class T3>
     SEXP wrap(const std::vector<boost::tuple<T1,T2,T3> > v);
-  
+
   template <class T1, class T2, class T3, class T4>
     SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4> > v);
-  
+
   template <class T1, class T2, class T3, class T4, class T5>
     SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5> > v);
 
@@ -98,11 +98,11 @@ namespace Rcpp {
     SEXP wrap_map(const std::map<T1,T2> v);
 
   template <class T1a, class T1b, class T2>
-    SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
+    SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v,
 		  std::string name1, std::string name2);
-  
+
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string name1, std::string name2, std::string name3);
 
   // unordered_maps defined in terms of vectors
@@ -110,13 +110,13 @@ namespace Rcpp {
     SEXP wrap_map(const boost::unordered_map<T1,T2> v);
 
   template <class T1a, class T1b, class T2>
-    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v, 
+    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v,
 		  std::string name1, std::string name2);
-  
+
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string name1, std::string name2, std::string name3);
-  
+
 } // namespace Rcpp
 
 #include <Rcpp.h>
@@ -183,23 +183,23 @@ inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessa
 
  inline bool cMessagePIdPred(const ssim::Event* e, ProcessId pid) {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
-    return (msg != 0 && pid == msg->pid); 
+    return (msg != 0 && pid == msg->pid);
   }
 
  inline bool cMessageNamePred(const ssim::Event* e, const string s, ProcessId pid) {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
     if (pid == NULL_PROCESSID)
-      return (msg != 0 && msg->name == s); 
-    else 
-      return (msg != 0 && pid == msg->pid && msg->name == s); 
+      return (msg != 0 && msg->name == s);
+    else
+      return (msg != 0 && pid == msg->pid && msg->name == s);
   }
 
  inline bool cMessageKindPred(const ssim::Event* e, const short k, ProcessId pid) {
     const cMessage * msg = dynamic_cast<const cMessage *>(e);
     if (pid == NULL_PROCESSID)
-      return (msg != 0 && msg->kind == k); 
-    else 
-      return (msg != 0 && pid == msg->pid && msg->kind == k); 
+      return (msg != 0 && msg->kind == k);
+    else
+      return (msg != 0 && pid == msg->pid && msg->kind == k);
   }
 
 /**
@@ -210,12 +210,12 @@ inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessa
  */
 class cProcess : public ssim::ProcessWithPId {
 public:
- cProcess() : previousEventTime(0.0) { } 
+ cProcess() : previousEventTime(0.0) { }
   virtual void handleMessage(const cMessage * msg) = 0;
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
     // cf. static_cast?
-    if ((msg = dynamic_cast<const cMessage *>(e)) != 0) { 
+    if ((msg = dynamic_cast<const cMessage *>(e)) != 0) {
       handleMessage(msg);
       previousEventTime = sim->clock();
     } else {
@@ -227,13 +227,13 @@ public:
     msg->timestamp = t;
     msg->sendingTime = sim->clock();
     msg->pid = pid();
-    sim->signal_event(pid(), msg, t - sim->clock());  
+    sim->signal_event(pid(), msg, t - sim->clock());
   }
   virtual void scheduleAt(Time t, string n) {
-    scheduleAt(t, new cMessage(-1,n));  
+    scheduleAt(t, new cMessage(-1,n));
   }
   virtual void scheduleAt(Time t, short k) {
-    scheduleAt(t, new cMessage(k));  
+    scheduleAt(t, new cMessage(k));
   }
 
   /**
@@ -242,14 +242,14 @@ public:
   void RemoveKind(short kind) {
     sim->remove_event(boost::bind(cMessageKindPred,_1,kind,pid()));
   }
-  
+
   /**
      @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
   */
   void RemoveName(string name) {
     sim->remove_event(boost::bind(cMessageNamePred,_1,name,pid()));
   }
-  
+
   /**
      @brief clear is a function to remove messages for the given process from the queue
   */
@@ -261,7 +261,7 @@ public:
      @brief simTime() function for OMNET++ API compatibility
   */
   Time simTime() { return sim->clock(); }
-  
+
   /**
      @brief now() function for compatibility with C++SIM
   */
@@ -308,7 +308,7 @@ private:
    Constructors provided for arrays.
  */
 class Rpexp {
-public: 
+public:
   Rpexp() {} // blank default constructor
   Rpexp(double *hin, double *tin, int nin) : n(nin) {
     int i;
@@ -352,14 +352,14 @@ public:
 };
 
 
-/** 
+/**
     @brief Random Weibull distribution for a given shape, scale and hazard ratio
 */
 double rweibullHR(double shape, double scale, double hr);
 
 
-/** 
-    @brief C++ wrapper class for the RngStream library. 
+/**
+    @brief C++ wrapper class for the RngStream library.
     set() sets the current R random number stream to this stream.
     This is compliant with being a Boost random number generator.
 */
@@ -385,24 +385,24 @@ class Rng : public RngStream {
 
 extern "C" { // functions that will be called from R
 
-  /** 
+  /**
       @brief A utility function to create the current_stream.
       Used when initialising the microsimulation package in R.
   */
   void r_create_current_stream();
-  
-  /** 
+
+  /**
       @brief A utility function to remove the current_stream.
       Used when finalising the microsimulation package in R.
   */
   void r_remove_current_stream();
 
-  /** 
+  /**
       @brief A utility function to set the user random seed for the simulation.
   */
   void r_set_user_random_seed(double * seed);
 
-  /** 
+  /**
       @brief A utility function to set the user random seed for the simulation.
   */
   void r_get_user_random_seed(double * seed);
@@ -411,21 +411,21 @@ extern "C" { // functions that will be called from R
   /*     @brief A utility function to move to the next user random stream for the simulation. */
   /* *\/ */
   /* void r_next_rng_stream(); */
-  
-  /** 
+
+  /**
       @brief A utility function to move to the next user random stream for the simulation.
   */
   void r_next_rng_substream();
-  
-  /** 
+
+  /**
       @brief Simple test of the random streams (with a stupid name)
   */
   void test_rstream2(double * x);
-  
+
 } // extern "C"
 
 
-  /** 
+  /**
       @brief Simple function to calculate the integral between the start and end times
       for (1+kappa)^(-u), where kappa is the discountRate (e.g. 0.03)
   */
@@ -434,9 +434,9 @@ inline double discountedInterval(double start, double end, double discountRate) 
   //else if (start == 0.0) return (1.0 - (1.0+discountRate)^(-end)) / log(1.0+discountRate);
   else return (pow(1.0+discountRate,-start) - pow(1.0+discountRate,-end)) / log(1.0+discountRate);
 }
- 
- 
-/** 
+
+
+/**
     @brief Function to transpose a vector of vectors.
     This assumes that all inner vectors have the same size and
     allocates space for the complete result in advance.
@@ -446,13 +446,13 @@ inline double discountedInterval(double start, double end, double discountRate) 
    std::vector<std::vector<T> > transpose(const std::vector<std::vector<T> > data) {
    std::vector<std::vector<T> > result(data[0].size(),
 				       std::vector<T>(data.size()));
-    for (typename std::vector<T>::size_type i = 0; i < data[0].size(); i++) 
+    for (typename std::vector<T>::size_type i = 0; i < data[0].size(); i++)
       for (typename std::vector<T>::size_type j = 0; j < data.size(); j++) {
 	result[i][j] = data[j][i];
         }
     return result;
  }
- 
+
  /**
    @brief EventReport class for collecting statistics on person-time, prevalence and numbers of events.
  */
@@ -471,10 +471,34 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _prev.clear();
    _partition.clear();
  }
+    void mergeWith(const EventReport& other)
+    {
+      // Ensure that the setPartition has been called, with the same
+      // parameters as other has.
+
+      // _prev
+      for (auto & prev : other._prev)
+	{
+	  this->_prev[prev.first] += prev.second;
+	}
+      // _pt
+      for (auto & pt : other._pt) // Who is this other personal trainer anyway???
+	{
+	  this->_pt[pt.first] += pt.second;
+	}
+      // _events
+      for (auto & event : other._events) // Who is this other personal trainer anyway???
+	{
+	  this->_events[event.first] += event.second;
+	}
+      
+    }
+
+
  void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
    Iterator lo, hi, it, last;
    lo = _partition.lower_bound(lhs);
-   hi = _partition.lower_bound(rhs); 
+   hi = _partition.lower_bound(rhs);
    last = _partition.begin(); // because it is ordered by greater<Time>
    ++_events[boost::make_tuple(state,event,*hi)];
    // vector<Time> this_pt = _pt[state]; if (this_pt.size() == 0) this_pt.resize(100);
@@ -492,23 +516,23 @@ inline double discountedInterval(double start, double end, double discountRate) 
       }
    }
  }
- 
+
  SEXP out() {
-   
+
    using namespace Rcpp;
-   
+
     return List::create(_("pt") = wrap_map(_pt,"age","pt"),
   			_("events") = wrap_map(_events,"event","age","number"),
   			_("prev") = wrap_map(_prev,"age","number"));
  }
- 
+
  Partition _partition;
  boost::unordered_map<pair<State,Time>, int > _prev;
  boost::unordered_map<pair<State,Time>, Time > _pt;
  boost::unordered_map<boost::tuple<State,Event,Time>, int > _events;
- 
+
  };
- 
+
 
  /**
     @brief CostReport class for collecting statistics on costs.
@@ -526,7 +550,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _partition.clear();
  }
  void add(const State state, const Time time, const Cost cost) {
-   Time time_lhs = * _partition.lower_bound(time); 
+   Time time_lhs = * _partition.lower_bound(time);
    _table[Pair(state,time_lhs)] += cost;
  }
  SEXP out() {
@@ -536,12 +560,12 @@ inline double discountedInterval(double start, double end, double discountRate) 
  Partition _partition;
    boost::unordered_map<pair<State,Time>, Cost > _table;
  };
- 
- 
+
+
 } // namespace ssim
 
 namespace Rcpp {
-  
+
   template <class T1, class T2>
     SEXP wrap(const vector<pair<T1,T2> > v) {
     vector<T1> v1;
@@ -553,7 +577,7 @@ namespace Rcpp {
     }
    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2));
   }
-  
+
   template <class T1, class T2>
     SEXP wrap(const vector<boost::tuple<T1,T2> > v) {
     int i, n=v.size();
@@ -566,7 +590,7 @@ namespace Rcpp {
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2));
   }
-  
+
   template <class T1, class T2, class T3>
     SEXP wrap(const vector<boost::tuple<T1,T2,T3> > v) {
     int i, n=v.size();
@@ -574,15 +598,15 @@ namespace Rcpp {
     vector<T2> v2(n);
     vector<T3> v3(n);
     typename vector<boost::tuple<T1,T2,T3> >::const_iterator it;
-    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) { 
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
       v1[i] = boost::get<0>(*it);
       v2[i] = boost::get<1>(*it);
       v3[i] = boost::get<2>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),_("Var3")=wrap(v3));
   }
-  
-  
+
+
   template <class T1, class T2, class T3, class T4>
     SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4> > v) {
     int i, n=v.size();
@@ -600,7 +624,7 @@ namespace Rcpp {
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4));
   }
-  
+
   template <class T1, class T2, class T3, class T4, class T5>
     SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
     int i, n=v.size();
@@ -621,7 +645,7 @@ namespace Rcpp {
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
 			_("Var5")=wrap(v5));
   }
-  
+
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v) {
     int i;
@@ -638,15 +662,15 @@ namespace Rcpp {
     return out;
     //return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
   }
-  
+
   // Special cases for wrap_map:
   //
   // map<pair<Tstate,T>, int > _prev;
   // map<pair<Tstate,T>, T > _pt;
   // map<boost::tuple<Tstate,Tevent,T>, int > _events;
-  
+
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string name1, std::string name2, std::string name3) {
     typedef boost::tuple<T1a,T1b,T1c> Tuple;
     int i;
@@ -668,10 +692,10 @@ namespace Rcpp {
     out.push_back(wrap(y),name3);
     return out;
   }
-  
-  
+
+
   template <class T1a, class T1b, class T2>
-    SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
+    SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v,
 		  std::string name1 = "age", std::string name2 = "value") {
     typedef std::pair<T1a,T1b> Pair;
     int i;
@@ -708,9 +732,9 @@ namespace Rcpp {
     return out;
     //return List::create(_("Key")=wrap(x),_("Value")=wrap(y));
   }
-  
+
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v, 
+    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string name1, std::string name2, std::string name3) {
     typedef boost::tuple<T1a,T1b,T1c> Tuple;
     int i;
@@ -732,10 +756,10 @@ namespace Rcpp {
     out.push_back(wrap(y),name3);
     return out;
   }
-  
-  
+
+
   template <class T1a, class T1b, class T2>
-    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v, 
+    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v,
 		  std::string name1 = "age", std::string name2 = "value") {
     typedef std::pair<T1a,T1b> Pair;
     int i;
@@ -755,7 +779,7 @@ namespace Rcpp {
     return out;
    }
 
-  
+
 } // Rcpp namespace
 
 

@@ -1,5 +1,5 @@
 * TODO
-* TODO Start report (NO)
+* Start report (NO)
 * Profiling 
 + profile R (AK)
 + profile valgrind (NO) 
@@ -11,6 +11,42 @@
 + change from dynamic to static
 + if keep critical consider naming them (possible speedup) (AK)
 + what does nowait do? speedup? (NO)
+* Reporting structure improvements
++ Can summary$pt and summary$prev be merged?
+  $prev and $pt are almost identical $pt allocates patient-time
+  whereas $prev allocates number of individuals, all other
+  columns are identical and their sizes seems to be very
+  similar. !suggest a single structure with one more column.
+
+
+> tmp <- callFhcrc(n=1e6) \\
+   user  system elapsed   \\
+ 40.731   0.041  10.695   \\
+> dim(tmp$summary$pt)     \\
+    122175      8         \\ 
+> dim(tmp$summary$prev)   \\   
+    116545      8         \\  
+
++ $events has one more factor, $event - the event type and does not fit
+  in that structure.
+
++ Could the dynamic mapping be changed for a static sparse
+  structure? According to the table below it would be 432000x8
+  matrix. The sparsity would result in overhead (and look bad if not
+  post-processed) with small simulations, but the static allocation
+  could save overhead for large simulations (when it is needed).
+  
+
+|-------+-------+----+-----+-------------+-----+------------------------|
+| state | grade | dx | psa | cohort      | age | number of combinations |
+|-------+-------+----+-----+-------------+-----+------------------------|
+|     3 |     3 |  3 |   2 | (1980-1900) | 100 | 432 000                |
+|-------+-------+----+-----+-------------+-----+------------------------|
+
++ A consequence of using a static structure maybe that openMP's
+  reduction() could be used. After a quick web search: it looks like it
+  does not operate directly on arrays.
+
 * Start testing on Povel
 * Optimizing flags / compilers
 * MPI? (if so on R-side, or?)
@@ -27,6 +63,11 @@ Howto install and compile the R-package:
 =R: install.packages(“Rcpp”)=
 
 =shell: R CMD INSTALL path_to_microsimulation=
+
+*** Makevars
+On Ferlin, the gcc compiler used for R is 4.6.0, which only has
+expereminetal support for C++11 standard. The flag to provide is
+-std=c++0x in lieu of -std=c++11.
 
 ** Project instructions from PDC
 *** For some application and HPC architecture of your choice:
