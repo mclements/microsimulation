@@ -1,0 +1,13 @@
+cores, Setting, time
+1, Naive openMP, 526.54 
+2, Naive openMP, 509.61 
+4, Naive openMP, 451.50 
+8, Naive openMP, 429.30 
+1, Improved openMP, 526.981
+2, Improved openMP, 273.301
+4, Improved openMP, 135.395
+8, Improved openMP, 73.373
+1, R-side parallelism, 517.96
+2, R-side parallelism, 259.78
+4, R-side parallelism, 128.72
+8, R-side parallelism, 64.936
