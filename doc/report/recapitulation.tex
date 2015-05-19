@@ -1,0 +1,23 @@
+% Rekapitulering av vad vi gjorde
+
+\section{Major changes to the code}
+
+%  2014, september
+%    trial and error, MPI, OpenMP(parallel, parallel/critical)
+%  
+%  2014-10-09
+%    omp parallel shared(…) private(…) and 
+%    omp critical for update of the shared report instance.
+%  
+%  2015-05-04 (serial centric execution model -> map-reduce paradigm)
+%    added instance variable <report> to class EventReport. Added
+%    function to merge several reports into one report ("reduction")
+%    thus could remove the earlier introduced critical sections, and
+%    only have a critical section around the report merge
+
+% R parallelisation
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "report"
+%%% End:

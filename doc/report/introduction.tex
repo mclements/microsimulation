@@ -1,11 +1,54 @@
 \section{Introduction}
 
-\subsection{Background}
+The software in question, microsimulation (ref to github), implements
+a probabilistic model, on a person to person level, of the occurence
+of prostate cancer in men from the age 35 and above. It also includes
+means of modelling different health care policies (such as screening
+of population at certain ages), the performance of the different tests
+utilised, the probability that a person A with symptoms B seeks care
+themselves, and so forth.
+
+By generating a population, and performing microsimulation (ref),
+i.e., follow each person (unit) over their life span, and then sort
+the outcome in different predefined categories, the effect of
+different policies are evaluated. This fulfills the the criteria of
+the map-reduce paradigm, where the simulation is the map step, and the
+sorting into different categories is the reduction step.
+
+The software has been developed ``organically'' over the years, the
+first version being implemented in C, then later in C++. It is called
+from R, using the Rcpp (ref) package. If we can reduce the execution
+time, and/or increase the sample size, different policies can be
+evaluated, and better accuracy obtained.
+
+We choose to first adapt the code to use OpenMP to see if any
+improvements could be achieved, and if time permitted, OpenMP and
+MPI. The first in order to decrease the execution time, and the second
+to allow for much larger sample sizes. In the end, it turned out that
+we only had time to adapt the code to OpenMP.
 
 
-\subsection{Aim}
+% % Description of the package and its architecture.
+% Purpose 
+% Package to perform so called microsimulation. Sample population is
+% generated, using a probalistic model of prostate cancer, follows
+% persons (micro unit). Implementing different so called policies
+% regarding screening, treatment, and try to evaluate their effect in
+% terms of survival rates, cost for health care and so forth.
 
 
+% % Technical
+% Invoked from R. Fulfills the map-reduce computational
+% model/paradigm. (Describe how it fulfills the map-reduce paradigm).
+% Reduce step is ensemble averages (c.f., micro vs. macro states in
+% statistical physics; Sample population generation -> apply operation
+% rules (map step), collect statistics according to the defined criteria
+% (reduce step)).
+
+% % Aim
+% Shorten execution time drastically to be able to try out a large
+% amount of different policies. Want to be able to run larger
+% models. First aim, OpenMp, second aim means MPI or equivalent, i.e..
 
 
 %%% Local Variables:
