@@ -112,3 +112,46 @@ Howto run valgrind from shell:
   + =gprof2dot -z callFhcrc -f callgrind < callgrind.out.4596 | dot -Tpdf > profile.pdf= set root function
   + =gprof2dot -s -z callFhcrc -f callgrind < callgrind.out.9822 | dot -Tpdf > profile.pdf= skip arguments to functions
 + kCachgrind
+
+
+* Meetings with Erwin 20150504
+** Status of the PDC project
++ old openMP with critical (where the reporting took ~70% of the time):
+=mySim <- callFhcrc(n 1e7, screen "noScreening")=\\
+=user  system elapsed=\\
+=410.196 0.216 113.112=
+
++ openMP private reporting and then merging reports with one thread:
+=mySim <- callFhcrc(n  1e7, screen "noScreening")=\\
+=user  system elapsed=\\
+=197.919 0.372 58.001=
+
+** Other possible improvements
++ change from static to dynamic
++ un-ordered maps to ordered
++ performance engineering (flags, compilers, chunk sizes etc)
+
+* Mailing with Rossen
+#+BEGIN_QUOTE
+Hi Rossen,
+
+Great, we have already started.
+
+We will get back to you if we find ourselves stuck.
+
+Best,
+Andreas
+
+
+*On 09/23/2014 12:43 PM, Rossen Apostolov wrote:*
+
+Hi Andreas,
+
+I will be your tutor/supervisor regarding your summer school project.
+
+Let me know if you have problems with it or would like me to have a look 
+at the results for evaluation.
+
+Cheers,
+Rossen
+#+END_QUOTE
