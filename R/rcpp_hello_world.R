@@ -462,7 +462,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
                             tables=fhcrcData,
                             includePSArecords=includePSArecords),
                         PACKAGE="microsimulation")
-                })))
+                }, mc.cores = mc.cores)))
   ## Apologies: we now need to massage the chunks from C++
   ## reader <- function(obj) {
   ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
