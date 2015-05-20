@@ -1,0 +1,12 @@
+Number of cores:1
+   user  system elapsed 
+510.947   6.940 517.964 
+Number of cores:2
+   user  system elapsed 
+252.211   3.690 259.788 
+Number of cores:4
+   user  system elapsed 
+633.358   8.848 128.729 
+Number of cores:8
+   user  system elapsed 
+567.725   7.211  64.936 

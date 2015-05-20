@@ -1,6 +1,6 @@
 require(microsimulation)
 for (i in c(1, 2, 4, 8)){
-  print(paste("Number of cores:", i))
+  cat(paste0("Number of cores:", i,"\n"))
   callFhcrc(n = 1e7, mc.cores = i)
 }
 
