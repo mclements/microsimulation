@@ -11,6 +11,7 @@ to MPI.
 %    omp parallel shared(â¦) private(â¦) and
 %    omp critical for update of the shared report instance.
 First, to the map step of the code, we added
+\lstset{language=C}
 \begin{lstlisting}
 #pragma omp parallel shared(nthreads,chunk) private(i,tid,sim,diffTime,cumTime)
 ...
@@ -23,6 +24,7 @@ result was incrementally added to the end result. In this reduction
 step several functions call was made updating the object, where the
 functions accessed it in the scope of the file and not by a passed
 reference. So in the first version, we just added
+\lstset{language=C++}
 \begin{lstlisting}
 #pragma omp critical
   {
