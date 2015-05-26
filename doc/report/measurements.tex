@@ -36,6 +36,20 @@ which is implemented in C++ and which can be run in parallel.
 Here the simulation loop is run in parallel whereas the data output
 and some post-processing is run within a omp critical statement.
 
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[height=0.85\textheight]{images/implementationProfiling.pdf}
+  \caption{implementations...}
+  \label{fig:implScaling}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[height=0.85\textheight]{images/flagsProfiling.pdf}
+  \caption{optimisation flags...}
+  \label{fig:flagScaling}
+\end{figure}
+
 \subsection{Data output in parallel}
 
 
