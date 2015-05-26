@@ -1,0 +1,16 @@
+Number of cores:1
+   user  system elapsed 
+508.747   7.045 515.870 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+Number of cores:2
+   user  system elapsed 
+499.075  23.806 262.759 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+Number of cores:4
+   user  system elapsed 
+511.428  17.164 133.813 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+Number of cores:8
+   user  system elapsed 
+540.329   6.055  71.874 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.

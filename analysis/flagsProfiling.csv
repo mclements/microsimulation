@@ -1,0 +1,13 @@
+Setting, cores, time
+O2, 1, 519.763
+O2, 2, 264.929
+O2, 4, 132.999
+O2, 8, 71.905
+O3, 1, 515.870
+O3, 2, 262.759
+O3, 4, 133.813
+O3, 8, 71.874
+Ofast funroll, 1, 501.880
+Ofast funroll, 2, 256.490
+Ofast funroll, 4, 129.021
+Ofast funroll, 8, 69.320
