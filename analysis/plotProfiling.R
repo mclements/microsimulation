@@ -16,13 +16,3 @@ ggplot(data = df, aes(x = cores, y = time, fill = Setting)) +
 ##   xlab("No. of cores") + ylab("Time [s]") + ggtitle("Microsimulation of 'no screening' with 1e7 individuals")
 
 ggsave("../doc/report/images/flagsProfiling.pdf")
-
-
-
-
-
-
-
-
-
-
