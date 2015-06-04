@@ -111,6 +111,8 @@ Howto run valgrind from shell:
   + =gprof2dot -f callgrind < callgrind.out.18503 | dot -Tpdf > profile.pdf= plot to pdf
   + =gprof2dot -z callFhcrc -f callgrind < callgrind.out.4596 | dot -Tpdf > profile.pdf= set root function
   + =gprof2dot -s -z callFhcrc -f callgrind < callgrind.out.9822 | dot -Tpdf > profile.pdf= skip arguments to functions
+  + =gprof2dot -s -n 5 -e 1 -z callFhcrc -f callgrind <
+    callgrind.out.7858 | dot -Tpdf > profile.pdf= restrict with threshold
 + kCachgrind
 
 
