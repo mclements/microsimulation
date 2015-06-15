@@ -6,9 +6,6 @@ The computation can be modelled using the MapReduce programming model. After
 analysing the code base, the conclusion was to first try to
 parallelise using openmp, then extend to MPI.
 
-%  2014-10-09
-%    omp parallel shared(â¦) private(â¦) and
-%    omp critical for update of the shared report instance.
 First, to the map step of the code, we added
 %\lstset{language=C}
 \begin{lstlisting}
@@ -17,13 +14,14 @@ First, to the map step of the code, we added
 #pragma omp for schedule(static,1).
 \end{lstlisting}
 However, the reduce step was not straight forward to parallelise. In
-the serial version of the code, the result was accumulated in an associative array (\texttt{map} in
-C++ terminology ) with scope throughout the whole module file (\emph{source
-  file}) , and every simulation result was incrementally added to the end
-result associative array. In this reduction step several function calls was made
-updating the result object, where the functions accessed it in the scope of
-the file and not by a passed reference. So in the first naive version, we
-just added \lstset{language=C++}
+the serial version of the code, the result was accumulated in an
+associative array (\texttt{map} in C++ terminology ) with scope
+throughout the whole module file (\emph{source file}) , and every
+simulation result was incrementally added to the end result
+associative array. In this reduction step several function calls was
+made updating the result object, where the functions accessed it in
+the scope of the file and not by a passed reference. So in the first
+naive version, we just added \lstset{language=C++}
 \begin{lstlisting}
 #pragma omp critical
   {
