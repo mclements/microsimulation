@@ -1,62 +1,48 @@
-\section{Results}
+% From assignment:
+% Prioritize measurements and analysis/interpretation!
 
-\subsubsection{Motivational R-side measurements}
+% Demonstrate use of tools (profiling, ...) , and simple performance
+% model.
 
-\begin{figure}[!htbp]
-  \centering
+\section{Measurements}
+
+\subsection{Motivational R-side measurement}
+
+\begin{figure}[!htbp] \centering
   \includegraphics[width=0.7\textwidth]{images/parentColByPortion.pdf}
-  \caption{Performance testing on the R side, where the ".Call" is
-    the C++-code which can be run in parallel.}
-  \label{fig:Rself}
+  \caption{Performance testing on the R side, where the ".Call" is the
+C++-code which can be run in parallel.}
+  \label{fig:rMot}
 \end{figure}
 
-To motivate the need and choice to go parallel Figure \ref{fig:Rself})
-shows the processes from the R-side where ".Call" is the part
-which is implemented in C++ and which can be run in parallel.
+To motivate the need and choice to go parallel Figure \ref{fig:rMot}
+shows the processes from the R-side where ``.Call'' is the part which
+is implemented in C++ and which can be run in parallel. The height of
+the bars indicates the time that function takes and the colour
+indicates the portion of time spent in the function itself. From
+Figure \ref{fig:rMot} we can conclude that ``.Call'' itself
+constitutes over 95\% of the time spent.
 
-\subsection{Baseline measurements C++}
-
-\begin{figure}[!htbp]
-  \centering
-  \includegraphics[height=0.50\textheight, angle=90]{images/profBaseLine.pdf}
-  \caption{Valgrind measurements at baseline}
-  \label{fig:simpleOpenMP}
+\subsection{Motivational C++-side measurement}
+\begin{figure}[!htbp] \centering
+  \includegraphics[height=0.70\textheight]{images/simpleMotivatingValgrind.pdf}
+  \caption{Using Valgrind to profile the main C++ function. This
+    function is possible to run in parallel.}
+  \label{fig:cppMot}
 \end{figure}
 
-
-\subsection{Simple approach with OpenMP}
-
-\begin{figure}[!htbp]
-  \centering
-  \includegraphics[height=0.85\textheight, angle=90]{images/profOpenMPSimple.pdf}
-  \caption{Valgrind results of the simple openMP implementation}
-  \label{fig:simpleOpenMP}
-\end{figure}
-
-Here the simulation loop is run in parallel whereas the data output
-and some post-processing is run within a omp critical statement.
-
-\begin{figure}[!htbp]
-  \centering
-  \includegraphics[height=0.5\textheight]{images/implementationProfiling.pdf}
-  \caption{implementations...}
-  \label{fig:implScaling}
-\end{figure}
-
-\begin{figure}[!htbp]
-  \centering
-  \includegraphics[height=0.5\textheight]{images/flagsProfiling.pdf}
-  \caption{optimisation flags...}
-  \label{fig:flagScaling}
-\end{figure}
-
-\subsection{Data output in parallel}
+We used Valgrind to profile the main C++ function that was called with
+``.Call'' from the R-side. Figure \ref{fig:cppMot} is showing the most
+important parts of the Valgrind profiling. This function is called
+once for each simulated individual and is possible to run in
+parallel. Noteworthy is that about half of the time is spent in the
+\emph{EventReport} subfunction. This subfunction is reducing the
+information from the individuals in the simulation to categories and
+stores that in a dynamically allocated associative array.
 
 
-\subsection{Hybrid openMP and MPI}
 
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: "report"
+%%% Local Variables: 
+%%% mode: latex 
+%%% TeX-master: "report" 
 %%% End:

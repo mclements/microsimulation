@@ -1,30 +1,27 @@
 % Rekapitulering av vad vi gjorde
 
-\section{Overview of the changes to the code}
+\section{Changes to the original code}
+%% "Refactoring of the code" might be a better title?
+The computation can be modelled using the MapReduce programming model. After
+analysing the code base, the conclusion was to first try to
+parallelise using openmp, then extend to MPI.
 
-The computation can be modelled using the map-reduce paradigm. First,
-we analysed the code, took out some parts and made some tests. The
-conclusion was to first try to parallelise using openmp, then expand
-to MPI.
-
-%  2014-10-09
-%    omp parallel shared(â¦) private(â¦) and
-%    omp critical for update of the shared report instance.
 First, to the map step of the code, we added
-\lstset{language=C}
+%\lstset{language=C}
 \begin{lstlisting}
 #pragma omp parallel shared(nthreads,chunk) private(i,tid,sim,diffTime,cumTime)
 ...
 #pragma omp for schedule(static,1).
 \end{lstlisting}
-However, the reduce step was not straight forward to parallelise. In
-the serial version of the code, an associative array with scope
-throughout the whole module (\emph{source file}) was used, and every
-result was incrementally added to the end result. In this reduction
-step several functions call was made updating the object, where the
-functions accessed it in the scope of the file and not by a passed
-reference. So in the first version, we just added
-\lstset{language=C++}
+However, the reduce step was not straightforward to parallelise. In
+the serial version of the code, the result was accumulated in an
+associative array (\texttt{map<,>} in C++ terminology ) with scope
+throughout the whole module file (\emph{source file}). After each map
+step, the result associative array (from now on denoted \emph{report})
+was incrementally updated. In this reduction step several function
+calls were made updating the report, where the functions
+accessed it in the scope of the file and not by a passed reference. So
+in the first naive version, we just added \lstset{language=C++}
 \begin{lstlisting}
 #pragma omp critical
   {
@@ -33,24 +30,24 @@ reference. So in the first version, we just added
                dx, psa>=3.0, cohort), msg->kind,
                previousEventTime, now());
   }
-\end{lstlisting}
-around the section accessing the resource.
+\end{lstlisting}.
 
-After some performance analysis, we realised that the reduction step
-as implemented became the bottle-neck of the whole software. We then
-realised that it was possible to let each thread/process build up its
-contribution to the resulting associative array in a private variable,
-and then merge these partial results into the shared result instance.
+After a performance analysis, we realised that the reduction step as
+implemented became the bottle-neck of the whole program. Instead, we
+let each thread/process build up its contribution to the end report in
+a thread private variable, and then merge these partial results into the
+shared report object.
 
 The R software also have a feature of using multi-cores, and we used
-that one as a benchmark what we should at least obtain
+that one as a benchmark to the minimum performance we should obtain.
 
-Summarising the steps, we call them
+Summarising the steps, we label them
 \begin{enumerate}
-\item naive OpenMP (paralleising the map step)
-\item improved OpenMP (first a thread-wise partial reduction, then
-  reducing these partial results)
 \item R automatic multi-threading.
+\item naive OpenMP (parallelising the map step)
+\item improved OpenMP (first a thread-wise reduction of the output
+  from the map step, then
+  reducing these partial results into the final result)
 \end{enumerate}
 
 % R parallelisation
