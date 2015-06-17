@@ -47,8 +47,8 @@
   %morekeywords={*,...}               % if you want to add more keywords to the set
 }
 
+\renewcommand{\theenumi}{\roman{enumi}.}
 \renewcommand{\labelenumi}{\theenumi}
-\renewcommand{\theenumi}{\roman{enumi}}
 
 % Which style to cite references
 \def\bibname{References}
@@ -86,7 +86,8 @@
 \input{parallel-measurements}
 \input{flags-measurements}
 
-
+\clearpage 
+%% Niten: fixar så att appendix blir ett appendix
 \input{appendix}
 
 

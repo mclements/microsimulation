@@ -14,7 +14,7 @@
 C++-code which can be run in parallel.}
   \label{fig:rMot}
 \end{figure}
-
+ 
 To motivate the need and choice to go parallel Figure \ref{fig:rMot}
 shows the processes from the R-side where ``.Call'' is the part which
 is implemented in C++ and which can be run in parallel. The height of
@@ -31,7 +31,10 @@ constitutes over 95\% of the time spent.
   \label{fig:cppMot}
 \end{figure}
 
-We used Valgrind to profile the main C++ function that was called with
+%% Poängtera att mätningen är före optimering/refaktorisering
+%% EventReport, som skrivet, tar huvuddelen av tiden
+
+We used Valgrind to profile the C++ function, ``callFhcrc'', that is called from
 ``.Call'' from the R-side. Figure \ref{fig:cppMot} is showing the most
 important parts of the Valgrind profiling. This function is called
 once for each simulated individual and is possible to run in
