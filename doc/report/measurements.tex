@@ -6,6 +6,9 @@
 
 \section{Measurements}
 
+Before proceeding, we used the Valgrind performance tools to determine
+where the program spends it execution time.
+
 \subsection{Motivational R-side measurement}
 
 \begin{figure}[!htbp] \centering
@@ -14,36 +17,34 @@
 C++-code which can be run in parallel.}
   \label{fig:rMot}
 \end{figure}
- 
-To motivate the need and choice to go parallel Figure \ref{fig:rMot}
-shows the processes from the R-side where ``.Call'' is the part which
-is implemented in C++ and which can be run in parallel. The height of
-the bars indicates the time that function takes and the colour
-indicates the portion of time spent in the function itself. From
-Figure \ref{fig:rMot} we can conclude that ``.Call'' itself
-constitutes over 95\% of the time spent.
+
+To motivate the need, and what part to parallelise, we made an inital
+performance measurement form the R-side perspective of the
+program. Figure \ref{fig:rMot} shows the processes from the R-side
+where ``.Call'' is the part which is implemented in C++ and which can
+be rewritten as a parallel program given the techniques presented in
+the course. The height of the bars indicates the time spent in the
+call to the function ``.Call'', and the brighter the colour the more
+time is spent in the actual function. From Figure \ref{fig:rMot} we
+can conclude that ``.Call'' itself constitutes over 95\% of the
+program execution time.
 
 \subsection{Motivational C++-side measurement}
 \begin{figure}[!htbp] \centering
   \includegraphics[height=0.70\textheight]{images/simpleMotivatingValgrind.pdf}
   \caption{Using Valgrind to profile the main C++ function. This
-    function is possible to run in parallel.}
+    function is possible to parallelise.}
   \label{fig:cppMot}
 \end{figure}
-
-%% Poängtera att mätningen är före optimering/refaktorisering
-%% EventReport, som skrivet, tar huvuddelen av tiden
-
-We used Valgrind to profile the C++ function, ``callFhcrc'', that is called from
-``.Call'' from the R-side. Figure \ref{fig:cppMot} is showing the most
-important parts of the Valgrind profiling. This function is called
-once for each simulated individual and is possible to run in
-parallel. Noteworthy is that about half of the time is spent in the
-\emph{EventReport} subfunction. This subfunction is reducing the
-information from the individuals in the simulation to categories and
-stores that in a dynamically allocated associative array.
-
-
+We used Valgrind to profile the C++ function, ``callFhcrc'', that is
+called in ``.Call'' from the R-side. Figure \ref{fig:cppMot} shows the
+most significant parts of the output from this profiling. This
+function is called once for each simulated individual and is possible
+to run in parallel. Noteworthy is that almost half of the execution
+time is spent in the \emph{EventReport::add} method function. This
+function is collecting, i.e., reducing, the results from the
+individuals in the simulation to categories and stores them in a
+dynamically allocated associative array.
 
 %%% Local Variables: 
 %%% mode: latex 
