@@ -1,6 +1,6 @@
 \section{Introduction}
 
-The software in question, microsimulation (ref to github), implements
+The software in question, microsimulation \cite{microsimulation}, implements
 a probabilistic model, on a person to person level, of the occurence
 of prostate cancer in men from the age 35 and above. It also includes
 means of modelling different health care policies (such as screening
@@ -8,7 +8,7 @@ of population at certain ages), the performance of the different tests
 utilised, the probability that a person A with symptoms B seeks care
 themselves, and so forth.
 
-By generating a population, and performing microsimulation (ref),
+By generating a population, and performing microsimulation \citep{gulati_calibrating_2010},
 i.e., follow each person (unit) over their life span, and then sort
 the outcome in different predefined categories, the effect of
 different policies are evaluated. This fulfills the criteria of the
@@ -18,7 +18,7 @@ is the reduction step.
 
 The software has been developed ``organically'' over the years, the
 first version being implemented in C, then later in C++. It is invoked
-from R, using the Rcpp (ref) package. If we can reduce the execution
+from R, using the Rcpp \citep{rcpp} package. If we can reduce the execution
 time, and/or increase the sample size, different policies can be
 evaluated, and better accuracy obtained.
 
