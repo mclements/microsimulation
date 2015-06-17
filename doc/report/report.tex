@@ -4,6 +4,7 @@
 \usepackage{graphicx}
 \usepackage[latin1]{inputenc}
 
+\usepackage[titletoc]{appendix}
 \usepackage{makeidx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -87,13 +88,17 @@
 \input{parallel-measurements}
 \input{flags-measurements}
 
-\clearpage 
-%% Niten: fixar så att appendix blir ett appendix
-\input{appendix}
-
-
 {\markboth{References}{References}
    \bibliography{references}
    }
+
+\clearpage 
+\begin{appendices}
+%% Niten: fixar så att appendix blir ett appendix
+\input{appendix}
+
+\end{appendices}
+
+
 
 \end{document}
