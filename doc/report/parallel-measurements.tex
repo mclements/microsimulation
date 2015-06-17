@@ -2,8 +2,8 @@
 
 We have compared three different parallelisation implementation: 
 \begin{enumerate}
-\item R automatic multi-threading, an R-side parallelism which uses a \texttt{mclapply} call from the R
-  \texttt{parallel} package.
+\item R automatic multi-threading, an R-side parallelism which uses a
+  \texttt{mclapply} call from the R \texttt{parallel} package.
 \item naive OpenMP which encloses the map step with \texttt{\#pragma
     omp parallel} and \texttt{\#pragma omp for}, and protects the
   global report object (reduction step) with \texttt{\#pragma omp
@@ -27,13 +27,9 @@ well with comparable results. The \emph{Naive openMP} implementation
 with the \emph{EventReport} mentioned in \ref{fig:cppMot} within
 \emph{\#pragma omp critical} statements. 
 
-%% Can one model how the software scales with number of core?
-
-%% Speedup should be plotted or tabularised
-
 Given the data, the automatic R-side parallelism should be
 used. However, it does not work with MPI, so if one wants to run a
-significant larger population, then a combined openMPp/MPI should be
+significant larger population, then a combined openMP/MPI should be
 used. 
 
 %%% Local Variables: 
