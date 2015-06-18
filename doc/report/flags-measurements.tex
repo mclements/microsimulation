@@ -6,13 +6,13 @@
 
 \subsection{Compilation flags}
 
-For the improved OpenMP, we continued with investigating the
+For the ``improved OpenMP'', we continued with investigating the
 performance effect of compilation flags. For an R package the
 \texttt{CXX} flags can be set in multiple ways, and this took
-considerable time to solve. We first tried to change the R package
+some effort to solve. We first tried to change the R package
 specific setting, in \texttt{/src/Makevars}, but for our settings to
 take precedence over the Ferlin system settings we had to set the
-flags in \texttt{.R/Makevars}. In Figure \ref{fig:flagScaling} we
+flags in \texttt{$\sim$/.R/Makevars}. In Figure \ref{fig:flagScaling} we
 compare the performance effect of using the compilation flags
 \texttt{-O2}, \texttt{-O3} and \texttt{-Ofast -funroll-all-loops} for
 a number of cores. The effect of setting compilation flags is small in

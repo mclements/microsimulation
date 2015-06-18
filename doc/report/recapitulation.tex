@@ -4,10 +4,9 @@
 %% "Refactoring of the code" might be a better title?
 The computation can be modelled using the MapReduce programming model. After
 analysing the code base, the conclusion was to first try to
-parallelise using openmp, then extend to MPI.
+parallelise using openMP, then extend to MPI.
 
 First, to the map step of the code, we added
-%\lstset{language=C}
 \begin{lstlisting}
 #pragma omp parallel shared(nthreads,chunk) private(i,tid,sim,diffTime,cumTime)
 ...
@@ -43,7 +42,7 @@ that one as a benchmark to the minimum performance we should obtain.
 
 Summarising the steps, we label them
 \begin{enumerate}
-\item R automatic multi-threading.
+\item R-side multi-threading.
 \item naive OpenMP (parallelising the map step)
 \item improved OpenMP (first a thread-wise reduction of the output
   from the map step, then

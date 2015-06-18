@@ -22,13 +22,13 @@ We have compared three different parallelisation implementation:
 \end{figure} 
 Figure \ref{fig:implScaling} shows how the three
 different implementations of parallelisation scales with additional
-cores. The \emph{R-side parallelism} and \emph{Improved openMP} scales
-well with comparable results. The \emph{Naive openMP} implementation
-with the \emph{EventReport} mentioned in \ref{fig:cppMot} within
-\emph{\#pragma omp critical} statements. 
+cores. The ``R-side parallelism'' and ``Improved openMP'' scales
+well with comparable results. The ``Naive openMP'' implementation
+with the ``EventReport'' mentioned in \ref{fig:cppMot} within
+\texttt{\#pragma omp critical} statements. 
 
 Given the data, the automatic R-side parallelism should be
-used. However, it does not work with MPI, so if one wants to run a
+used. However, it does not scale well with MPI, so if one wants to run a
 significant larger population, then a combined openMP/MPI should be
 used. 
 

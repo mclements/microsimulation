@@ -128,6 +128,18 @@ Howto run valgrind from shell:
 =user  system elapsed=\\
 =197.919 0.372 58.001=
 
+** MPI
+install.packages("/home/myusername/Rpackages/Rmpi_0.6-5.tar.gz", repos
+= NULL, type = "source", lib = "/home/myusername/Rpackages/",
+configure.args=c("--with-Rmpi-libpath=/usr/mpi/gcc/openmpi-1.6.3/lib64/","--with‌​-Rmpi-type=OPENMPI",
+"--with-Rmpi-include=/usr/mpi/gcc/openmpi-1.6.3/include/") )
+
+install.packages("Rmpi",
+configure.args=c("--with-Rmpi-include=/afs/pdc.kth.se/pdc/vol/openmpi/1.5.4/gcc/4.6/include","--with-Rmpi-libpath=/afs/pdc.kth.se/pdc/vol/openmpi/1.5.4/gcc/4.6/lib","--with-Rmpi-type=OPENMPI")
+)
+
+R > Sys.getenv("MPI_HOME")
+
 ** Other possible improvements
 + change from static to dynamic
 + un-ordered maps to ordered

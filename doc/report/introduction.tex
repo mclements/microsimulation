@@ -1,26 +1,27 @@
 \section{Introduction}
 
-The software in question, microsimulation \cite{microsimulation}, implements
-a probabilistic model, on a person to person level, of the occurence
-of prostate cancer in men from the age 35 and above. It also includes
-means of modelling different health care policies (such as screening
-of population at certain ages), the performance of the different tests
-utilised, the probability that a person A with symptoms B seeks care
-themselves, and so forth.
+The software in question, microsimulation \cite{microsimulation},
+implements a probabilistic discrete event simulation (DES), on a
+person level (microsimulation). It simulates the incidence and development of prostate cancer
+in men from the age 35 and above. This is called a natural history
+model and can then be used to investigate effects of different health
+care policies (such as screening of the population) or the effect of
+better diagnostic markers.
 
-By generating a population, and performing microsimulation \citep{gulati_calibrating_2010},
-i.e., follow each person (unit) over their life span, and then sort
-the outcome in different predefined categories, the effect of
+By generating a population, and performing the microsimulation \citep{gulati_calibrating_2010},
+i.e., follow each person (unit) over their life span, and then
+aggregating the outcome in different predefined categories, the effect of
 different policies are evaluated. This fulfills the criteria of the
 MapReduce programming model \cite{MapReduce:2004}, where the
 simulation is the map step, and the sorting into different categories
 is the reduction step.
 
-The software has been developed ``organically'' over the years, the
-first version being implemented in C, then later in C++. It is invoked
-from R, using the Rcpp \citep{rcpp} package. If we can reduce the execution
-time, and/or increase the sample size, different policies can be
-evaluated, and better accuracy obtained.
+The software has developed over the years, the first version being
+implemented in C, then later in C++. It does pre- and post-processing
+in R, and uses the Rcpp \citep{rcpp} package interact with the C++
+simulation engine. If we can reduce the execution time, and/or
+increase the sample size, different policies can be evaluated, and
+better accuracy obtained.
 
 We choose to first adapt the code to use OpenMP to see if any
 improvements could be achieved, and if time permitted, OpenMP and
