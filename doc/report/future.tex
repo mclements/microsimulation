@@ -1,0 +1,27 @@
+\section{Future work}
+Besides combining the openMP solution with MPI, which we have already
+mentioned. 
+
+We belive that the dynamically allocated associative array
+(\texttt{map<,>} caould be changed to a static vector. According to the
+Table \ref{tab:comb} below the matrix currently has 432000 cells
+($\sim$3MB). The sparsity would result in overhead for small
+simulations, but the static allocation could save overhead for large simulations.
+  
+\begin{table}
+  \begin{center}
+    \begin{tabular}{ | l | l | l | l | l | l | r | }
+      \hline
+      state & grade & dx & psa & cohort      & age & number of combinations \\
+      \hline
+      3     & 3     & 3  & 2   & (1980-1900) & 100 & 432 000                \\
+      \hline
+    \end{tabular}
+\end{center}
+\caption{Size of after the data has been reduced}
+\label{tab:comb}
+\end{table}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "report"
+%%% End:
