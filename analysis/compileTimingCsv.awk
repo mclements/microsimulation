@@ -8,5 +8,5 @@ BEGIN{printf("Setting, cores, time\n")}
 {fname = FILENAME}
 {sub(/.log/, "", fname)}
 {sub(/_/, " ", fname)}
-/cores/{printf "%s, %s, ", fname, substr($0,length($0),1)}
+match($0,":"){printf "%s, %s, ", fname, substr($0,RSTART+1)}
 /elapsed/{getline; print $(NF)}

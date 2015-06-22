@@ -95,6 +95,7 @@ Number of cores:71
 FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
 79 slaves are spawned successfully. 0 failed.
 Running with 79 workers
+Number of cores:79
    user  system elapsed 
  44.862   3.188  48.415 
 FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
