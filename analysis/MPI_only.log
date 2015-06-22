@@ -1,0 +1,100 @@
+1 slaves are spawned successfully. 0 failed.
+Running with 1 workers
+Number of cores:1
+user  system elapsed 
+521.635   0.235 521.964 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+2 slaves are spawned successfully. 0 failed.
+Running with 2 workers
+Number of cores:2
+user  system elapsed 
+256.006   0.221 256.283 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+4 slaves are spawned successfully. 0 failed.
+Running with 4 workers
+Number of cores:4
+user  system elapsed 
+126.715   0.408 127.163 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+6 slaves are spawned successfully. 0 failed.
+Running with 6 workers
+Number of cores:6
+user  system elapsed 
+87.775   0.532  88.370 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+8 slaves are spawned successfully. 0 failed.
+Running with 8 workers
+Number of cores:8
+user  system elapsed 
+67.232   0.889  68.178 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+9 slaves are spawned successfully. 0 failed.
+Running with 9 workers
+Number of cores:9
+user  system elapsed 
+60.293   1.027  61.381 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+10 slaves are spawned successfully. 0 failed.
+Running with 10 workers
+Number of cores:10
+user  system elapsed 
+55.526   0.502  56.090 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+12 slaves are spawned successfully. 0 failed.
+Running with 12 workers
+Number of cores:12
+user  system elapsed 
+48.993   1.012  50.075 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+14 slaves are spawned successfully. 0 failed.
+Running with 14 workers
+Number of cores:14
+user  system elapsed 
+43.716   1.182  44.981 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+23 slaves are spawned successfully. 0 failed.
+Running with 23 workers
+Number of cores:23
+   user  system elapsed 
+ 34.246   2.637  37.013 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+31 slaves are spawned successfully. 0 failed.
+Running with 31 workers
+Number of cores:31
+   user  system elapsed 
+ 32.202   2.617  34.978 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+39 slaves are spawned successfully. 0 failed.
+Running with 39 workers
+Number of cores:39
+   user  system elapsed 
+ 31.754   1.734  33.674 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+47 slaves are spawned successfully. 0 failed.
+Running with 47 workers
+Number of cores:47
+   user  system elapsed 
+ 33.123   2.232  35.605 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+55 slaves are spawned successfully. 0 failed.
+Running with 55 workers
+Number of cores:55
+   user  system elapsed 
+ 35.237   2.432  37.939 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+63 slaves are spawned successfully. 0 failed.
+Number of cores:63
+   user  system elapsed 
+ 38.722   2.657  41.674 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+71 slaves are spawned successfully. 0 failed.
+Running with 71 workers
+Number of cores:71
+   user  system elapsed 
+ 40.559   3.251  44.176 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.
+79 slaves are spawned successfully. 0 failed.
+Running with 79 workers
+   user  system elapsed 
+ 44.862   3.188  48.415 
+FHCRC prostate cancer model with 10000000 individual(s) under scenario 'noScreening'.

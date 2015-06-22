@@ -145,7 +145,7 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
 }
 
 callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, mc.cores=1) {
+                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, mc.cores=1, cl=NULL) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -216,8 +216,7 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                       Survival=Survival))
   cost_parameters = c(DeathCost=10000)
   ## now run the chunks separately
-  print(system.time(out <- parallel::mclapply(1:mc.cores,
-                function(i) {
+  stepFun <- function(i) {
                   chunk <- chunks[[i]]
                   ## set.user.Random.seed(initialSeeds[[i]])
                   .Call("callFhcrc",
@@ -233,7 +232,9 @@ callFhcrc <- function(n=10,screen="noScreening",nLifeHistories=10,screeningCompl
                           tables=fhcrcData,
                           cost_parameters=cost_parameters),
                         PACKAGE="microsimulation")
-                }, mc.cores = mc.cores)))
+                 }
+   print(system.time(out <- if (is.null(cl)) parallel::mclapply(1:mc.cores,stepFun) else parallel::parLapply(cl, 1:mc.cores, stepFun)))
+
   ## Apologies: we now need to massage the chunks from C++
   ## reader <- function(obj) {
   ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
