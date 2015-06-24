@@ -6,8 +6,9 @@
 
 \section{Measurements}
 
-Before proceeding, we used the Valgrind performance tools to determine
-where the program spends it execution time.
+We used Valgrind performance tools to determine where the C++ code
+spends execution time, \texttt{Rprof} to analyse the R code and simple
+printed timings to analyse the performance of the whole simulation. 
 
 \subsection{Motivational R-side measurement}
 
@@ -24,11 +25,12 @@ program. Figure \ref{fig:rMot} shows the processes from the R-side
 where ``\texttt{.Call}'' is the part which is implemented in C++ and which can
 be rewritten as a parallel program given the techniques presented in
 the course. The height of the bars indicates the time spent in the
-call to the function ``\texttt{.Call}'', and the brighter the colour the more
+call to the function, and the brighter the colour the more
 time is spent in the actual function. From Figure \ref{fig:rMot} we
 can conclude that ``\texttt{.Call}'' itself constitutes over 95\% of the
 program execution time.
 
+\clearpage{}
 \subsection{Motivational C++-side measurement}
 \begin{figure}[!htbp] \centering
   \includegraphics[height=0.70\textheight]{images/simpleMotivatingValgrind.pdf}
@@ -47,6 +49,7 @@ individuals in the simulation to categories and stores them in a
 dynamically allocated associative array. For a more detailed version
 see Figure \ref{fig:mediumValgrind} in Appendix \ref{sec:valgrind} and
 for the full profiling see \url{https://github.com/mclements/microsimulation/blob/sim_instances/analysis/fullProfilingNotForPaper.pdf}.
+
 
 %%% Local Variables: 
 %%% mode: latex 

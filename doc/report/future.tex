@@ -1,14 +1,15 @@
 \section{Future work}
-Besides combining the openMP solution with MPI, which we have already
-mentioned. 
+\begin{itemize}
+\item The \texttt{MPI} implementation is very simple and there might be
+performance gains in a more refined solution.
+\item We belive that the dynamically allocated associative array for
+  the reporting could be changed to a pre-allocated static vector. According to the
+  Table \ref{tab:comb} below the 6 dimensional matrix has 432000 cells
+  with $\sim$3MB data, that could be projected to a sparse
+  vector. The sparsity would result in overhead for small simulations,
+  but the static allocation could save overhead for large simulations.
 
-We belive that the dynamically allocated associative array
-(\texttt{map<,>} caould be changed to a static vector. According to the
-Table \ref{tab:comb} below the matrix currently has 432000 cells
-($\sim$3MB). The sparsity would result in overhead for small
-simulations, but the static allocation could save overhead for large simulations.
-  
-\begin{table}
+\begin{table}[!htbp]
   \begin{center}
     \begin{tabular}{ | l | l | l | l | l | l | r | }
       \hline
@@ -18,9 +19,13 @@ simulations, but the static allocation could save overhead for large simulations
       \hline
     \end{tabular}
 \end{center}
-\caption{Size of after the data has been reduced}
+\caption{The size of the allocated data after the reduction.}
 \label{tab:comb}
 \end{table}
+
+\item We could use averages of the timings instead of single measurements to better
+  evalute the performance of \texttt{MPI + openMP}.
+\end{itemize}
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "report"

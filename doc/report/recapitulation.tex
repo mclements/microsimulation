@@ -6,7 +6,7 @@ The computation can be modelled using the MapReduce programming model. After
 analysing the code base, the conclusion was to first try to
 parallelise using openMP, then extend to MPI.
 
-First, to the map step of the code, we added
+First, to the map step of the code, we added:
 \begin{lstlisting}
 #pragma omp parallel shared(nthreads,chunk) private(i,tid,sim,diffTime,cumTime)
 ...
@@ -20,7 +20,8 @@ step, the result associative array (from now on denoted \emph{report})
 was incrementally updated. In this reduction step several function
 calls were made updating the report, where the functions
 accessed it in the scope of the file and not by a passed reference. So
-in the first naive version, we just added \lstset{language=C++}
+in the first naive version, we just added:
+\lstset{language=C++}
 \begin{lstlisting}
 #pragma omp critical
   {
@@ -29,7 +30,7 @@ in the first naive version, we just added \lstset{language=C++}
                dx, psa>=3.0, cohort), msg->kind,
                previousEventTime, now());
   }
-\end{lstlisting}.
+\end{lstlisting}
 
 After a performance analysis, we realised that the reduction step as
 implemented became the bottle-neck of the whole program. Instead, we

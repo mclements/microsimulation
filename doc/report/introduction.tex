@@ -24,10 +24,13 @@ increase the sample size, different policies can be evaluated, and
 better accuracy obtained.
 
 We choose to first adapt the code to use OpenMP to see if any
-improvements could be achieved, and if time permitted, OpenMP and
-MPI. The first in order to decrease the execution time, and the second
-to allow for much larger sample sizes. In the end, it turned out that
-we only had time to adapt the code to OpenMP.
+improvements could be achieved, and if time permitted, \texttt{OpenMP}
+and \texttt{MPI} as a hybrid solution. The first in order to decrease
+the execution time, and the second to allow for much larger sample
+sizes. We spent most of our efforts adapting the code to
+\texttt{OpenMP} and then made a simple \texttt{MPI} implementation for
+the hybrid solution. Due to allocation and software requirements we
+did the development and profiling on Ferlin.
 
 
 % % Description of the package and its architecture.
