@@ -38,14 +38,14 @@ let each thread/process build up its contribution to the end report in
 a thread private variable, and then merge these partial results into the
 shared report object.
 
-The R software also have a feature of using multi-cores, and we used
-that one as a benchmark to the minimum performance we should obtain.
+The R software also have a feature of using multiple threads, and we used
+that as a benchmark for our implementations.
 
 Summarising the steps, we label them
 \begin{enumerate}
-\item R-side multi-threading.
-\item naive OpenMP (parallelising the map step)
-\item improved OpenMP (first a thread-wise reduction of the output
+\item ``R-side parallelism'' (high level R multithreading)
+\item ``naive OpenMP'' (parallelising the map step)
+\item ``improved OpenMP'' (first a thread-wise reduction of the output
   from the map step, then
   reducing these partial results into the final result)
 \end{enumerate}

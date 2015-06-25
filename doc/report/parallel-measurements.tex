@@ -2,7 +2,7 @@
 
 We have compared three different implementation for shared memory parallelisation: 
 \begin{enumerate}
-\item ``R-side parallelism'', a high level R multi-threading which uses
+\item ``R-side parallelism'', a high level R multithreading which uses
   \texttt{mclapply} from the R \texttt{parallel} package.
 \item ``naive openMP'' which encloses the map step with \texttt{\#pragma
     omp parallel} and \texttt{\#pragma omp for}, and protects the
