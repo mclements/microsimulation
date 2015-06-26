@@ -29,8 +29,35 @@ and \texttt{MPI} as a hybrid solution. The first in order to decrease
 the execution time, and the second to allow for much larger sample
 sizes. We spent most of our efforts adapting the code to
 \texttt{openMP} and then made a simple \texttt{MPI} implementation for
-the hybrid solution. Due to allocation and software requirements we
-did the development and profiling on Ferlin.
+the hybrid solution. 
+
+\section{Environment}
+\subsection{Hardware}
+Due to allocation and software requirements we did the development and
+profiling on Ferlin. Ferlin has two quad-core 2.2GHz processors per
+node and a maximum of 16 nodes per job.
+
+\subsection{Software}
+For the \texttt{openMP} implementation we loaded
+\texttt{gcc/4.8.1} and \texttt{R/3.0.2}. We wanted a recent
+\texttt{gcc} version to support \texttt{openMP} and \texttt{C++11} and needed a recent R
+version for the R/C++ interaction via Rcpp. A quirk we noticed, when
+loading the modules, was that the \texttt{gcc} module needed to be loaded before
+the R module, otherwise R would load an earlier version of \texttt{gcc}.
+
+For the \texttt{MPI} implementation we used
+\texttt{openmpi/1.4.1-intel}, which was the default \texttt{MPI}
+module on Ferlin.
+
+
+
+
+% Currently Loaded Modulefiles:
+%  1) easy/1.8.ferlin(default)     6) mpi/ferlin(default)         
+%  2) i-cce/11.1                   7) gcc/4.8.1                   
+%  3) i-fce/11.1                   8) openmpi/1.5.4-gcc-4.6       
+%  4) i-compilers/11.1             9) R/3.0.2                     
+%  5) openmpi/1.4.1-intel(default)
 
 
 % % Description of the package and its architecture.
