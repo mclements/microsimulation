@@ -202,7 +202,9 @@ FhcrcParameters <- list(
     ## BPThresholdBiopsyFollowUp=3.47,
     ## BPThreshold=4.69,
     ## BPThresholdBiopsyFollowUp=4.69,
-    PSAFalsePositiveThreshold=4.2, # reduce the false positives by ~40%
+    PSA_FP_threshold_nca=4.2, # reduce the false positives in no cancers with a PSA threshold
+    PSA_FP_threshold_GG6=10.0, # reduce the false positive in gleason 6 by PSA threshold
+    onset_FP_threshold_GG6=3.0, # reduce the false positive in gleason 6 by early onset
     BPThreshold=4.2, 
     BPThresholdBiopsyFollowUp=4.2, 
     rTPF=1.0,

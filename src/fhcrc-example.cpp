@@ -577,7 +577,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	falsePositives.record("age0",t0+35.0);
 	falsePositives.record("ext_grade",ext_grade);
       }
-      if (psa<parameter["PSAFalsePositiveThreshold"]) positive_test = false; // strong assumption
+      if ((ext_grade == ext::Gleason_le_6 &&
+	   (now()-35.0 < t0+parameter["onset_FP_threshold_GG6"] ||
+	    psa<parameter["PSA_FP_threshold_GG6"])) // FP Gleason 6
+	  || (now()-35.0<t0 && psa<parameter["PSA_FP_threshold_nca"])) {// FP no cancer
+	positive_test = false; // strong assumption
+      }
     }
     // if (panel && !positive_test && t0<now()-35.0 && ext_grade > ext::Gleason_le_6) {
     //   if (R::runif(0.0,1.0) < 1.0-parameter["rTPF"]) positive_test = true;
