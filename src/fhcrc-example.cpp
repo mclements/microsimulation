@@ -31,6 +31,8 @@ namespace {
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
+  enum survival_t {StageShift, LeadTimeBased};
+
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
@@ -703,7 +705,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       RemoveKind(toUtility);
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
     }
-    else { // Localised
+    else { // Loco-regional
       tx = calculate_treatment(u_tx,now(),year);
       if (tx == CM) scheduleAt(now(), toCM);
       if (tx == RP) scheduleAt(now(), toRP);
@@ -722,36 +724,45 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
     // reset the random number stream
     rngNh->set();
-    // calculate survival
-    double u_surv = R::runif(0.0,1.0);
+    // check for cure
+    bool cured = false;
     double age_c = (state == Localised) ? tc + 35.0 : tmc + 35.0;
     double lead_time = age_c - now();
-    double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
-    double age_sd = calculate_survival(u_surv,now(),age_c,tx);
-    double weight = exp(-parameter["c_benefit_value"]*lead_time);
-    double age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
-    scheduleAt(age_cancer_death, toCancerDeath);
-    // Disutilities prior to a cancer death
-    double age_palliative = age_cancer_death - utility_duration["PalliativeTherapy"] - utility_duration["TerminalIllness"];
-    double age_terminal = age_cancer_death - utility_duration["TerminalIllness"];
-    // Reset utilities for those in with a Metatatic diagnosis
-    if (state == Metastatic) {
-      if (age_palliative > now())
-	scheduleUtilityChange(age_palliative, "MetastaticCancer",false);
-      else
-	scheduleUtilityChange(now(), "MetastaticCancer", false);
+    if (parameter["c_benefit_type"]==LeadTimeBased) {
+      double pcure = 1 - exp(-lead_time*parameter["c_benefit_value1"]);
+      cured = (R::runif(0.0,1.0) < pcure);
+      if (cured) RemoveKind(toMetastatic);
+    } 
+    if (!cured) {
+      // calculate survival
+      double u_surv = R::runif(0.0,1.0);
+      double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
+      double age_sd = calculate_survival(u_surv,now(),age_c,tx);
+      double weight = exp(-parameter["c_benefit_value"]*lead_time);
+      double age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
+      scheduleAt(age_cancer_death, toCancerDeath);
+      // Disutilities prior to a cancer death
+      double age_palliative = age_cancer_death - utility_duration["PalliativeTherapy"] - utility_duration["TerminalIllness"];
+      double age_terminal = age_cancer_death - utility_duration["TerminalIllness"];
+      // Reset utilities for those in with a Metatatic diagnosis
+      if (state == Metastatic) {
+	if (age_palliative > now())
+	  scheduleUtilityChange(age_palliative, "MetastaticCancer",false);
+	else
+	  scheduleUtilityChange(now(), "MetastaticCancer", false);
+      }
+      if (age_palliative>now()) { // cancer death more than 36 months after diagnosis
+	scheduleUtilityChange(age_palliative, "PalliativeTherapy"); 
+	scheduleUtilityChange(age_terminal, "TerminalIllness");
+      } 
+      else if (age_terminal>now()) { // cancer death between 36 and 6 months of diagnosis
+	scheduleUtilityChange(now(), "PalliativeTherapy",false, -1.0);
+	scheduleUtilityChange(age_terminal, "PalliativeTherapy", false, 1.0); // reset
+	scheduleUtilityChange(age_terminal,"TerminalIllness");
+      } 
+      else // cancer death within 6 months of diagnosis/treatment
+	scheduleUtilityChange(now(), "TerminalIllness");
     }
-    if (age_palliative>now()) { // cancer death more than 36 months after diagnosis
-      scheduleUtilityChange(age_palliative, "PalliativeTherapy"); 
-      scheduleUtilityChange(age_terminal, "TerminalIllness");
-    } 
-    else if (age_terminal>now()) { // cancer death between 36 and 6 months of diagnosis
-      scheduleUtilityChange(now(), "PalliativeTherapy",false, -1.0);
-      scheduleUtilityChange(age_terminal, "PalliativeTherapy", false, 1.0); // reset
-      scheduleUtilityChange(age_terminal,"TerminalIllness");
-    } 
-    else // cancer death within 6 months of diagnosis/treatment
-      scheduleUtilityChange(now(), "TerminalIllness");
   } break;
 
   case toRP:

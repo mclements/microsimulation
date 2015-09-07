@@ -190,6 +190,8 @@ FhcrcParameters <- list(
     c_baseline_specific = 1.0,
     c_benefit_value = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
     sxbenefit = 1.0,
+    c_benefit_type = 1, # 0=stage-shift (=> c_benefit_value=10), 1=lead-time based (=> c_benefit_value=0.1)
+    c_benefit_value1 = 0.1,
     screeningCompliance = 0.75,
     rescreeningCompliance = 0.95,
     biopsyCompliance = 0.858,
