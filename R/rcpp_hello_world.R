@@ -205,8 +205,8 @@ FhcrcParameters <- list(
     ## BPThreshold=4.69,
     ## BPThresholdBiopsyFollowUp=4.69,
     PSA_FP_threshold_nCa=4.2, # reduce FP in no cancers with PSA threshold
-    PSA_FP_threshold_GG6=10.0, # reduce FP in GG 6 with PSA threshold
-    onset_age_portion_FP_GG6=0.1, # reduce FP by a yearly portion after onset
+    PSA_FP_threshold_GG6=4.2, # reduce FP in GG 6 with PSA threshold
+    onset_age_portion_FP_GG6=0.0, # reduce FP by a yearly portion after onset
     BPThreshold=4.2, 
     BPThresholdBiopsyFollowUp=4.2, 
     rTPF=1.0,
