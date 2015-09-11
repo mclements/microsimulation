@@ -877,7 +877,7 @@ namespace Rcpp {
   
   template <class T1a, class T1b, class T2>
     SEXP wrap_map(const std::map<std::pair<T1a,T1b>,T2> v, 
-		  std::string name1 = "age", std::string name2 = "value") {
+		  std::string name1, std::string name2) {
     typedef std::pair<T1a,T1b> Pair;
     int i;
     int n = v.size();
@@ -941,7 +941,7 @@ namespace Rcpp {
   
   template <class T1a, class T1b, class T2>
     SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v, 
-		  std::string name1 = "age", std::string name2 = "value") {
+		  std::string name1, std::string name2) {
     typedef std::pair<T1a,T1b> Pair;
     int i;
     int n = v.size();

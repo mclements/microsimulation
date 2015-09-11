@@ -31,7 +31,7 @@ namespace {
 
   enum treatment_t {no_treatment, CM, RP, RT};
 
-  enum survival_t {StageShift, LeadTimeBased};
+  enum survival_t {StageShiftBased, LeadTimeBased};
 
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
@@ -728,18 +728,27 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     bool cured = false;
     double age_c = (state == Localised) ? tc + 35.0 : tmc + 35.0;
     double lead_time = age_c - now();
+    // calculate the age at cancer death by c_benefit_type
+    double age_cancer_death;
     if (parameter["c_benefit_type"]==LeadTimeBased) {
       double pcure = 1 - exp(-lead_time*parameter["c_benefit_value1"]);
       cured = (R::runif(0.0,1.0) < pcure);
       if (cured) RemoveKind(toMetastatic);
+      else {
+      double u_surv = R::runif(0.0,1.0);
+      age_cancer_death = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
+      }
     } 
-    if (!cured) {
-      // calculate survival
+    else if (parameter["c_benefit_type"]==StageShiftBased) {
+      // calculate survival 
       double u_surv = R::runif(0.0,1.0);
       double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
       double age_sd = calculate_survival(u_surv,now(),age_c,tx);
       double weight = exp(-parameter["c_benefit_value"]*lead_time);
-      double age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
+      age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
+    }
+    else REprintf("c_benefit_type not matched.");
+    if (!cured) {
       scheduleAt(age_cancer_death, toCancerDeath);
       // Disutilities prior to a cancer death
       double age_palliative = age_cancer_death - utility_duration["PalliativeTherapy"] - utility_duration["TerminalIllness"];
