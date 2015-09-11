@@ -572,20 +572,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       false;
     // Important case: PSA<1 (to check)
     // Reduce false positives wrt Gleason 7+ by 1-rFPF: which BPThreshold?
-    if (panel && positive_test && (onset() || ext_grade == ext::Gleason_le_6)) {
+    if (panel && positive_test) {
       // if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"]) positive_test = false;
-      if (includePSArecords) {
-	falsePositives.record("id",id);
-	falsePositives.record("psa",psa);
-	falsePositives.record("biomarker",biomarker);
-	falsePositives.record("age",now());
-	falsePositives.record("age0",t0+35.0);
-	falsePositives.record("ext_grade",ext_grade);
-      }
       if ((ext_grade == ext::Gleason_le_6 && onset() && psa<parameter["PSA_FP_threshold_GG6"]) // FP GG 6 PSA threshold
 	  ||  (!onset() && psa < parameter["PSA_FP_threshold_nCa"])) {// FP no cancer PSA threshold
 	positive_test = false; // strong assumption
       }
+    }
+    if (includePSArecords && !onset() && positive_test) {
+      falsePositives.record("id",id);
+      falsePositives.record("psa",psa);
+      falsePositives.record("biomarker",biomarker);
+      falsePositives.record("age",now());
+      falsePositives.record("age0",t0+35.0);
+      falsePositives.record("ext_grade",ext_grade);
     }
     // if (panel && !positive_test && t0<now()-35.0 && ext_grade > ext::Gleason_le_6) {
     //   if (R::runif(0.0,1.0) < 1.0-parameter["rTPF"]) positive_test = true;
