@@ -169,6 +169,7 @@ namespace {
     virtual void handleMessage(const cMessage* msg);
     void scheduleUtilityChange(double at, std::string category, bool transient = true, 
 			       double sign = -1.0);
+    bool onset();
   };
 
   /** 
@@ -255,6 +256,8 @@ namespace {
     return age_d;
   }
 
+  bool FhcrcPerson::onset() { return now() <= this->t0+35.0; }
+  
   void FhcrcPerson::opportunistic_rescreening(double psa) {
     TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
     double prescreened = 1.0 - rescreen_cure(key); 
@@ -569,7 +572,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       false;
     // Important case: PSA<1 (to check)
     // Reduce false positives wrt Gleason 7+ by 1-rFPF: which BPThreshold?
-    if (panel && positive_test && (now()-35.0<t0 || ext_grade == ext::Gleason_le_6)) {
+    if (panel && positive_test && (onset() || ext_grade == ext::Gleason_le_6)) {
       // if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"]) positive_test = false;
       if (includePSArecords) {
 	falsePositives.record("id",id);
@@ -579,10 +582,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	falsePositives.record("age0",t0+35.0);
 	falsePositives.record("ext_grade",ext_grade);
       }
-      if ((ext_grade == ext::Gleason_le_6 && // FP Gleason 6
-	   ((now()-35.0)*(1-parameter["onset_age_portion_FP_GG6"]) < t0 || //yearly portion after onset
-	    psa<parameter["PSA_FP_threshold_GG6"])) // Gleason 6 PSA threshold
-	  || (now()-35.0 < t0 && psa < parameter["PSA_FP_threshold_nCa"])) {// FP no cancer PSA threshold
+      if ((ext_grade == ext::Gleason_le_6 && onset() && psa<parameter["PSA_FP_threshold_GG6"]) // FP GG 6 PSA threshold
+	  ||  (!onset() && psa < parameter["PSA_FP_threshold_nCa"])) {// FP no cancer PSA threshold
 	positive_test = false; // strong assumption
       }
     }
@@ -729,7 +730,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double age_c = (state == Localised) ? tc + 35.0 : tmc + 35.0;
     double lead_time = age_c - now();
     // calculate the age at cancer death by c_benefit_type
-    double age_cancer_death;
+    double age_cancer_death=-1.0;
     if (parameter["c_benefit_type"]==LeadTimeBased) {
       double pcure = 1 - exp(-lead_time*parameter["c_benefit_value1"]);
       cured = (R::runif(0.0,1.0) < pcure);
@@ -744,7 +745,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       double u_surv = R::runif(0.0,1.0);
       double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
       double age_sd = calculate_survival(u_surv,now(),age_c,tx);
-      double weight = exp(-parameter["c_benefit_value"]*lead_time);
+      double weight = exp(-parameter["c_benefit_value0"]*lead_time);
       age_cancer_death = weight*age_cd + (1.0-weight)*age_sd;
     }
     else REprintf("c_benefit_type not matched.");

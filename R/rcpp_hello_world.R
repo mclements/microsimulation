@@ -188,9 +188,9 @@ FhcrcParameters <- list(
     beta.rho=0.62,
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
-    c_benefit_value = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
+    c_benefit_value0 = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
     sxbenefit = 1.0,
-    c_benefit_type = 1, # 0=stage-shift (=> c_benefit_value=10), 1=lead-time based (=> c_benefit_value=0.1)
+    c_benefit_type = 1, # 0=stage-shift (=> c_benefit_value0=10), 1=lead-time based (=> c_benefit_value1=0.1)
     c_benefit_value1 = 0.1,
     screeningCompliance = 0.75,
     rescreeningCompliance = 0.95,
@@ -204,9 +204,8 @@ FhcrcParameters <- list(
     ## BPThresholdBiopsyFollowUp=3.47,
     ## BPThreshold=4.69,
     ## BPThresholdBiopsyFollowUp=4.69,
-    PSA_FP_threshold_nCa=4.2, # reduce FP in no cancers with PSA threshold
-    PSA_FP_threshold_GG6=4.2, # reduce FP in GG 6 with PSA threshold
-    onset_age_portion_FP_GG6=0.0, # reduce FP by a yearly portion after onset
+    PSA_FP_threshold_nCa=4.4, # reduce FP in no cancers with PSA threshold
+    PSA_FP_threshold_GG6=3.6, # reduce FP in GG 6 with PSA threshold
     BPThreshold=4.2, 
     BPThresholdBiopsyFollowUp=4.2, 
     rTPF=1.0,
