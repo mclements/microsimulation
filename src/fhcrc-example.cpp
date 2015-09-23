@@ -143,7 +143,6 @@ namespace {
   {
   public:
     double beta0, beta1, beta2;
-    double beta0star, beta1star, beta2star;
     double t0, y0, tm, tc, tmc;
     state_t state;
     diagnosis_t dx;
@@ -159,8 +158,6 @@ namespace {
       id(id), cohort(cohort), utility(1.0) { };
     double ymean(double t);
     double y(double t);
-    double BPmean(double t);
-    double BP(double t);
     treatment_t calculate_treatment(double u, double age, double year);    
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
     void opportunistic_rescreening(double psa);
@@ -181,22 +178,11 @@ namespace {
     return yt;
   }
 
-  double FhcrcPerson::BPmean(double t) {
-    if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
-    double yt = t<t0 ? exp(beta0star+beta1star*t) : exp(beta0star+beta1star*t+beta2star*(t-t0));
-    return yt;
-  }
-      
   /** 
       Calculate the *measured* PSA value at a given time (** NB: time = age - 35 **)
   */
   double FhcrcPerson::y(double t) {
     double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(double(parameter["tau2"]))));
-      return yt;
-    }
-
-  double FhcrcPerson::BP(double t) {
-    double yt = FhcrcPerson::BPmean(t)*exp(R::rnorm(0.0, sqrt(double(parameter["tau2"]))));
       return yt;
     }
 
@@ -313,21 +299,10 @@ void FhcrcPerson::init() {
   rngNh->set();
   t0 = sqrt(2*R::rexp(1.0)/parameter["g0"]);
   grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
-  Double Beta0 = rbinorm(Double(parameter["mubeta0"],parameter["mubeta0"]),
-			 Double(parameter["sebeta0"],parameter["sebeta0"]),
-			 parameter["beta.rho"]); 
-  Double Beta1 = rbinormPos(Double(parameter["mubeta1"],parameter["mubeta1"]),
-			    Double(parameter["sebeta1"],parameter["sebeta1"]),
-			    parameter["beta.rho"]); 
-  Double Beta2 = rbinormPos(Double(mubeta2[grade],mubeta2[grade]*parameter["mubeta2.scale"]),
-			    Double(sebeta2[grade],sebeta2[grade]),
-			    parameter["beta.rho"]); 
-  beta0 = Beta0.first;
-  beta1 = Beta1.first;
-  beta2 = Beta2.first;
-  beta0star = Beta0.second;
-  beta1star = Beta1.second;
-  beta2star = Beta2.second;
+  
+  beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]);
+  beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
+  beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]);
   
   y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
@@ -434,9 +409,6 @@ void FhcrcPerson::init() {
     outParameters.record("beta0",beta0);
     outParameters.record("beta1",beta1);
     outParameters.record("beta2",beta2);
-    outParameters.record("beta0star",beta0star);
-    outParameters.record("beta1star",beta1star);
-    outParameters.record("beta2star",beta2star);
     outParameters.record("t0",t0);
     outParameters.record("tm",tm);
     outParameters.record("tc",tc);
@@ -461,7 +433,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // declarations
   double psa = y(now()-35.0);
-  double biomarker = BP(now() - 35.0);
   // double test = panel ? biomarker : psa;
   double Z = ymean(now()-35.0);
   double age = now();
@@ -531,14 +502,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       psarecord.record("dx",dx);
       psarecord.record("age",age);
       psarecord.record("psa",psa);
-      psarecord.record("biomarker",biomarker);
       psarecord.record("t0",t0);
       psarecord.record("beta0",beta0);
       psarecord.record("beta1",beta1);
       psarecord.record("beta2",beta2);
-      psarecord.record("beta0star",beta0star);
-      psarecord.record("beta1star",beta1star);
-      psarecord.record("beta2star",beta2star);
       psarecord.record("Z",Z);
     }
     if (!everPSA) {
@@ -582,7 +549,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (includePSArecords && !onset() && positive_test) {
       falsePositives.record("id",id);
       falsePositives.record("psa",psa);
-      falsePositives.record("biomarker",biomarker);
       falsePositives.record("age",now());
       falsePositives.record("age0",t0+35.0);
       falsePositives.record("ext_grade",ext_grade);
