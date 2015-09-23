@@ -132,18 +132,32 @@ xyplot(pcdeath~time | factor(diayear), data=d,
 ## all(callFhcrc(10)$lifeHistories == callFhcrc(10)$lifeHistories) # fails
 ## all(callFhcrc(1e4)$parameters == callFhcrc(1e4)$parameters) # okay
 
-## extract PSA values
+## extract PSA values and calculate STHLM3 PSA "pseudo-thresholds" for the biomarker panel
 refresh
 require(microsimulation)
+pos <- function(x) ifelse(x>0,x,0)
 set.seed(12345)
-temp <- callFhcrc(1e6,screen="stockholm3_risk_stratified",includePSArecords=TRUE)$psarecord
+temp <- callFhcrc(1e6,screen="stockholm3_risk_stratified",includePSArecords=TRUE,mc.cores=2)$psarecord
 temp2 <- subset(temp,organised & age>=50 & age<70 & !dx) 
 ## first organised screen
 i <- tapply(1:nrow(temp2),temp2$id,min)
-temp2 <- temp2[i,]
-xtabs(~state+ext_grade+I(psa>=3),temp2)
-pos <- function(x) ifelse(x>0,x,0)
-       
+temp3 <- temp2[i,]
+cat("No cancer:\n")
+with(subset(temp3,state==0 & psa>3), mean(psa<4.4)) # about 42% (from STHLM3)
+cat("Loco-regional Cancer:\n")
+with(subset(temp3,state>0 & ext_grade==0 & psa>3), mean(psa<3.6)) # about 17% (from STHLM3)
+with(subset(temp3,state>0 & ext_grade==0 & psa>3),
+     cumsum(table(cut(delta,c(0,5,10,15,Inf)))/length(delta)))
+with(subset(temp3,state>0 & ext_grade==0 & psa>3.6), 
+     plot(density(delta,from=0)))
+with(subset(temp3,state>0 & ext_grade==0 & psa>3), 
+    lines(density(delta,from=0),lty=2))
+
+with(subset(temp3,state>0 & ext_grade==0 & psa>3), mean(delta))
+with(subset(temp3,state>0 & ext_grade==0 & psa>3 & psa<3.6), mean(delta))
+temp3 <- transform(temp3, delta=age-(t0+35))
+
+
 temp2 <- transform(temp2,
                    advanced=(state>0 & ext_grade==2),
                    cancer=(state>0),
