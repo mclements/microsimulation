@@ -184,8 +184,8 @@ FhcrcParameters <- list(
     sebeta1=0.0430,
     mubeta2=c(0.0397,0.1678),
     sebeta2=c(0.0913,0.3968),
-    mubeta2.scale=1.0, # cf. 2.1
-    beta.rho=0.62,
+    ## mubeta2.scale=1.0, # cf. 2.1
+    ## beta.rho=0.62,
     c_txlt_interaction = 1.0,
     c_baseline_specific = 1.0,
     c_benefit_value0 = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
