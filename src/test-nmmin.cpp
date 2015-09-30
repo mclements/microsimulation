@@ -43,8 +43,8 @@ public:
     trace(trace), maxit(maxit), report(report), abstol(abstol), reltol(reltol) { }
   void optim(optimfn fn, optimgr gr, Rcpp::NumericVector init, void * ex) {
     n = init.size();
-    int mask[n]; for (int i=0; i<n; ++i) mask[i] = 1;
-    vmmin(n, &init[0], &Fmin, fn, gr, maxit, trace, mask, abstol, reltol, report,
+    std::vector<int> mask(n,1);
+    vmmin(n, &init[0], &Fmin, fn, gr, maxit, trace, &mask[0], abstol, reltol, report,
 	  ex, &fncount, &grcount, &fail);
   }
   int n, trace, maxit, report, fncount, grcount, fail;

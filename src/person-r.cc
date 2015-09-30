@@ -187,7 +187,7 @@ void Person::handleMessage(const cMessage* msg) {
     // relative survival
   };
   
-};
+}
 
 
 extern "C" {

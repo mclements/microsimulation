@@ -32,6 +32,7 @@
 #define MICROSIMULATION_H
 
 #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#pragma GCC diagnostic ignored "-Wlong-long"
 
 #include <RcppCommon.h>
 #include <boost/tuple/tuple.hpp>
