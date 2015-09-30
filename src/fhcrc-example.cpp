@@ -313,6 +313,11 @@ void FhcrcPerson::init() {
   ext_grade= (grade==base::Gleason_le_7) ? 
     (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
     ext::Gleason_ge_8;
+
+  if (debug) {
+    Rprintf("id=%i, grade=%i, ext_grade=%i, beta0=%f, beta1=%f, beta2=%f, mubeta0=%f, sebeta0=%f, mubeta1=%f, sebeta1=%f, mubeta2=%f, sebeta2=%f\n", id, grade, ext_grade, beta0, beta1, beta2, double(parameter["mubeta0"]), double(parameter["sebeta0"]), double(parameter["mubeta1"]), double(parameter["sebeta1"]), mubeta2[grade], sebeta2[grade]);
+  }
+  
   tx = no_treatment;
   txhaz = -1.0;
   // schedule natural history events
