@@ -172,6 +172,7 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
 
 ## initial values for the FHCRC model
 FhcrcParameters <- list(
+    revised_natural_history=TRUE,
     ## panel=FALSE,
     tau2 = 0.0829,
     g0=0.0005,
@@ -182,8 +183,14 @@ FhcrcParameters <- list(
     sebeta0=0.2384,
     mubeta1=0.04463,
     sebeta1=0.0430,
-    mubeta2=c(0.0397,0.1678),
-    sebeta2=c(0.0913,0.3968),
+    mubeta2=c(0.0397,0.1678, 0.0),
+    sebeta2=c(0.0913,0.3968, 0.0),
+    rev_mubeta2=c(0.051, 0.129, 0.1678),
+    rev_sebeta2=c(0.064, 0.087, 0.3968),
+    alpha7=0.13,
+    beta7=0.006,
+    alpha8=-4.61,
+    beta8=0.06,
     ## mubeta2.scale=1.0, # cf. 2.1
     ## beta.rho=0.62,
     c_txlt_interaction = 1.0,

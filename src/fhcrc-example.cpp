@@ -298,11 +298,22 @@ void FhcrcPerson::init() {
   everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
   t0 = sqrt(2*R::rexp(1.0)/parameter["g0"]);
-  grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
-  
+  if (!bparameter["revised_natural_history"]){    
+    grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
+    beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]);
+  }
+  else {
+    double u = R::runif(0.0,1.0);
+    if (u < exp(parameter["alpha8"] + parameter["beta8"] * t0))
+      ext_grade = ext::Gleason_ge_8;
+    else if (u > 1 - (parameter["alpha7"] + parameter["beta7"] * t0))
+      ext_grade = ext::Gleason_7;
+    else ext_grade = ext::Gleason_le_6;
+    grade = ext_grade == ext::Gleason_ge_8 ? base::Gleason_ge_8 : base::Gleason_le_7;
+    beta2 = R::rnormPos(mubeta2[ext_grade],sebeta2[ext_grade]);
+  }
   beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]);
   beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
-  beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]);
   
   y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
@@ -310,9 +321,12 @@ void FhcrcPerson::init() {
   tc = (log((beta1+beta2)*R::rexp(1.0)/parameter["gc"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand(R::runif(0.0,1.0));
-  ext_grade= (grade==base::Gleason_le_7) ? 
-    (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
-    ext::Gleason_ge_8;
+  if (!bparameter["revised_natural_history"]){
+    ext_grade= (grade==base::Gleason_le_7) ? 
+      (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
+      ext::Gleason_ge_8;
+  }
+  
 
   if (debug) {
     Rprintf("id=%i, grade=%i, ext_grade=%i, beta0=%f, beta1=%f, beta2=%f, mubeta0=%f, sebeta0=%f, mubeta1=%f, sebeta1=%f, mubeta2=%f, sebeta2=%f\n", id, grade, ext_grade, beta0, beta1, beta2, double(parameter["mubeta0"]), double(parameter["sebeta0"]), double(parameter["mubeta1"]), double(parameter["sebeta1"]), mubeta2[grade], sebeta2[grade]);
@@ -820,8 +834,13 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   bparameter = parms["bparameter"]; // scalar bools
   List otherParameters = parms["otherParameters"];
   debug = as<bool>(parms["debug"]);
-  mubeta2 = as<NumericVector>(otherParameters["mubeta2"]);
-  sebeta2 = as<NumericVector>(otherParameters["sebeta2"]);
+  if (!bparameter["revised_natural_history"]) {
+    mubeta2 = as<NumericVector>(otherParameters["mubeta2"]);
+    sebeta2 = as<NumericVector>(otherParameters["sebeta2"]);
+  } else {
+    mubeta2 = as<NumericVector>(otherParameters["rev_mubeta2"]);
+    sebeta2 = as<NumericVector>(otherParameters["rev_sebeta2"]);
+  }
   NumericVector mu0 = as<NumericVector>(otherParameters["mu0"]);
   cost_parameters = as<NumericVector>(otherParameters["cost_parameters"]);
   utility_estimates = as<NumericVector>(otherParameters["utility_estimates"]);
