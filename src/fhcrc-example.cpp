@@ -747,7 +747,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       diagnoses.record("dx",dx);
       diagnoses.record("tx",tx);
       diagnoses.record("cancer_death",(aoc>age_cancer_death) ? 1 : 0);
-      diagnoses.record("age_cancer_death",age_cancer_death);
+      diagnoses.record("age_at_death", (aoc>age_cancer_death) ? age_cancer_death : aoc);
     }
   } break;
 
