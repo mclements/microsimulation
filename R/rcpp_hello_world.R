@@ -366,11 +366,12 @@ diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
 treatmentT <- c("CM","RP","RT")
 psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 
-callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=0.75,
-                      seed=12345, studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
-                      includePSArecords=FALSE, flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
-                      discountRate = 0.03, parms = NULL,
-                      mc.cores=1) {
+callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
+                      screeningCompliance=0.75, seed=12345,
+                      studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
+                      includePSArecords=FALSE, includeDiagnoses=FALSE,
+                      flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
+                      discountRate = 0.03, parms = NULL, mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -470,7 +471,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
                             bparameter=unlist(parameter[bInd]),
                             otherParameters=parameter[!pind & !bInd],
                             tables=fhcrcData,
-                            includePSArecords=includePSArecords),
+                            includePSArecords=includePSArecords,
+                            includeDiagnoses=includeDiagnoses),
                         PACKAGE="microsimulation")
                 }, mc.cores = mc.cores)))
   ## Apologies: we now need to massage the chunks from C++
@@ -517,6 +519,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   map2df <- function(obj) as.data.frame(do.call("cbind",obj))
   lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
   psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
+  diagnoses <- do.call("rbind",lapply(out,function(obj) data.frame(obj$diagnoses)))
   falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
@@ -526,12 +529,18 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,screeningCompliance=
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT
+  enum(diagnoses$state) <- stateT
+  enum(diagnoses$ext_grade) <- gradeT
+  enum(diagnoses$dx) <- diagnosisT
+  enum(diagnoses$tx) <- treatmentT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                psaT = psaT)
-  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,parameters=parameters,
-              ## prev=summary$prev, pt=summary$pt, events=summary$events)
-              summary=summary,costs=costs, psarecord=psarecord, cohort=data.frame(table(cohort)),
-              discountRate = discountRate, falsePositives=falsePositives)
+  out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,
+              parameters=parameters, summary=summary, costs=costs,
+              psarecord=psarecord, diagnoses=diagnoses,
+              cohort=data.frame(table(cohort)),
+              discountRate = discountRate,
+              falsePositives=falsePositives)
   class(out) <- "fhcrc"
   out
 }

@@ -59,7 +59,8 @@ namespace {
   vector<LifeHistory::Type> lifeHistories;
   SimpleReport<double> outParameters;
   SimpleReport<double> psarecord, falsePositives;
-
+  SimpleReport<double> diagnoses;
+  
   bool debug = false;
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
@@ -87,7 +88,7 @@ namespace {
   NumericVector cost_parameters, utility_estimates, utility_duration;
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
-  bool includePSArecords, panel;
+  bool includePSArecords, panel, includeDiagnoses;
 
   // an alternative approach to specifying costs and compliance (not currently used)
   class cMessageScreen : public cMessage {
@@ -120,7 +121,7 @@ namespace {
   {
   public:
     double beta0, beta1, beta2;
-    double t0, y0, tm, tc, tmc;
+    double t0, y0, tm, tc, tmc, aoc;
     state_t state;
     diagnosis_t dx;
     base::grade_t grade;
@@ -267,7 +268,7 @@ namespace {
 void FhcrcPerson::init() {
   
   // declarations
-  double ym, aoc;
+  double ym;
 
   // change state variables
   state = Healthy;
@@ -735,6 +736,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       else // cancer death within 6 months of diagnosis/treatment
 	scheduleUtilityChange(now(), "TerminalIllness");
     }
+    if (includeDiagnoses) {
+      diagnoses.record("id",id);
+      diagnoses.record("age",age);
+      diagnoses.record("year",year);
+      diagnoses.record("psa",psa);
+      diagnoses.record("ext_grade",ext_grade);
+      diagnoses.record("state",state);
+      diagnoses.record("organised",organised); // only meaningful for mixed_screening, keep this?
+      diagnoses.record("dx",dx);
+      diagnoses.record("tx",tx);
+      diagnoses.record("cancer_death",(aoc>age_cancer_death) ? 1 : 0);
+      diagnoses.record("age_cancer_death",age_cancer_death);
+    }
   } break;
 
   case toRP:
@@ -825,6 +839,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   int n = as<int>(parms["n"]);
   includePSArecords = as<bool>(parms["includePSArecords"]);
+  includeDiagnoses = as<bool>(parms["includeDiagnoses"]);
   int firstId = as<int>(parms["firstId"]);
   interp_prob_grade7 = 
     NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
@@ -907,6 +922,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   lifeHistories.clear();
   psarecord.clear();
   falsePositives.clear();
+  diagnoses.clear();
 
   report.discountRate = parameter["discountRate.effectiveness"];
   report.setPartition(ages);
@@ -942,7 +958,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 		      _("lifeHistories") = wrap(lifeHistories), // vector<LifeHistory::Type>
 		      _("parameters") = outParameters.wrap(),   // SimpleReport<double>
 		      _("psarecord")=psarecord.wrap(),          // SimpleReport<double>
-		      _("falsePositives")=falsePositives.wrap() // SimpleReport<double>
+		      _("falsePositives")=falsePositives.wrap(),// SimpleReport<double>
+		      _("diagnoses")=diagnoses.wrap()           // SimpleReport<double>
 		      );
 }
 
