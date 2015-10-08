@@ -43,29 +43,6 @@ namespace {
     enum Fields {id,state,ext_grade,dx,event,begin,end,year,psa};
   }
 
-  template<class T = double>
-  class SimpleReport {
-  public:
-    typedef map<string,vector<T> > Map;
-    void record(string field, T value) {
-      _data[field].push_back(value);
-    }
-    void revise(string field, T value) {
-      _data[field].pop_back();
-      _data[field].push_back(value);
-    }
-    void clear() { _data.clear(); }
-    SEXP wrap() {
-      return Rcpp::wrap(_data);
-    }
-    void append(SimpleReport<T> & obj) {
-      for(typename Map::iterator it = obj._data.begin(); it != obj._data.end(); ++it) {
-	_data[it->first].insert(_data[it->first].end(), it->second.begin(), it->second.end());
-      }
-    }
-    Map _data;
-  };
-
   RcppExport SEXP rllogis_(SEXP shape, SEXP scale) {
     RNGScope scope;
     return wrap(R::rllogis(as<double>(shape),as<double>(scale)));

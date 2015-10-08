@@ -588,20 +588,55 @@ inline double discountedInterval(double start, double end, double discountRate) 
  boost::unordered_map<pair<State,Time>, Cost > _table;
  };
 
- /* class StringCostReport : public CostReport<std::string, double, double> { */
- /* public: */
- /*   typedef std::string State; */
- /*   typedef double Time; */
- /*   typedef double Cost; */
- /* StringCostReport(NumericVector costs = NULL, Cost discountRate = 0) : costs(costs), discountRate(discountRate) { } */
- /*   void add(const State state, const Time time) { */
- /*     Time time_lhs = * _partition.lower_bound(time);  */
- /*     _table[Pair(state,time_lhs)] += discountedCost(time,costs[state]); */
- /*   } */
- /*   NumericVector costs; */
- /* }; */
- 
- 
+ /**
+    @brief SimpleReport class for collecting data for homogeneous fields of type T with string names.
+ */
+ template<class T = double>
+   class SimpleReport {
+ public:
+ /**
+    @brief Map typedef for a map of strings to vector<T>
+ */
+ typedef map<string,vector<T> > Map;
+ /**
+    @brief record adds a value for a given field into the SimpleReport
+ */
+ void record(string field, T value) {
+   _data[field].push_back(value);
+ }
+ /**
+    @brief revise changes the last value in a given field.
+    Reminder: std::map::operator[] creates an element for a key if it does not exist.
+ */
+ void revise(string field, T value) {
+   if (!_data[field].empty()) 
+     _data[field].pop_back();
+   _data[field].push_back(value);
+ }
+ /**
+    @brief clear the report data
+ */
+ void clear() { _data.clear(); }
+ /**
+    @brief wrap the report as a DataFrame or a List
+ */
+ SEXP wrap() {
+   return Rcpp::wrap(_data);
+ }
+ /**
+    @brief append another SimpleReport, which is useful for aggregating multiple reports.
+ */
+ void append(SimpleReport<T> & obj) {
+   for(typename Map::iterator it = obj._data.begin(); it != obj._data.end(); ++it) {
+     _data[it->first].insert(_data[it->first].end(), it->second.begin(), it->second.end());
+   }
+ }
+ /**
+    @brief _data class member of a map from strings to vector<T>.
+ */
+ Map _data;
+ };
+
 } // namespace ssim
 
 namespace Rcpp {
