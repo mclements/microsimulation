@@ -1315,13 +1315,13 @@ dx$pred <- 1000*predict(gam(n~s(age,year,k=50),data=dx,offset=log(pt),family=poi
 library("RColorBrewer"); library("lattice");
 brewer.div <- colorRampPalette(brewer.pal(9, "Spectral"), interpolate = "spline")
 pdf("~/work/levelplot-pc-incidence.pdf")
-levelplot(pred~age*year,dx,subset=(age>=30), col.regions = brewer.div(100), aspect = "iso",
+levelplot(pred~age*year,dx,subset=(age>=30), col.regions = rev(brewer.div(100)), aspect = "iso",
   xlab="Age (years)", ylab="Calendar period", ylim=c(1980,2050))
 dev.off()
 with(list(res=600),
        jpeg(file="~/work/levelplot-pc-incidence.jpg",height=5*res,width=5*res,res=res,
             quality=100))
-levelplot(pred~age*year,dx,subset=(age>=30), col.regions = brewer.div(100), aspect = "iso",
+levelplot(pred~age*year,dx,subset=(age>=30), col.regions = rev(brewer.div(100)), aspect = "iso",
   xlab="Age (years)", ylab="Calendar period", ylim=c(1980,2050))
 dev.off()
 
