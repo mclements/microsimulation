@@ -693,7 +693,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double age_c = (state == Localised) ? tc + 35.0 : tmc + 35.0;
     double lead_time = age_c - now();
     // calculate the age at cancer death by c_benefit_type
-    double age_cancer_death=-1.0;
+    double age_cancer_death=R_PosInf;
     if (parameter["c_benefit_type"]==LeadTimeBased) {
       double pcure = 1 - exp(-lead_time*parameter["c_benefit_value1"]);
       cured = (R::runif(0.0,1.0) < pcure);

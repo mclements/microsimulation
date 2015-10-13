@@ -363,7 +363,7 @@ eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
             "toOrganised","toTreatment","toCM","toRP","toRT","toADT","toUtilityChange","toUtility",
             "toSTHLM3", "toOpportunistic")
 diagnosisT <- c("NotDiagnosed","ClinicalDiagnosis","ScreenDiagnosis")
-treatmentT <- c("CM","RP","RT")
+treatmentT <- c("no_treatment","CM","RP","RT")
 psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 
 callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
