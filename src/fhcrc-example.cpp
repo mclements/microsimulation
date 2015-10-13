@@ -210,7 +210,10 @@ namespace {
     double txhaz = (localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
     double lead_time = age_c - age_diag;
     double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
-    double ustar = pow(u,1/(parameter["c_baseline_specific"]*txbenefit*parameter["sxbenefit"]));
+    double mort_hr = ext_grade==ext::Gleason_le_6 ? parameter["gleason_le_6_hr"] :
+      ext_grade==ext::Gleason_7 ? parameter["gleason_7_hr"] :
+      parameter["gleason_ge_8_hr"];
+    double ustar = pow(u,1/(parameter["c_baseline_specific"]*mort_hr*txbenefit*parameter["sxbenefit"]));
     if (localised) 
       age_d = age_c + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(age_diag,50.0,80.0)),grade)].invert(-log(ustar));
     else
@@ -746,7 +749,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       diagnoses.record("organised",organised); // only meaningful for mixed_screening, keep this?
       diagnoses.record("dx",dx);
       diagnoses.record("tx",tx);
-      diagnoses.record("cancer_death",(aoc>age_cancer_death) ? 1 : 0);
+      diagnoses.record("cancer_death",(aoc>age_cancer_death) ? 1.0 : 0.0);
       diagnoses.record("age_at_death", (aoc>age_cancer_death) ? age_cancer_death : aoc);
     }
   } break;

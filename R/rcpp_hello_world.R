@@ -214,7 +214,11 @@ FhcrcParameters <- list(
     PSA_FP_threshold_nCa=4.4, # reduce FP in no cancers with PSA threshold
     PSA_FP_threshold_GG6=3.6, # reduce FP in GG 6 with PSA threshold
     BPThreshold=4.2, 
-    BPThresholdBiopsyFollowUp=4.2, 
+    BPThresholdBiopsyFollowUp=4.2,
+    ## Natural history calibration
+    gleason_le_6_hr = 1, 
+    gleason_7_hr = 1,
+    gleason_ge_8_hr = 1,
     rTPF=1.0,
     rFPF=0.6,
     c_low_grade_slope=-0.006,
