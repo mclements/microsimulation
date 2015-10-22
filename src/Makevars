@@ -4,4 +4,4 @@ PKG_CFLAGS = -I. -O3 -g -Wall
 
 SOURCES = $(wildcard *.c */*.c */*/*.c)
 
-OBJECTS = microsimulation.o person-r.o calibperson-r.o simple-example.o simple-example2.o fhcrc-example.o illness-death.o ssim.o RngStream.o test-nmmin.o $(SOURCES:.c=.o)
+OBJECTS = microsimulation.o person-r.o calibperson-r.o simple-example.o simple-example2.o fhcrc-example.o illness-death.o ssim.o RngStream.o test-nmmin.o cervical.o $(SOURCES:.c=.o)

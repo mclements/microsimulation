@@ -96,6 +96,10 @@ class NumericInterpolate {
       return x[i]+(yfind-y[i])/slope[i];
     }
   }
+  double invert(double yfind, double xentry) { // assumes that the function is increasing
+    double yentry = approx(xentry);
+    return invert(yfind - yentry);
+  }
   double invert_decreasing(double yfind) { // assumes that the function is decreasing
     int i;
     if (yfind>=y[0]) return x[0];
