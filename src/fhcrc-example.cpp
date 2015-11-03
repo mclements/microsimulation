@@ -16,16 +16,16 @@ namespace {
   namespace ext {
     enum grade_t {Gleason_le_6,Gleason_7,Gleason_ge_8};
   }
-  
+
   enum state_t {Healthy,Localised,Metastatic}; // stage?
 
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
-  
-  enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen, 
+
+  enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen,
 		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility, toSTHLM3, toOpportunistic };
 
-  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70, 
-		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified, 
+  enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70,
+		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified,
 		 goteborg, risk_stratified, mixed_screening,
 		 regular_screen, single_screen};
 
@@ -60,7 +60,7 @@ namespace {
   SimpleReport<double> outParameters;
   SimpleReport<double> psarecord, falsePositives;
   SimpleReport<double> diagnoses;
-  
+
   bool debug = false;
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
@@ -93,9 +93,9 @@ namespace {
   // an alternative approach to specifying costs and compliance (not currently used)
   class cMessageScreen : public cMessage {
   public:
-    cMessageScreen(bool formal_compliance = false, bool formal_costs = false) : 
-      cMessage(toScreen), 
-      formal_compliance(formal_compliance), 
+    cMessageScreen(bool formal_compliance = false, bool formal_costs = false) :
+      cMessage(toScreen),
+      formal_compliance(formal_compliance),
       formal_costs(formal_costs) { }
     bool formal_compliance, formal_costs;
   };
@@ -116,8 +116,8 @@ namespace {
   T bounds(T x, T a, T b) {
     return (x<a)?a:((x>b)?b:x);
   }
-  
-  class FhcrcPerson : public cProcess 
+
+  class FhcrcPerson : public cProcess
   {
   public:
     double beta0, beta1, beta2;
@@ -127,27 +127,27 @@ namespace {
     base::grade_t grade;
     ext::grade_t ext_grade;
     treatment_t tx;
-    bool adt; 
+    bool adt;
     double txhaz;
     int id;
     double cohort, utility;
     bool everPSA, previousNegativeBiopsy, organised;
-    FhcrcPerson(const int id = 0, const double cohort = 1950) : 
+    FhcrcPerson(const int id = 0, const double cohort = 1950) :
       id(id), cohort(cohort), utility(1.0) { };
     double ymean(double t);
     double y(double t);
-    treatment_t calculate_treatment(double u, double age, double year);    
+    treatment_t calculate_treatment(double u, double age, double year);
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
     void opportunistic_rescreening(double psa);
     void init();
     void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
-    void scheduleUtilityChange(double at, std::string category, bool transient = true, 
+    void scheduleUtilityChange(double at, std::string category, bool transient = true,
 			       double sign = -1.0);
     bool onset();
   };
 
-  /** 
+  /**
       Calculate the (geometric) mean PSA value at a given time (** NB: time = age - 35 **)
   */
   double FhcrcPerson::ymean(double t) {
@@ -156,7 +156,7 @@ namespace {
     return yt;
   }
 
-  /** 
+  /**
       Calculate the *measured* PSA value at a given time (** NB: time = age - 35 **)
   */
   double FhcrcPerson::y(double t) {
@@ -164,7 +164,7 @@ namespace {
       return yt;
     }
 
-  /** 
+  /**
       Report on costs for a given item
   */
   void FhcrcPerson::add_costs(string item) {
@@ -178,7 +178,7 @@ namespace {
   void FhcrcPerson::scheduleUtilityChange(double at, std::string category, bool transient, double sign) {
     scheduleAt(at, new cMessageUtilityChange(sign*utility_estimates[category]));
     if (transient) {
-      scheduleAt(at + utility_duration[category], 
+      scheduleAt(at + utility_duration[category],
 		 new cMessageUtilityChange(-sign*utility_estimates[category]));
     }
   }
@@ -186,12 +186,12 @@ namespace {
   treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) {
     TablePrtx::key_type key;
     if (bparameter["stockholmTreatment"])
-       key = 
+       key =
 	 TablePrtx::key_type(bounds<double>(age,50.0,85.0),
 			     bounds<double>(year,2008.0,2012.0),
 			     int(ext_grade));
     else // original FHCRC table prtx
-      key = 
+      key =
 	TablePrtx::key_type(bounds<double>(age,50.0,79.0),
 			    bounds<double>(year,1973.0,2004.0),
 			    int(grade));
@@ -206,7 +206,7 @@ namespace {
   double FhcrcPerson::calculate_survival(double u, double age_diag, double age_c, treatment_t tx) { // also: tc, tm, tmc, grade, now()
     double age_d = -1.0;        // age at death (output)
     double age_m = tm + 35.0;   // age at onset of metastatic cancer
-    bool localised = (age_diag < age_m); 
+    bool localised = (age_diag < age_m);
     double txhaz = (localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
     double lead_time = age_c - age_diag;
     double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
@@ -214,7 +214,7 @@ namespace {
       ext_grade==ext::Gleason_7 ? parameter["gleason_7_hr"] :
       parameter["gleason_ge_8_hr"];
     double ustar = pow(u,1/(parameter["c_baseline_specific"]*mort_hr*txbenefit*parameter["sxbenefit"]));
-    if (localised) 
+    if (localised)
       age_d = age_c + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(age_diag,50.0,80.0)),grade)].invert(-log(ustar));
     else
       age_d = age_c + H_dist[grade].invert(-log(ustar));
@@ -224,10 +224,10 @@ namespace {
   }
 
   bool FhcrcPerson::onset() { return now() <= this->t0+35.0; }
-  
+
   void FhcrcPerson::opportunistic_rescreening(double psa) {
     TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
-    double prescreened = 1.0 - rescreen_cure(key); 
+    double prescreened = 1.0 - rescreen_cure(key);
     double shape = rescreen_shape(key);
     double scale = rescreen_scale(key);
     double u = R::runif(0.0,1.0);
@@ -254,22 +254,22 @@ namespace {
   RcppExport SEXP rbinorm_test() {
     RNGScope rng;
     Double x = rbinorm(Double(1.0,1.0), Double(2.0,2.0), 0.62);
-    vector<double> v; v.push_back(x.first); v.push_back(x.second); 
+    vector<double> v; v.push_back(x.first); v.push_back(x.second);
     return wrap(v);
   }
   RcppExport SEXP rbinormPos_test() {
     RNGScope rng;
     Double x = rbinormPos(Double(1.0,1.0), Double(2.0,2.0), 0.62);
-    vector<double> v; v.push_back(x.first); v.push_back(x.second); 
+    vector<double> v; v.push_back(x.first); v.push_back(x.second);
     return wrap(v);
   }
-    
 
-/** 
+
+/**
     Initialise a simulation run for an individual
  */
 void FhcrcPerson::init() {
-  
+
   // declarations
   double ym;
 
@@ -279,7 +279,7 @@ void FhcrcPerson::init() {
   everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
   t0 = sqrt(2*R::rexp(1.0)/parameter["g0"]);
-  if (!bparameter["revised_natural_history"]){    
+  if (!bparameter["revised_natural_history"]){
     grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
     beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]);
   }
@@ -295,7 +295,7 @@ void FhcrcPerson::init() {
   }
   beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]);
   beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
-  
+
   y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = ymean(tm);
@@ -303,16 +303,16 @@ void FhcrcPerson::init() {
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand(R::runif(0.0,1.0));
   if (!bparameter["revised_natural_history"]){
-    ext_grade= (grade==base::Gleason_le_7) ? 
-      (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) : 
+    ext_grade= (grade==base::Gleason_le_7) ?
+      (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) :
       ext::Gleason_ge_8;
   }
-  
+
 
   if (debug) {
     Rprintf("id=%i, grade=%i, ext_grade=%i, beta0=%f, beta1=%f, beta2=%f, mubeta0=%f, sebeta0=%f, mubeta1=%f, sebeta1=%f, mubeta2=%f, sebeta2=%f\n", id, grade, ext_grade, beta0, beta1, beta2, double(parameter["mubeta0"]), double(parameter["sebeta0"]), double(parameter["mubeta1"]), double(parameter["sebeta1"]), mubeta2[grade], sebeta2[grade]);
   }
-  
+
   tx = no_treatment;
   txhaz = -1.0;
   // schedule natural history events
@@ -329,7 +329,7 @@ void FhcrcPerson::init() {
       scheduleAt(R::runif(50.0,70.0),toScreen);
       break;
     case single_screen:
-    case regular_screen: 
+    case regular_screen:
     case goteborg:
     case risk_stratified:
       scheduleAt(parameter["start_screening"],toScreen);
@@ -349,11 +349,11 @@ void FhcrcPerson::init() {
     case stockholm3_goteborg:
     case stockholm3_risk_stratified:
     case screenUptake: {
-      // Assume: 
+      // Assume:
       // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
       // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
-      // (iii) intermediate cohorts are a weighted mixture of (i) and (ii) 
-      double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03; 
+      // (iii) intermediate cohorts are a weighted mixture of (i) and (ii)
+      double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03;
       double shapeA = 3.8;
       double scaleA = 15.0;
       double shapeT = 2.0;
@@ -386,7 +386,7 @@ void FhcrcPerson::init() {
     }
   }
   if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
-      ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) && 
+      ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) &&
       (2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"])) {
     scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
   }
@@ -423,11 +423,11 @@ void FhcrcPerson::init() {
   }
 }
 
-/** 
+/**
     Handle self-messages received
  */
 void FhcrcPerson::handleMessage(const cMessage* msg) {
-  
+
   // by default, use the natural history RNG
   rngNh->set();
 
@@ -440,7 +440,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   double compliance;
   bool formal_costs = parameter["formal_costs"]==1.0 && (screen != mixed_screening || organised);
   bool formal_compliance = parameter["formal_compliance"]==1.0 && (screen != mixed_screening || organised);
-  
+
   // record information
   if (parameter["full_report"] == 1.0)
     report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
@@ -465,7 +465,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toOtherDeath:
     add_costs("Death"); // cost for death, should this be zero???
-    
+
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
     }
@@ -477,13 +477,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(tc+35.0,toClinicalDiagnosis);
     scheduleAt(tm+35.0,toMetastatic);
     break;
-  
+
   case toMetastatic:
     state = Metastatic;
     RemoveKind(toClinicalDiagnosis);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
     break;
-    
+
   case toOrganised:
   case toSTHLM3:
     organised = true;
@@ -526,14 +526,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
 						bounds<double>(age,55,75))) :
       tableOpportunisticBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
-						bounds<double>(age,55,75))); 
-    // bool positive_test = 
+						bounds<double>(age,55,75)));
+    // bool positive_test =
     //   (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
     //   ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
     //   (!panel && msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
     //   ( panel && msg->kind == toBiopsyFollowUpScreen && biomarker >= parameter["BPThresholdBiopsyFollowUp"]) ? true :
     //   false;
-    bool positive_test = 
+    bool positive_test =
       (msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
       (msg->kind == toBiopsyFollowUpScreen && psa >= parameter["psaThresholdBiopsyFollowUp"]) ? true :
       false;
@@ -588,16 +588,16 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  }
 	  break;
 	case regular_screen:
-	  if (parameter["start_screening"] <= now() && 
-	      now()+parameter["screening_interval"] <= parameter["stop_screening"]) 
+	  if (parameter["start_screening"] <= now() &&
+	      now()+parameter["screening_interval"] <= parameter["stop_screening"])
 	    scheduleAt(now() + parameter["screening_interval"], toScreen);
 	  break;
 	case twoYearlyScreen50to70:
-	  if (50.0 <= now() && now() < 70.0) 
+	  if (50.0 <= now() && now() < 70.0)
 	    scheduleAt(now() + 2.0, toScreen);
 	  break;
 	case fourYearlyScreen50to70:
-	  if (50.0 <= now() && now() < 70.0) 
+	  if (50.0 <= now() && now() < 70.0)
 	    scheduleAt(now() + 4.0, toScreen);
 	  break;
 	case screenUptake:
@@ -617,7 +617,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     } // rescreening
     rngNh->set();
   } break;
-    
+
   case toClinicalDiagnosis:
     dx = ClinicalDiagnosis;
     RemoveKind(toMetastatic); // competing events
@@ -648,13 +648,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     rngScreen->set();
     add_costs("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
-    
+
     if (state == Healthy) {
       previousNegativeBiopsy = true;
       // Here we want 20% to opportunistic and 80% to re-screen in 12 months with threshold of 4. N.B. also the false negative 6 rows below.
       if (now() < parameter["stop_screening"] && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
       // else schedule a routine future screen
-    } else { // state != Healthy
+    }
+    else { // state != Healthy
       if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) {
 	scheduleAt(now(), toScreenDiagnosis);
       } else { // false negative biopsy
@@ -678,7 +679,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       if (tx == RP) scheduleAt(now(), toRP);
       if (tx == RT) scheduleAt(now(), toRT);
       // check for ADT
-      double pADT = 
+      double pADT =
 	pradt(TablePradt::key_type(tx,
 				   bounds<double>(now(),50,79),
 				   bounds<double>(year,1973,2004),
@@ -705,9 +706,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       double u_surv = R::runif(0.0,1.0);
       age_cancer_death = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
       }
-    } 
+    }
     else if (parameter["c_benefit_type"]==StageShiftBased) {
-      // calculate survival 
+      // calculate survival
       double u_surv = R::runif(0.0,1.0);
       double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
       double age_sd = calculate_survival(u_surv,now(),age_c,tx);
@@ -728,14 +729,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	  scheduleUtilityChange(now(), "MetastaticCancer", false);
       }
       if (age_palliative>now()) { // cancer death more than 36 months after diagnosis
-	scheduleUtilityChange(age_palliative, "PalliativeTherapy"); 
+	scheduleUtilityChange(age_palliative, "PalliativeTherapy");
 	scheduleUtilityChange(age_terminal, "TerminalIllness");
-      } 
+      }
       else if (age_terminal>now()) { // cancer death between 36 and 6 months of diagnosis
 	scheduleUtilityChange(now(), "PalliativeTherapy",false, -1.0);
 	scheduleUtilityChange(age_terminal, "PalliativeTherapy", false, 1.0); // reset
 	scheduleUtilityChange(age_terminal,"TerminalIllness");
-      } 
+      }
       else // cancer death within 6 months of diagnosis/treatment
 	scheduleUtilityChange(now(), "TerminalIllness");
     }
@@ -757,9 +758,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toRP:
     add_costs("Prostatectomy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleUtilityChange(now(), "ProstatectomyPart1"); 
+    scheduleUtilityChange(now(), "ProstatectomyPart1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleUtilityChange(now() + utility_duration["ProstatectomyPart1"], 
+    scheduleUtilityChange(now() + utility_duration["ProstatectomyPart1"],
 			  "ProstatectomyPart2");
     break;
 
@@ -768,14 +769,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     // Scheduling utilities for the first 2 months after procedure
     scheduleUtilityChange(now(), "RadiationTherapyPart1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleUtilityChange(now() + utility_duration["RadiationTherapyPart1"], 
+    scheduleUtilityChange(now() + utility_duration["RadiationTherapyPart1"],
 			  "RadiationTherapyPart2");
     break;
 
   case toCM:
     add_costs("ActiveSurveillance"); // expand here
     scheduleUtilityChange(now(), "ActiveSurveillance");
-    break; 
+    break;
 
   case toADT:
     // costs & utilities??
@@ -784,7 +785,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toUtility:
     {
       const cMessageUtility * msgUtility;
-      if ((msgUtility = dynamic_cast<const cMessageUtility *>(msg)) != 0) { 
+      if ((msgUtility = dynamic_cast<const cMessageUtility *>(msg)) != 0) {
 	utility = msgUtility->utility;
       } else {
 	REprintf("Could not cast to cMessageUtility.");
@@ -794,7 +795,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toUtilityChange:
     {
       const cMessageUtilityChange * msgUtilityChange;
-      if ((msgUtilityChange = dynamic_cast<const cMessageUtilityChange *>(msg)) != 0) { 
+      if ((msgUtilityChange = dynamic_cast<const cMessageUtilityChange *>(msg)) != 0) {
 	utility += msgUtilityChange->change;
       } else {
 	REprintf("Could not cast to cMessageUtilityChange.");
@@ -804,7 +805,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   default:
     REprintf("No valid kind of event: %i\n",msg->kind);
     break;
-    
+
   } // switch
 
 } // handleMessage()
@@ -844,7 +845,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   includePSArecords = as<bool>(parms["includePSArecords"]);
   includeDiagnoses = as<bool>(parms["includeDiagnoses"]);
   int firstId = as<int>(parms["firstId"]);
-  interp_prob_grade7 = 
+  interp_prob_grade7 =
     NumericInterpolate(as<DataFrame>(tables["prob_grade7"]));
   prtxCM = TablePrtx(as<DataFrame>(tables["prtx"]),
 			       "Age","DxY","G","CM"); // NB: Grade is now {0,1[,2]} coded cf {1,2[,3]}
@@ -858,25 +859,25 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   rescreen_shape = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "shape");
   rescreen_scale = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "scale");
   rescreen_cure  = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "cure");
-  
+
   H_dist.clear();
   DataFrame df_survival_dist = as<DataFrame>(tables["survival_dist"]); // Grade,Time,Survival
   DataFrame df_survival_local = as<DataFrame>(tables["survival_local"]); // Age,Grade,Time,Survival
   // extract the columns from the survival_dist data-frame
   IntegerVector sd_grades = df_survival_dist["Grade"];
-  NumericVector 
+  NumericVector
     sd_times = df_survival_dist["Time"],
     sd_survivals = df_survival_dist["Survival"];
   typedef pair<double,double> dpair;
-  for (int i=0; i<sd_grades.size(); ++i) 
+  for (int i=0; i<sd_grades.size(); ++i)
     H_dist[sd_grades[i]].push_back(dpair(sd_times[i],-log(sd_survivals[i])));
-  for (H_dist_t::iterator it_sd = H_dist.begin(); it_sd != H_dist.end(); it_sd++) 
+  for (H_dist_t::iterator it_sd = H_dist.begin(); it_sd != H_dist.end(); it_sd++)
     it_sd->second.prepare();
   // now we can use: H_dist[grade].invert(-log(u))
   H_local.clear();
   // extract the columns from the data-frame
   IntegerVector sl_grades = df_survival_local["Grade"];
-  NumericVector 
+  NumericVector
     sl_ages = df_survival_local["Age"],
     sl_times = df_survival_local["Time"],
     sl_survivals = df_survival_local["Survival"];
@@ -887,9 +888,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
       (dpair(sl_times[i],-log(sl_survivals[i])));
   }
   // prepare the map values for lookup
-  for (H_local_t::iterator it_sl = H_local.begin(); 
-       it_sl != H_local.end(); 
-       it_sl++) 
+  for (H_local_t::iterator it_sl = H_local.begin();
+       it_sl != H_local.end();
+       it_sl++)
     it_sl->second.prepare();
   // now we can use: H_local[H_local_t::key_type(*H_local_age_set.lower_bound(age),grade)].invert(-log(u))
 
@@ -902,7 +903,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     Rprintf("Interp for grade 6/7 (expecting approx 0.3): %f\n",interp_prob_grade7.approx(0.143));
     Rprintf("prtxCM(80,2008,1) [expecting 0.970711]: %f\n",prtxCM(TablePrtx::key_type(80.0,2008.0,1)));
   }
-  
+
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
   screen = as<int>(otherParameters["screen"]);
   panel = as<bool>(parms["panel"]);
@@ -935,7 +936,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   costs.setPartition(ages);
 
   // main loop
-  for (int i = 0; i < n; ++i) { 
+  for (int i = 0; i < n; ++i) {
     person = FhcrcPerson(i+firstId,cohort[i]);
     Sim::create_process(&person);
     Sim::run_simulation();
@@ -956,8 +957,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // output
   // TODO: clean up these objects in C++ (cf. R)
   return List::create(_("costs") = costs.wrap(),                // CostReport
-		      _("summary") = report.wrap(),             // EventReport 
-		      _("shortSummary") = shortReport.wrap(),   // EventReport 
+		      _("summary") = report.wrap(),             // EventReport
+		      _("shortSummary") = shortReport.wrap(),   // EventReport
 		      _("lifeHistories") = wrap(lifeHistories), // vector<LifeHistory::Type>
 		      _("parameters") = outParameters.wrap(),   // SimpleReport<double>
 		      _("psarecord")=psarecord.wrap(),          // SimpleReport<double>
