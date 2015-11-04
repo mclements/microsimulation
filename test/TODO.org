@@ -1,0 +1,36 @@
+* PSA validation
+** Validation of microsimulation PSA-testing by age and psa
+ + Compared with STHLM0, the microsimulation has too many low PSA (PSA<3) and too few high
+   PSA (PSA>3); this is true for both testing proportions
+   and test rates.
+ + In summary, there is evidence that high PSA values are
+   under-represented in the microsimulation. This is predicated on the
+   STHLM0 data being correct; there is reasonable face validity with
+   other data sources, although we note that direct comparisons are
+   not straightforward.
+** PSA sub-model validation with external code
+ + Re-running the PSA longitudinal sub-model separately, we found that
+   a high proportion of men aged 70+ years had PSA 10+; in contrast,
+   the simulation for "screenUptake" had few men with PSA 10+ for the
+   older men. This did not restrict for previous prostate cancer diagnosis.
+ + This could be partial explained by a loss of high PSA
+   values due to earlier diagnosis.
+ + Code in test/test_microsimulation.R
+** Comparison with NHANES data
+ + STHLM0 looked reasonable compared to the American data. A direct
+   comparison was difficult, as the NHANES was a survey of healthy
+   men, while the STHLM0 is based on men who were tested (or
+   re-tested) for prostate cancer; men who had a low PSA test prior to
+   2003 may be under-represented by the men tested since 2003. This is
+   an interesting estimation problem -- that is, how can we estimate
+   cross-sectional estimates from testing data?
+** Checks undertaken
+ + Re-extracted the PSA data from the original large
+   SAS dataset (OK)
+ + Re-ran the STHLM0 extraction (OK)
+ + Re-ran the microsimulation (OK)
+ + Checked that the microsimulation parameters are as per the FHCRC C
+   code (OK)
+* Survival validation
+** DONE Rider 2015
+** TODO PcBase survival extract
