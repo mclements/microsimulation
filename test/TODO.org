@@ -8,6 +8,10 @@
    STHLM0 data being correct; there is reasonable face validity with
    other data sources, although we note that direct comparisons are
    not straightforward.
+ + Code at [[~/src/ki/STHLM0/PSArateByAge.R][~/src/ki/STHLM0/PSArateByAge.R]]
+ + Result at
+   [[~/src/ki/STHLM0/psaRatesByPSA.pdf]]
+
 ** PSA sub-model validation with external code
  + Re-running the PSA longitudinal sub-model separately, we found that
    a high proportion of men aged 70+ years had PSA 10+; in contrast,
@@ -15,7 +19,7 @@
    older men. This did not restrict for previous prostate cancer diagnosis.
  + This could be partial explained by a loss of high PSA
    values due to earlier diagnosis.
- + Code in test/test_microsimulation.R
+ + Code at [[~/src/ki/microsimulation/test/test_microsimulation.R][~/src/ki/microsimulation/test/test_microsimulation.R]]
 ** Comparison with NHANES data
  + STHLM0 looked reasonable compared to the American data. A direct
    comparison was difficult, as the NHANES was a survey of healthy
@@ -24,6 +28,12 @@
    2003 may be under-represented by the men tested since 2003. This is
    an interesting estimation problem -- that is, how can we estimate
    cross-sectional estimates from testing data?
+ + Code at [[~/src/ki/NHANES/PSA_distribution.R][~/src/ki/NHANES/PSA_distribution.R]]
+**  Comparing PSA testing proportions
+ + NHANES compared with parameter (cancer onset)
+ + First test, fixes 10<PSA<inf indicating that discrepancy seen in
+   for when not restricting to first test could be explained with retesting.
+ + revised_natural_history=FALSE
 ** Checks undertaken
  + Re-extracted the PSA data from the original large
    SAS dataset (OK)
@@ -33,4 +43,11 @@
    code (OK)
 * Survival validation
 ** DONE Rider 2015
+ + Code at [[~/src/ki/diagnoses/surviavalByDiagnosis.R][~/src/ki/diagnoses/surviavalByDiagnosis.R]]
+*** DONE Add CI-bars to the point estimates, line break legend 2*3
+ + Result at
+ [[~/src/ki/diagnoses/survivalByRiskAgePlusRider.pdf]]
 ** TODO PcBase survival extract
+ + Code at [[~/src/ki/diagnoses/surviavalByDiagnosis.R][~/src/ki/diagnoses/surviavalByDiagnosis.R]]
+ + Result at
+ [[~/src/ki/diagnoses/survivalPcBase.pdf]]

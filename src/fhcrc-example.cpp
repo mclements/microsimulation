@@ -420,6 +420,10 @@ void FhcrcPerson::init() {
     outParameters.record("ext_grade",ext_grade);
     outParameters.record("age_psa",-1.0);
     outParameters.record("pca_death",0.0);
+    outParameters.record("psa55",y(55.0-35.0));
+    outParameters.record("psa65",y(65.0-35.0));
+    outParameters.record("psa75",y(75.0-35.0));
+    outParameters.record("psa85",y(85.0-35.0));
   }
 }
 
