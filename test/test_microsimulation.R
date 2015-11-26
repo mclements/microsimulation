@@ -168,14 +168,15 @@ temp2 <- transform(temp2,
 temp2 <- within(temp2, {
     ext_grade <- ifelse(cancer, ext_grade, NA)
 })
-rnormPos <- function(n,mean=0,sd=1,lbound=0) {
-    if (length(mean)<n) mean <- rep(mean,length=n)
-    if (length(sd)<n) sd <- rep(sd,length=n)
-    x <- rnorm(n,mean,sd)
-    while(any(i <- which(x<lbound)))
-        x[i] <- rnorm(sum(i),mean[i],sd[i])
-    x
-}
+## ## rnormPos is now in the package...
+## rnormPos <- function(n,mean=0,sd=1,lbound=0) {
+##     if (length(mean)<n) mean <- rep(mean,length=n)
+##     if (length(sd)<n) sd <- rep(sd,length=n)
+##     x <- rnorm(n,mean,sd)
+##     while(any(i <- which(x<lbound)))
+##         x[i] <- rnorm(length(i),mean[i],sd[i])
+##     x
+## }
 ## onset ho(t) = g0 * t
 p <- list(mubeta0=-1.609,
           sebeta0=0.2384,
@@ -302,19 +303,29 @@ p <- list(mubeta0=-1.609,
 set.seed(12345)
 n <- 1e6
 age_o <- 35+sqrt(-2*log(runif(n))/p$g0)
-grade <- rep(1:2,c(0.9*n,0.1*n))
+## grade <- rep(1:2,c(0.9*n,0.1*n)) # this should depend on age of onset
+grade <- ifelse(runif(n) < 0.006*(age_o-35), 1, 0)
 beta0 <- with(p, rnorm(n,mubeta0,sebeta0))
 beta1 <- with(p, rnormPos(n,mubeta1,sebeta1))
 beta2 <- with(p, rnormPos(n,mubeta2[grade],sebeta2[grade]))
 eps <- with(p, rnorm(n,0,tau2))
 lpsa <- pmin(log(20),beta0+beta1*(50-35)+beta2*pmax(0,50-age_o)+eps)
-plot(density(exp(lpsa)),xlim=c(0,20))
+plot(density(exp(lpsa)),xlim=c(0,20)) # density of PSA at age 50 years
 i <- 1
 for (age in seq(55,80,by=5)) {
     lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps)
     lines(density(exp(lpsa)),col=i)
     i <- i+1
 }
+psacut <- function(x) cut(x,c(0,1,3,10,Inf), right=FALSE)
+tab <- sapply(ages <- seq(55,80,by=5), function(age) {
+    lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps)
+    lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o))
+    tab <- table(psacut(exp(lpsa)))
+    tab/sum(tab)
+})
+colnames(tab) <- ages
+tab
 
 p <- list(mubeta0=-1.609,
           sebeta0=0.2384,
