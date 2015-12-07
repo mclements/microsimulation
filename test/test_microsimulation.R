@@ -40,7 +40,6 @@ xyplot(rate ~ year | factor(age5), data=t1, type="l")
 
 dbGetQuery(connection, 'select event,sum(n) from events group by event')
 
-
 temp=callFhcrc(1e5,nLifeHistories=1e5)
 life=temp$lifeHistories
 deaths <- sqldf("select t1.id, t1.end as dx, t2.end as death, t1.state, t1.ext_grade from life as t1 inner join life as t2 on t1.id=t2.id where t1.event='toClinicalDiagnosis' and t2.event='toCancerDeath'")
@@ -68,6 +67,48 @@ ICER(model2,model4)
 
 
 
+#### Calibrate for survival
+require(microsimulation)
+require(dplyr)
+## competing risks - using FhcrcParameters$mu0 and fhcrcData$survival_local
+CR <- function(agedx,times=c(10,15),HR=1,grade=0) {
+    S0 <- data.frame(age=0:105,mu0=FhcrcParameters$mu0) %>%
+        filter(age>=agedx) %>%
+            mutate(Time=age-agedx,S0=exp(-cumsum(c(0,mu0[-length(mu0)])))) %>%
+                select(Time,mu0,S0)
+    S1 <- filter(fhcrcData$survival_local,AgeLow==agedx,Grade==grade) %>%
+        mutate(S1=Survival^HR,mu1=-HR*log(c(Survival[-1],NA)/Survival)) %>%
+            select(Time,mu1,S1)
+    inner_join(S0,S1,by="Time") %>%
+        mutate(x0=S0*S1*mu0, x1=S0*S1*mu1, CR0=cumsum(x0), CR1=cumsum(x1)) %>%
+            filter(Time %in% (times-1)) %>%
+                mutate(Time=times) %>%
+                    select(Time,CR1,CR0)
+}
+CRsolve <- function(data) {
+    data$grade <- ifelse(data$grade %in% c(0,6,7),0,1)
+    optimize(function(hr)
+             CR(unique(data$age),HR=hr,grade=data$grade) %>% inner_join(data, by="Time") %>%
+             with(sum(c(CR1-cr1)^2)),
+             c(0.1,10))
+}
+## PSA<10, M0/MX
+CRsolve(data.frame(age=55,grade=6,Time=c(10,15),cr1=c(0.009,0.029))) # HR=0.137
+## CRsolve(data.frame(age=50,grade=7,Time=c(10,15),cr1=c(NA,NA))) # too few at risk
+CRsolve(data.frame(age=65,grade=6,Time=c(10,15),cr1=c(0.014,0.047))) # HR=0.181
+CRsolve(data.frame(age=65,grade=7,Time=c(10,15),cr1=c(0.087,0.198))) # HR=0.874
+CRsolve(data.frame(age=75,grade=6,Time=c(10,15),cr1=c(0.049,0.119))) # HR=0.480
+CRsolve(data.frame(age=75,grade=7,Time=c(10,15),cr1=c(0.128,0.217))) # HR=1.020
+##
+## PSA>=10, M0/MX
+CRsolve(data.frame(age=55,grade=6,Time=c(10,15),cr1=c(0.060,0.178))) # HR=0.902
+CRsolve(data.frame(age=55,grade=7,Time=c(10,15),cr1=c(0.369,0.474))) # HR=3.631
+CRsolve(data.frame(age=65,grade=6,Time=c(10,15),cr1=c(0.088,0.188))) # HR=0.840
+CRsolve(data.frame(age=65,grade=7,Time=c(10,15),cr1=c(0.329,0.436))) # HR=2.644
+CRsolve(data.frame(age=75,grade=6,Time=c(10,15),cr1=c(0.140,0.239))) # HR=1.134
+CRsolve(data.frame(age=75,grade=7,Time=c(10,15),cr1=c(0.265,0.363))) # HR=2.035
+CRsolve(data.frame(age=75,grade=8,Time=c(10,15),cr1=c(0.463,0.524))) # HR=0.797
+## NB: the SEER survival data were NOT stratified by PSA value.
 
 refresh
 require(rstpm2)
