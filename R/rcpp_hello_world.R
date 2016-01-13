@@ -197,7 +197,7 @@ FhcrcParameters <- list(
     c_baseline_specific = 1.0,
     c_benefit_value0 = 10, # (value -> reduction): 0.04 -> 10%; 0.18 -> 20%; 10 -> 28%
     sxbenefit = 1.0,
-    c_benefit_type = 1, # 0=stage-shift (=> c_benefit_value0=10), 1=lead-time based (=> c_benefit_value1=0.1)
+    c_benefit_type = 0, # 0=stage-shift (=> c_benefit_value0=10), 1=lead-time based (=> c_benefit_value1=0.1)
     c_benefit_value1 = 0.1,
     screeningCompliance = 0.75,
     rescreeningCompliance = 0.95,
@@ -247,6 +247,14 @@ FhcrcParameters <- list(
         0.240339, 0.256215, 0.275103, 0.314157, 0.345252, 0.359275, 0.41768,
         0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538,
         0.782609),
+    hr_locoregional=transform(expand.grid(age=c(50,60,70),ext_grade=0:2,psa10=0:1),
+                              hr=c(0.4173833, 0.8237552, 1.3758962, 3.2657666,
+                                   2.1100927, 3.0383135, 1.9129827, 0.8172029,
+                                   1.2776311, 0.7484806, 0.8408693, 0.9978505,
+                                   2.3135633, 2.2911048, 1.9367181, 0.7051611,
+                                   0.6943169, 0.6788740)),
+    hr_metastatic=data.frame(age=c(50, 60, 70),
+                             hr=c(0.9858856, 1.0001901, 0.8751924)),
     cost_parameters = c(Invitation = 50,
         FormalPSA = 130,
         OpportunisticPSA = 1910,

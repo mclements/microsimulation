@@ -88,11 +88,15 @@ namespace fhcrc_example {
   bool debug = false;
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
+  typedef Table<boost::tuple<double,int,int>,double> TableLocoHR; // Age, G, PSA10+
+  typedef Table<double,double> TableMetastaticHR; // Age
   typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
   typedef Table<pair<double,double>,double> TableBiopsyCompliance;
   typedef Table<pair<double,double>,double> TableDDD; // as per TableBiopsyCompliance
   typedef map<int,NumericInterpolate> H_dist_t;
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
+  TableLocoHR hr_locoregional;
+  TableMetastaticHR hr_metastatic;
   TablePrtx prtxCM, prtxRP;
   TablePradt pradt;
   TableBiopsyCompliance tableOpportunisticBiopsyCompliance, tableFormalBiopsyCompliance;
@@ -158,9 +162,10 @@ namespace fhcrc_example {
     bool everPSA, previousNegativeBiopsy, organised;
     FhcrcPerson(const int id = 0, const double cohort = 1950) :
       id(id), cohort(cohort), utility(1.0) { };
-    double ymean(double t);
-    double y(double t);
+    double psamean(double age);
+    double psameasured(double age);
     treatment_t calculate_treatment(double u, double age, double year);
+    double calculate_mortality_hr(double age_diag);
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
     void opportunistic_rescreening(double psa);
     void init();
@@ -172,20 +177,19 @@ namespace fhcrc_example {
   };
 
   /**
-      Calculate the (geometric) mean PSA value at a given time (** NB: time = age - 35 **)
+      Calculate the (geometric) mean PSA value at a given age (** NB: this used to be t=age-35.0 **)
   */
-  double FhcrcPerson::ymean(double t) {
-    if (t<0.0) t = 0.0; // is this the correct way to handle PSA before age 35 years?
+  double FhcrcPerson::psamean(double age) {
+    double t = age<35.0 ? 0.0 : age - 35.0;
     double yt = t<t0 ? exp(beta0+beta1*t) : exp(beta0+beta1*t+beta2*(t-t0));
     return yt;
   }
 
   /**
-      Calculate the *measured* PSA value at a given time (** NB: time = age - 35 **)
+      Calculate the *measured* PSA value at a given age (** NB: this used to be t=age-35 **)
   */
-  double FhcrcPerson::y(double t) {
-    double yt = FhcrcPerson::ymean(t)*exp(R::rnorm(0.0, sqrt(double(parameter["tau2"]))));
-      return yt;
+  double FhcrcPerson::psameasured(double age) {
+    return FhcrcPerson::psamean(age)*exp(R::rnorm(0.0, sqrt(double(parameter["tau2"]))));
     }
 
   /**
@@ -227,23 +231,48 @@ namespace fhcrc_example {
       return tx;
   }
 
+  /** @brief calculate survival taking account of screening and treatment.
+
+      For the Nordic natural history model, we have calibrated
+      survival to observed survival from PCBase. These calibrations
+      are represented by the hr_locoregional and hr_metastatic tables.
+
+      Note that we do not use now(), as the time points change
+      depending on how we represent screening. This explains why we
+      pass all of the ages as parameters.
+
+      The ustar is an approach to adjust survival for different
+      factors. Rather than solve a revised survival function, we solve
+      the baseline survival function for a revised ustar = u^(1/HR).
+   **/
+
+  double FhcrcPerson::calculate_mortality_hr(double age_diag) { // also: tm, ext_grade
+    double age_m = tm + 35.0;   // age at onset of metastatic cancer
+    bool localised = (age_diag < age_m);
+    double mort_hr;
+    if (localised)
+      mort_hr = hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, psamean(age_diag)>10 ? 1 : 0));
+    else
+      mort_hr = hr_metastatic(age_diag);
+    return mort_hr;
+  }
+
   double FhcrcPerson::calculate_survival(double u, double age_diag, double age_c, treatment_t tx) { // also: tc, tm, tmc, grade, now()
     double age_d = -1.0;        // age at death (output)
     double age_m = tm + 35.0;   // age at onset of metastatic cancer
     bool localised = (age_diag < age_m);
     double txhaz = (localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
+    // calibration HR(age_diag,PSA,ext_grade) for loco-regional or HR(age_diag) for metastatic cancer
     double lead_time = age_c - age_diag;
     double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
-    double mort_hr = ext_grade==ext::Gleason_le_6 ? parameter["gleason_le_6_hr"] :
-      ext_grade==ext::Gleason_7 ? parameter["gleason_7_hr"] :
-      parameter["gleason_ge_8_hr"];
+    double mort_hr = calculate_mortality_hr(age_diag);
     double ustar = pow(u,1/(parameter["c_baseline_specific"]*mort_hr*txbenefit*parameter["sxbenefit"]));
     if (localised)
       age_d = age_c + H_local[H_local_t::key_type(*H_local_age_set.lower_bound(bounds<double>(age_diag,50.0,80.0)),grade)].invert(-log(ustar));
     else
       age_d = age_c + H_dist[grade].invert(-log(ustar));
-    if (debug) Rprintf("id=%i, lead_time=%f, tx=%i, txbenefit=%f, u=%f, ustar=%f, age_diag=%f, age_m=%f, age_c=%f, age_d=%f\n",
-		       id,lead_time,(int)tx,txbenefit,u,ustar,age_diag,age_m,age_c,age_d);
+    if (debug) Rprintf("id=%i, lead_time=%f, ext_grade=%i, psamean=%f, tx=%i, txbenefit=%f, u=%f, ustar=%f, age_diag=%f, age_m=%f, age_c=%f, age_d=%f, mort_hr=%f\n",
+		       id, lead_time, (int)ext_grade, psamean(age_diag), (int)tx,txbenefit, u, ustar, age_diag, age_m, age_c, age_d, mort_hr);
     return age_d;
   }
 
@@ -320,9 +349,9 @@ void FhcrcPerson::init() {
   beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]);
   beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
 
-  y0 = ymean(t0); // depends on: t0, beta0, beta1, beta2
+  y0 = psamean(t0+35); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
-  ym = ymean(tm);
+  ym = psamean(tm+35);
   tc = (log((beta1+beta2)*R::rexp(1.0)/parameter["gc"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand(R::runif(0.0,1.0));
@@ -444,10 +473,10 @@ void FhcrcPerson::init() {
     outParameters.record("ext_grade",ext_grade);
     outParameters.record("age_psa",-1.0);
     outParameters.record("pca_death",0.0);
-    outParameters.record("psa55",y(55.0-35.0));
-    outParameters.record("psa65",y(65.0-35.0));
-    outParameters.record("psa75",y(75.0-35.0));
-    outParameters.record("psa85",y(85.0-35.0));
+    outParameters.record("psa55",psameasured(55.0));
+    outParameters.record("psa65",psameasured(65.0));
+    outParameters.record("psa75",psameasured(75.0));
+    outParameters.record("psa85",psameasured(85.0));
   }
 }
 
@@ -460,9 +489,9 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   rngNh->set();
 
   // declarations
-  double psa = y(now()-35.0);
+  double psa = psameasured(now()); // includes measurement error
   // double test = panel ? biomarker : psa;
-  double Z = ymean(now()-35.0);
+  double Z = psamean(now());
   double age = now();
   double year = age + cohort;
   double compliance;
@@ -519,8 +548,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     scheduleAt(now(), toScreen); // now start organised screening
     break;
 
-  case toBiopsyFollowUpScreen:
-  case toScreen: {
+  case toScreen:
+  case toBiopsyFollowUpScreen: {
     rngScreen->set();
     if (includePSArecords) {
       psarecord.record("id",id);
@@ -539,6 +568,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (!everPSA) {
       if (id<nLifeHistories) {
 	outParameters.revise("age_psa",now());
+	// outParameters.revise("first_psa",psa);
       }
       everPSA = true;
     }
@@ -726,8 +756,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double lead_time = age_c - now();
     // calculate the age at cancer death by c_benefit_type
     double age_cancer_death=R_PosInf;
-    if (parameter["c_benefit_type"]==LeadTimeBased) {
-      double pcure = 1 - exp(-lead_time*parameter["c_benefit_value1"]);
+    if (parameter["c_benefit_type"]==LeadTimeBased) { // [new paper ref]
+      double pcure = pow(1 - exp(-lead_time*parameter["c_benefit_value1"]),
+      			 calculate_mortality_hr(age_c));
+      if (debug) Rprintf("hr for lead time=%f\n", calculate_mortality_hr(age_c));
       cured = (R::runif(0.0,1.0) < pcure);
       if (cured) RemoveKind(toMetastatic);
       else {
@@ -735,7 +767,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       age_cancer_death = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
       }
     }
-    else if (parameter["c_benefit_type"]==StageShiftBased) {
+    else if (parameter["c_benefit_type"]==StageShiftBased) { // [annals paper ref]
       // calculate survival
       double u_surv = R::runif(0.0,1.0);
       double age_cd = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
@@ -880,6 +912,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   prtxRP = TablePrtx(as<DataFrame>(tables["prtx"]),
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
+  hr_locoregional = TableLocoHR(as<DataFrame>(otherParameters["hr_locoregional"]),"age","ext_grade","psa10","hr");
+  hr_metastatic = TableMetastaticHR(as<DataFrame>(otherParameters["hr_metastatic"]),"age","hr");
   tableOpportunisticBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyOpportunisticComplianceTable"]),
 						"psa","age","compliance");
   tableFormalBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyFormalComplianceTable"]),
@@ -930,6 +964,18 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     // Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(pair<double,double>(bounds<double>(1.0,4.0,10.0), bounds<double>(100.0,55,75))));
     Rprintf("Interp for grade 6/7 (expecting approx 0.3): %f\n",interp_prob_grade7.approx(0.143));
     Rprintf("prtxCM(80,2008,1) [expecting 0.970711]: %f\n",prtxCM(TablePrtx::key_type(80.0,2008.0,1)));
+    {
+      double age_diag=51.0;
+      ext::grade_t ext_grade = ext::Gleason_ge_8;
+      // FhrcPerson person = FhcrcPerson(0,1960);
+      // Rprintf("hr_localregional(50,0,)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, person.psamean(age_diag)>10 ? 1 : 0)));
+      Rprintf("hr_localregional(50,8+,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, 0)));
+      Rprintf("hr_localregional(50,8+,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, 1)));
+      Rprintf("hr_localregional(50,7,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 0)));
+      Rprintf("hr_localregional(50,7,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 1)));
+      Rprintf("hr_localregional(50,<=6,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 0)));
+      Rprintf("hr_localregional(50,<=6,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 1)));
+    }
   }
 
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);

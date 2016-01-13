@@ -131,14 +131,18 @@ class DataFrameSelect {
   }
 };
 
-template<class Key0, class Outcome>
+/** @brief A table class for lookups.  For the case of a single key,
+    this is a small extension to std::map, including the ability to
+    read columns from a DataFrame. Looking up a key which is less than the
+    lowest key value will use the lowest key.
+
+ **/
+template<class key_type, class mapped_type>
   class Table {
  public:
-  typedef Key0 key_type;
-  typedef pair<key_type,Outcome> value_type;
+  typedef pair<key_type,mapped_type> value_type;
   typedef set<key_type, greater<key_type> > Axis;
-  typedef Outcome mapped_type;
-  void insert(const key_type& key, const Outcome& outcome) {
+  void insert(const key_type& key, const mapped_type& outcome) {
     axis.insert(key);
     data[key] = outcome;
   }
@@ -146,20 +150,21 @@ template<class Key0, class Outcome>
     axis.insert(value.first);
     data[value.first].push_back(value.second);
   }
-  virtual Outcome operator()(key_type key) {
-    return data[*axis.lower_bound(key)];
+  virtual mapped_type operator()(key_type key) {
+    if (key<*axis.begin()) return data[*axis.begin()];
+    else return data[*axis.lower_bound(key)];
   }
   Table() {}
-  Table(const DataFrame & df, string s0, string s1) { 
-    DataFrameSelect<Key0> df0(df,s0);
-    DataFrameSelect<Outcome> df1(df,s1);
+  Table(const DataFrame & df, string s0, string s1) {
+    DataFrameSelect<key_type> df0(df,s0);
+    DataFrameSelect<mapped_type> df1(df,s1);
     for (int i=0; i<df0.size(); i++) {
       insert(key_type(df0[i]), df1[i]);
     }
   }
  private:
   Axis axis;
-  map<key_type,Outcome> data;
+  map<key_type,mapped_type> data;
 };
 
 template<class Key0, class Key1, class Outcome>

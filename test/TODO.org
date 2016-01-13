@@ -1,3 +1,4 @@
+#+TAGS: Mark Andreas
 * PSA validation
 ** Validation of microsimulation PSA-testing by age and psa
  + Compared with STHLM0, the microsimulation has too many low PSA (PSA<3) and too few high
@@ -47,7 +48,33 @@
 *** DONE Add CI-bars to the point estimates, line break legend 2*3
  + Result at
  [[~/src/ki/diagnoses/survivalByRiskAgePlusRider.pdf]]
-** TODO PcBase survival extract
+** DONE PcBase survival extract
  + Code at [[~/src/ki/diagnoses/surviavalByDiagnosis.R][~/src/ki/diagnoses/surviavalByDiagnosis.R]]
  + Result at
  [[~/src/ki/diagnoses/survivalPcBase.pdf]]
+** DONE Calibrate stage-shift model using PcBase survival	    :Andreas:
+   The stage-shift model is now used as the default model. This was
+   done using mean(log(HR(t=10)),log(HR(t=15))) where t is the time
+   since diagnosis. Code here: [[~/src/ki/diagnoses/PCbaseHR.R]]
+   Calibration result here:
+   [[~/src/ki/diagnoses/stage_shift_calibrated.pdf]]
+** TODO Calibrate lead-time based using PcBase survival		    :Andreas:
+   This has not been successful so far.  Code here:
+   [[~/src/ki/diagnoses/PCbaseHR.R]] Calibration result here:
+   [[~/src/ki/diagnoses/lead_time_calibrated.pdf]]
+* TODO Biomarker model at PSA 10+				       :Mark:
+  Consider whether men with PSA 10+ will do a S3M test. This has costs
+  implications, but may also have clinical relevance.
+* TODO PSA uptake patterns					       :Mark:
+  Look at Mariotto paper for psa uptake patterns. We could also look
+  at the Australian Medicare data for an age-specific test pattern.
+* TODO Switch the time notation					       :Mark:
+  Mark complains about the use of t0, tc, tmc and tm. At some point,
+  it would be good to chance these to age_0, etc.
+* TODO New base model for the biomarker				    :Andreas:
+  New base model for the biomarker where we draw a random sample
+  within the same group (uninformed of PSA-value). Keeping the PSA
+  based model as an option.
+* TODO Report incidence & mortality in tables 			    :Andreas:
+  Produce incidence & mortality tables similar to how they are
+  reported in table 6 & 7 in the IHE report.
