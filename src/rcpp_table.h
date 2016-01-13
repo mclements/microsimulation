@@ -19,8 +19,8 @@ class Interpolate {
   vector<double> x, y, slope;
   Interpolate()  {
   }
- Interpolate(vector<double> inx, vector<double> iny) : 
-  x(inx), y(iny) { 
+ Interpolate(vector<double> inx, vector<double> iny) :
+  x(inx), y(iny) {
     // calculate the slope between points
     for (size_t i=0; i<x.size()-1; i++) {
       slope.push_back((y[i+1]-y[i]) / (x[i+1]-x[i]));
@@ -42,8 +42,8 @@ class Interpolate {
   }
 };
 
-/** 
-    Class for numerical interpolation for x and y. 
+/**
+    Class for numerical interpolation for x and y.
     Includes methods to read in x and y from a data-frame or from pairs of (x,y).
     Includes methods for linear approximation (approx, x->y) and inversion of increasing (invert)
     and decreasing (invert_decreasing) values (y->x).
@@ -56,7 +56,7 @@ class NumericInterpolate {
   int n;
  NumericInterpolate() : x(0), y(0), slope(0), n(0) {
   }
-  NumericInterpolate(DataFrame df, int i0=0, int i1=1) { 
+  NumericInterpolate(DataFrame df, int i0=0, int i1=1) {
     // calculate the slope between points
     x = df(i0);
     y = df(i1);
@@ -76,7 +76,7 @@ class NumericInterpolate {
   double approx(double xfind) {
     int i;
     if (xfind<=x[0]) return y[0];
-    else if (xfind>=x[n-1]) return y[n-1]+slope[n-2]*(xfind-x[n-1]); // linear 
+    else if (xfind>=x[n-1]) return y[n-1]+slope[n-2]*(xfind-x[n-1]); // linear
     else {
       i = lower_bound(x.begin(), x.end(), xfind) - 1 - x.begin();
       return y[i]+slope[i]*(xfind-x[i]);
@@ -116,7 +116,7 @@ T set_lower_bound(set<T,greater<T> > aset, T value) {
 template <class T>
 class DataFrameSelect {
  public:
-  Vector<Rcpp::traits::r_sexptype_traits<T>::rtype> data; 
+  Vector<Rcpp::traits::r_sexptype_traits<T>::rtype> data;
   DataFrameSelect(const DataFrame & df, int i = 0) {
     data = df(i); // copy
   }
@@ -170,7 +170,7 @@ template<class Key0, class Key1, class Outcome>
   typedef map<key_type,mapped_type> data_type;
   typedef pair<
     set<Key0, greater<Key0> >,
-    set<Key1, greater<Key1> > 
+    set<Key1, greater<Key1> >
     > Axis;
   void insert(key_type key, Outcome outcome) {
     axis.first.insert(key.first);
@@ -182,7 +182,7 @@ template<class Key0, class Key1, class Outcome>
 			 *(axis.second.lower_bound(key.second)))];
   }
   Table() {}
-  Table(const DataFrame & df, string s0, string s1, string s2) { 
+  Table(const DataFrame & df, string s0, string s1, string s2) {
     DataFrameSelect<Key0> df0(df,s0);
     DataFrameSelect<Key1> df1(df,s1);
     DataFrameSelect<Outcome> df2(df,s2);
@@ -202,7 +202,7 @@ template<class I0, class I1, class Outcome>
   typedef Outcome mapped_type;
   typedef boost::tuple<
     set<I0, greater<I0> >,
-    set<I1, greater<I1> > 
+    set<I1, greater<I1> >
     > Axis;
   void insert(key_type key, Outcome outcome) {
     get<0>(axis).insert(get<0>(key));
@@ -214,7 +214,7 @@ template<class I0, class I1, class Outcome>
 			 *get<1>(axis).lower_bound(get<1>(key)))];
   }
   Table() {}
-  Table(const DataFrame & df, string s0, string s1, string s2) { 
+  Table(const DataFrame & df, string s0, string s1, string s2) {
     DataFrameSelect<I0> df0(df,s0);
     DataFrameSelect<I1> df1(df,s1);
     DataFrameSelect<Outcome> df2(df,s2);
@@ -246,7 +246,7 @@ template<class I0, class I1, class I2, class Outcome>
 			 )];
   }
   Table() {}
-  Table(const DataFrame & df, string s0, string s1, string s2, string s3) { 
+  Table(const DataFrame & df, string s0, string s1, string s2, string s3) {
     DataFrameSelect<I0> df0(df,s0);
     DataFrameSelect<I1> df1(df,s1);
     DataFrameSelect<I2> df2(df,s2);
@@ -288,7 +288,7 @@ template<class I0, class I1, class I2, class I3, class Outcome>
 		      )];
   }
   Table() {}
-  Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4) { 
+  Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4) {
     DataFrameSelect<I0> df0(df,s0);
     DataFrameSelect<I1> df1(df,s1);
     DataFrameSelect<I2> df2(df,s2);
@@ -332,7 +332,7 @@ template<class I0, class I1, class I2, class I3, class I4, class Outcome>
 		      *get<4>(axis).lower_bound(get<4>(key))
 		      )];
   }
-  Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4, string s5) { 
+  Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4, string s5) {
     DataFrameSelect<I0> df0(df,s0);
     DataFrameSelect<I1> df1(df,s1);
     DataFrameSelect<I2> df2(df,s2);
