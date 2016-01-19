@@ -71,7 +71,7 @@
 * TODO Switch the time notation					       :Mark:
   Mark complains about the use of t0, tc, tmc and tm. At some point,
   it would be good to chance these to age_0, etc.
-* TODO New base model for the biomarker				    :Andreas:
+* DONE New base model for the biomarker				    :Andreas:
   New base model for the biomarker where we draw a random sample
   within the same group (uninformed of PSA-value). Keeping the PSA
   based model as an option.

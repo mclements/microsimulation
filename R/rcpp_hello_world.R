@@ -211,6 +211,7 @@ FhcrcParameters <- list(
     ## BPThresholdBiopsyFollowUp=3.47,
     ## BPThreshold=4.69,
     ## BPThresholdBiopsyFollowUp=4.69,
+    biomarker_model = 0, # biomarker_model = 0 random, biomarker_model = 1 psa/risk based correction of FP
     PSA_FP_threshold_nCa=4.4, # reduce FP in no cancers with PSA threshold
     PSA_FP_threshold_GG6=3.6, # reduce FP in GG 6 with PSA threshold
     BPThreshold=4.2,

@@ -57,6 +57,8 @@ namespace fhcrc_example {
 
   enum survival_t {StageShiftBased, LeadTimeBased};
 
+  enum biomarker_model_t {random_correction, psa_informed_correction};
+
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
@@ -598,10 +600,19 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     // Important case: PSA<1 (to check)
     // Reduce false positives wrt Gleason 7+ by 1-rFPF: which BPThreshold?
     if (panel && positive_test) {
-      // if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"]) positive_test = false;
-      if ((ext_grade == ext::Gleason_le_6 && onset() && psa<parameter["PSA_FP_threshold_GG6"]) // FP GG 6 PSA threshold
-	  ||  (!onset() && psa < parameter["PSA_FP_threshold_nCa"])) {// FP no cancer PSA threshold
-	positive_test = false; // strong assumption
+      if (int(parameter("biomarker_model"))==random_correction) { // base model for the biomarker
+	if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"])
+	  positive_test = false;
+      }
+      else if (int(parameter("biomarker_model"))==psa_informed_correction) { // optimistic model for the biomarker
+	if ((ext_grade == ext::Gleason_le_6 &&
+	     onset() && psa<parameter["PSA_FP_threshold_GG6"]) // FP GG 6 PSA threshold
+	    ||  (!onset() && psa < parameter["PSA_FP_threshold_nCa"])) {// FP no cancer PSA threshold
+	  positive_test = false; // strong assumption
+	}
+      }
+      else {
+	REprintf("Parameter biomarker_model not matched: %i\n", int(parameter("biomarker_model")));
       }
     }
     if (includePSArecords && !onset() && positive_test) {
