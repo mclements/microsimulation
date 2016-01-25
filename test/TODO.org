@@ -35,6 +35,10 @@
  + First test, fixes 10<PSA<inf indicating that discrepancy seen in
    for when not restricting to first test could be explained with retesting.
  + revised_natural_history=FALSE
+** TODO Validate PSA uptake 1995-2003 				    :Andreas:
+Do a big run (e.g. 1e8 or 1e9) and validate the incidence
+1995-2003. If incidence is ok psa uptake should could be ok as
+well. Start by checking old validation.
 ** Checks undertaken
  + Re-extracted the PSA data from the original large
    SAS dataset (OK)
@@ -73,8 +77,22 @@
   it would be good to chance these to age_0, etc.
 * DONE New base model for the biomarker				    :Andreas:
   New base model for the biomarker where we draw a random sample
-  within the same group (uninformed of PSA-value). Keeping the PSA
-  based model as an option.
-* TODO Report incidence & mortality in tables 			    :Andreas:
+  within the group 3<psa<10. And randomly (uninformed of PSA-value)
+  adjust for the rFPR. The PSA based model is kept as an option.
+* TODO Compare the two biomarker models
+* TODO Report incidence & mortality in tables			    :Andreas:
   Produce incidence & mortality tables similar to how they are
-  reported in table 6 & 7 in the IHE report.
+  reported in table 6 & 7 in the IHE report. This needs to be re-done
+  since we changed thresholds for the biomarker panel.
+* DONE Re-run the psa-threshold for the biomarker model		    :Andreas:
+  After the calibration of the gleason specific prevalence we needed
+  to re-run the thresholds for the PSA based biomarker-model. This
+  will have to be redone again if we update the PSA-uptake model for
+  1994-2003.  This lead to a slight change in thresholds, diff:
+  #+BEGIN_SRC R :exports code :eval no
+    -    PSA_FP_threshold_nCa=4.4, # reduce FP in no cancers with PSA threshold
+    -    PSA_FP_threshold_GG6=3.6, # reduce FP in GG 6 with PSA threshold
+    +    PSA_FP_threshold_nCa=4.15, # reduce FP in no cancers with PSA threshold
+    +    PSA_FP_threshold_GG6=3.41, # reduce FP in GG 6 with PSA threshold
+  #+END_SRC
+  [[file:~/src/ki/biomarker_model/biomarker_psa_threshold.R]]

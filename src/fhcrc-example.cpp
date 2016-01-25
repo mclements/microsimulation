@@ -599,7 +599,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       false;
     // Important case: PSA<1 (to check)
     // Reduce false positives wrt Gleason 7+ by 1-rFPF: which BPThreshold?
-    if (panel && positive_test) {
+    if (panel && positive_test && psa < 10.) {
       if (int(parameter("biomarker_model"))==random_correction) { // base model for the biomarker
 	if (R::runif(0.0,1.0) < 1.0-parameter["rFPF"])
 	  positive_test = false;
