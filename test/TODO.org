@@ -1,4 +1,5 @@
 #+TAGS: Mark Andreas
+#+TODO: Todo: Ongoing: | Done:
 * PSA validation
 ** Validation of microsimulation PSA-testing by age and psa
  + Compared with STHLM0, the microsimulation has too many low PSA (PSA<3) and too few high
@@ -35,7 +36,7 @@
  + First test, fixes 10<PSA<inf indicating that discrepancy seen in
    for when not restricting to first test could be explained with retesting.
  + revised_natural_history=FALSE
-** TODO Validate PSA uptake 1995-2003 				    :Andreas:
+** Todo: Validate PSA uptake 1995-2003 				    :Andreas:
 Do a big run (e.g. 1e8 or 1e9) and validate the incidence
 1995-2003. If incidence is ok psa uptake should could be ok as
 well. Start by checking old validation.
@@ -47,44 +48,44 @@ well. Start by checking old validation.
  + Checked that the microsimulation parameters are as per the FHCRC C
    code (OK)
 * Survival validation
-** DONE Rider 2015
+** Done: Rider 2015
  + Code at [[~/src/ki/diagnoses/surviavalByDiagnosis.R][~/src/ki/diagnoses/surviavalByDiagnosis.R]]
-*** DONE Add CI-bars to the point estimates, line break legend 2*3
+*** Done: Add CI-bars to the point estimates, line break legend 2*3
  + Result at
  [[~/src/ki/diagnoses/survivalByRiskAgePlusRider.pdf]]
-** DONE PcBase survival extract
+** Done: PcBase survival extract
  + Code at [[~/src/ki/diagnoses/surviavalByDiagnosis.R][~/src/ki/diagnoses/surviavalByDiagnosis.R]]
  + Result at
  [[~/src/ki/diagnoses/survivalPcBase.pdf]]
-** DONE Calibrate stage-shift model using PcBase survival	    :Andreas:
+** Done: Calibrate stage-shift model using PcBase survival	    :Andreas:
    The stage-shift model is now used as the default model. This was
    done using mean(log(HR(t=10)),log(HR(t=15))) where t is the time
    since diagnosis. Code here: [[~/src/ki/diagnoses/PCbaseHR.R]]
    Calibration result here:
    [[~/src/ki/diagnoses/stage_shift_calibrated.pdf]]
-** TODO Calibrate lead-time based using PcBase survival		    :Andreas:
+** Todo: Calibrate lead-time based using PcBase survival		    :Andreas:
    This has not been successful so far.  Code here:
    [[~/src/ki/diagnoses/PCbaseHR.R]] Calibration result here:
    [[~/src/ki/diagnoses/lead_time_calibrated.pdf]]
-* TODO Biomarker model at PSA 10+				       :Mark:
+* Todo: Biomarker model at PSA 10+				       :Mark:
   Consider whether men with PSA 10+ will do a S3M test. This has costs
   implications, but may also have clinical relevance.
-* TODO PSA uptake patterns					       :Mark:
+* Todo: PSA uptake patterns					       :Mark:
   Look at Mariotto paper for psa uptake patterns. We could also look
   at the Australian Medicare data for an age-specific test pattern.
-* TODO Switch the time notation					       :Mark:
+* Todo: Switch the time notation					       :Mark:
   Mark complains about the use of t0, tc, tmc and tm. At some point,
   it would be good to chance these to age_0, etc.
-* DONE New base model for the biomarker				    :Andreas:
+* Done: New base model for the biomarker			    :Andreas:
   New base model for the biomarker where we draw a random sample
   within the group 3<psa<10. And randomly (uninformed of PSA-value)
   adjust for the rFPR. The PSA based model is kept as an option.
-* TODO Compare the two biomarker models
-* TODO Report incidence & mortality in tables			    :Andreas:
+* Todo: Compare the two biomarker models
+* Todo: Report incidence & mortality in tables		    :Andreas:
   Produce incidence & mortality tables similar to how they are
   reported in table 6 & 7 in the IHE report. This needs to be re-done
   since we changed thresholds for the biomarker panel.
-* DONE Re-run the psa-threshold for the biomarker model		    :Andreas:
+* Done: Re-run the psa-threshold for the biomarker model 	    :Andreas:
   After the calibration of the gleason specific prevalence we needed
   to re-run the thresholds for the PSA based biomarker-model. This
   will have to be redone again if we update the PSA-uptake model for
@@ -96,3 +97,47 @@ well. Start by checking old validation.
     +    PSA_FP_threshold_GG6=3.41, # reduce FP in GG 6 with PSA threshold
   #+END_SRC
   [[file:~/src/ki/biomarker_model/biomarker_psa_threshold.R]]
+* Publication plan
+** PSA submodel							       :Mark:
+   PSA uptake compare with [[file:~/KI/Literature/jonsson2011.pdf]]
+   Poisson-likelihood?
+   How good is current? *Mark?*
+** Nordic Natural history "base of the pyramid"
+   Calibrations and adaptions
+   + PSA x Gleason?
+   + Gleason incidence
+   + PSA proportions by age & gleason
+     [[file:~/src/ki/STHLM0/gleasonFitting.R]]
+     [[file:~/src/ki/STHLM0/gleasonFittedFinal.pdf]]
+   + Survival calibration
+     [[file:~/src/ki/diagnoses/stage_shift_calibrated.pdf]]
+     [[file:~/src/ki/diagnoses/PCbaseHR.R]]
+   + Effectiveness only?
+     - Tx by Gleason & age
+     - PSA uptake
+     - Pop
+     - Metastatic OC *Mark?*
+     - Re-testing
+   + Issues :: incidence by gleason
+   + Story :: Region specific is *Mark?*
+     - why is Nordic so different?
+     - Is this due to good data?
+   + Heat map
+   + Compare with US parameters??
+** Organised vs opportunistic
+   MISCAN ERSPC
+   CEA
+** S3M "Polish Vodka"
+   + $H_0:S3M vs PSA
+   + effectiveness
+   + costs
+   + with baseline scenario
+     - Simplified "current" *Mark?*
+   Baseline STHLM3 CEA ICERs! Uncertainties. Is it obvious that S3M
+   is effective?
+   + Is S3M "PSA-like"
+   + Sensitivity analysis for S3M long-term effectiveness.
+   + Comparison with evaluation of PHI & 4K?
+** Misc
+   STHLM3 lower PSA + S3M?
+   + How was the threshold determined?
