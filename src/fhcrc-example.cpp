@@ -411,8 +411,8 @@ void FhcrcPerson::init() {
       double pscreening = cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03;
       double shapeA = 3.8;
       double scaleA = 15.0;
-      double shapeT = 2.0;
-      double scaleT = 10.0;
+      double shapeT = 2.16;
+      double scaleT = 11.7;
       double uscreening = R::runif(0.0,1.0);
       double first_screen;
       if (cohort > 1960.0) {
