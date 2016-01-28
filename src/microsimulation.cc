@@ -100,7 +100,7 @@ namespace R {
   
   double rllogis(double shape, double scale) {
     double u = R::runif(0.0,1.0);
-    return scale*exp(log(1.0/u-1.0)/shape);
+    return scale*exp(-log(1.0/u-1.0)/shape);
   }
 
   double rllogis_trunc(double shape, double scale, double left) {
