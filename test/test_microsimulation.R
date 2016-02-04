@@ -331,7 +331,7 @@ with(reports, plot(table( PSAposAdvanced - BBPposAdvanced)))
 with(reports, plot(density(pBiopsy)))
 with(reports, plot(PSAposAdvanced - BBPposAdvanced,pBiopsy))
 
-
+## Old natural history - ignoring diagnosis
 p <- list(mubeta0=-1.609,
           sebeta0=0.2384,
           mubeta1=0.04463,
@@ -351,14 +351,17 @@ beta1 <- with(p, rnormPos(n,mubeta1,sebeta1))
 beta2 <- with(p, rnormPos(n,mubeta2[grade],sebeta2[grade]))
 eps <- with(p, rnorm(n,0,tau2))
 lpsa <- pmin(log(20),beta0+beta1*(50-35)+beta2*pmax(0,50-age_o)+eps)
+psacut <- function(x) cut(x,c(0,1,3,10,Inf), right=FALSE)
+table(psacut(exp(lpsa)))/length(lpsa)
 plot(density(exp(lpsa)),xlim=c(0,20)) # density of PSA at age 50 years
 i <- 1
-for (age in seq(55,80,by=5)) {
+for (age in seq(45,85,by=10)) {
+    cat(age,"\n")
     lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps)
     lines(density(exp(lpsa)),col=i)
+    print(table(cut(exp(lpsa),psa_cuts))/length(lpsa))
     i <- i+1
 }
-psacut <- function(x) cut(x,c(0,1,3,10,Inf), right=FALSE)
 tab <- sapply(ages <- seq(55,80,by=5), function(age) {
     lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o)+eps)
     lpsa <- pmin(log(20),beta0+beta1*(age-35)+beta2*pmax(0,age-age_o))
@@ -367,6 +370,10 @@ tab <- sapply(ages <- seq(55,80,by=5), function(age) {
 })
 colnames(tab) <- ages
 tab
+
+
+
+## revised natural history?
 
 p <- list(mubeta0=-1.609,
           sebeta0=0.2384,
