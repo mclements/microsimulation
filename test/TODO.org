@@ -98,30 +98,56 @@ well. Start by checking old validation.
   #+END_SRC
   [[file:~/src/ki/biomarker_model/biomarker_psa_threshold.R]]
 * Publication plan
-** PSA submodel							       :Mark:
-   PSA uptake compare with [[file:~/KI/Literature/jonsson2011.pdf]]
-   Poisson-likelihood?
-   How good is current? *Mark?*
-** Nordic Natural history "base of the pyramid"
+** PSA historic testing                                               :Mark:
++ PSA uptake compare with Jonsson 2011
++ Poisson-likelihood?
++ PSA testing by PSA-value
+     [[~/src/ki/STHLM0/psaRatesByPSA.pdf]]
++ Re-testing younger ages (Medicare > 65)
++ Model of all PSA-testing based on PCa incidence in Stockholm.
++ Use STHLM0, 2003-now, to get PSA re-testing patterns per integer
+  year and age (PSA-value?). Use start of uptake to year-be-year
+  introduce possible retesting.
++ Question :: What do we do with the PSA-values for the missing data
+     1993-2003? Can we assume something reasonable or should/can we
+     skip the PSA-dependence?
++ Reference ::
+  + Jonsson 2011
+    [[file:~/KI/Literature/jonsson_uptake_2011.pdf]]
+  + Mariotto 2007
+    [[file:~/KI/Literature/mariotto_reconstructing_2007.pdf]]
+*** Additional stories
+This could be additional angles in the paper or separate publications.
+1) Reconstruct overall PSA-testing in Swedish counties using observed
+   PCa prevalence.
+2) Reconstruct overall PSA-testing in Great Britain using observed
+   PCa prevalence.
++ Question :: Can we do predictions on uptake & re-testing using
+     STHLM0 data on these other regions?
+** Nordic Natural history "base of the pyramid"                    :Andreas:
    Calibrations and adaptions
    + PSA x Gleason?
    + Gleason incidence
+     How does the distributions compare with e.g. the US
    + PSA proportions by age & gleason
      [[file:~/src/ki/STHLM0/gleasonFitting.R]]
      [[file:~/src/ki/STHLM0/gleasonFittedFinal.pdf]]
    + Survival calibration
+     PCBase vs SEER (old gleason 6+7 and 8) prior to PSA
      [[file:~/src/ki/diagnoses/stage_shift_calibrated.pdf]]
      [[file:~/src/ki/diagnoses/PCbaseHR.R]]
    + Effectiveness only?
-     - Tx by Gleason & age
+     - Tx by Gleason & age - Mark
      - PSA uptake
      - Pop
-     - Metastatic OC *Mark?*
+     - Mortality other causes
      - Re-testing
    + Issues :: incidence by gleason
-   + Story :: Region specific is *Mark?*
+   + Story :: Region specific incidence (e.g. US vs Sweden)
      - why is Nordic so different?
      - Is this due to good data?
+   + Reference :: Mariotto 2007
+	[[file:~/KI/Literature/mariotto_reconstructing_2007.pdf]]
    + Heat map
    + Compare with US parameters??
 ** Organised vs opportunistic
