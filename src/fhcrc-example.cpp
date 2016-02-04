@@ -682,7 +682,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	}
       } // rescreening compliance
       if (screen == screenUptake || (screen == mixed_screening && !organised))
-	opportunistic_rescreening(psa);
+	opportunistic_rescreening(psa); // includes rescreening compliance
     } // rescreening
     rngNh->set();
   } break;
@@ -991,6 +991,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 
   nLifeHistories = as<int>(otherParameters["nLifeHistories"]);
   screen = as<int>(otherParameters["screen"]);
+  if (debug) Rprintf("screen=%i\n",screen);
   panel = as<bool>(parms["panel"]);
   NumericVector cohort = as<NumericVector>(parms["cohort"]); // at present, this is the only chuck-specific data
 

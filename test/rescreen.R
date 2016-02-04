@@ -246,10 +246,14 @@ set.seed(12345)
 sim <- callFhcrc(1e6, screen="screenUptake")
 events <- sim$summary$events
 pt <- sim$summary$pt
-rates <- sqldf('with pop as (select age, year, sum(pt) as pt from pt where year between 1990 and 2020 and age between 40 and 79 group by age, year), screen as (select age, year, count(*) as n from events where event in ("toScreen","toBiopsyFollowUpScreen") group by age, year) select pop.age, pop.year, pop.pt, coalesce(n,0) as n, 1.0*coalesce(n,0)/pt as rate from pop left natural join screen')
+rates <- sqldf('with pop as (select age, year, sum(pt) as pt from pt where year between 1980 and 2020 and age between 40 and 89 group by age, year), screen as (select age, year, count(*) as n from events where event in ("toScreen","toBiopsyFollowUpScreen") group by age, year) select pop.age, pop.year, pop.pt, coalesce(n,0) as n, 1.0*coalesce(n,0)/pt as rate from pop left natural join screen')
 rates$pred <- predict(gam(n~s(age,year)+offset(log(pt)),data=rates,family="poisson"),newdata=transform(rates,pt=1),type="response")
 ratestab <- xtabs(rate~age+year,rates)
 ## ratestab[ratestab==0] <- NA
+filled.contour(as.numeric(dimnames(ratestab)$age),
+               as.numeric(dimnames(ratestab)$year),
+               ratestab)
+ratestab <- xtabs(n~age+year,rates)
 filled.contour(as.numeric(dimnames(ratestab)$age),
                as.numeric(dimnames(ratestab)$year),
                ratestab)
@@ -296,7 +300,7 @@ NumericVector testRcpp(NumericVector cohort) {
 }
 '
 sourceCpp(code=src)
-tmp <- sapply(rep(1912,1000),testRcpp)
+tmp <- sapply(rep(1950,1000),testRcpp)
 mean(tmp==-1) # ~10%
 i <- tmp != -1
 plot(density(tmp[i]),xlim=c(30,120))
@@ -331,10 +335,10 @@ DataFrame testRcpp(DataFrame rescreening, double time, double psa) {
 '
 sourceCpp(code=src)
 rescreening$total <- rescreening$total_cat
-tmp <- do.call("rbind",lapply(1:1e3,function(i) testRcpp(rescreening,61,11.3)))
+tmp <- do.call("rbind",lapply(1:1e3,function(i) testRcpp(rescreening,71,0.1)))
 head(tmp)
 mean(tmp$brescreened)
-plot(density(tmp$t[tmp$brescreened],from=61))
+plot(density(tmp$t[tmp$brescreened],from=71))
 
 subset(rescreening,age5==60)
 subset(rescreening,age5==30)
