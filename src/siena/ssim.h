@@ -26,6 +26,7 @@
 #define _ssim_h
 
 #include <boost/function.hpp>
+#include <string>
 
 /** \file ssim.h 
  *
@@ -111,6 +112,7 @@ class Event {
  public:
 			Event(): refcount(0) {};
     virtual		~Event() {};
+    virtual std::string str() const { return "(event)"; };
 
  private:
     mutable unsigned refcount;
@@ -586,6 +588,7 @@ public:
     static void		set_error_handler(SimErrorHandler *) throw();
     static void remove_event(EventPredicate pred) throw();
 };
+  void Rprint_actions();
 
 } // end namespace ssim
 

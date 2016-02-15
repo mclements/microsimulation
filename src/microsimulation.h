@@ -191,6 +191,15 @@ public:
   short kind;
   string name;
   Time sendingTime, timestamp;
+  string str() const { 
+    std::ostringstream stringStream;
+    stringStream << "kind=";
+    stringStream << kind;
+    stringStream << ",name=";
+    stringStream << name;
+    string str = stringStream.str();
+    return str;
+  }
   // this does NOT include schedulePriority
 };
 

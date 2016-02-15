@@ -496,6 +496,9 @@ void FhcrcPerson::init() {
     outParameters.record("psa75",psameasured(75.0));
     outParameters.record("psa85",psameasured(85.0));
   }
+
+  if (debug) Rprint_actions();
+
 }
 
 /**
@@ -999,6 +1002,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
       Rprintf("hr_localregional(50,7,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 1)));
       Rprintf("hr_localregional(50,<=6,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 0)));
       Rprintf("hr_localregional(50,<=6,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 1)));
+      Rprintf("screeningCompliance=%g\n",as<double>(parameter["screeningCompliance"]));
     }
   }
 

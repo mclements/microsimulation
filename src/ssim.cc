@@ -26,6 +26,7 @@
 
 #include <siena/ssim.h>
 #include "heap.h"
+#include <R.h>
 
 namespace ssim {
 
@@ -77,6 +78,15 @@ struct PDescr {
 
 typedef std::vector<PDescr> PsTable;
 static PsTable processes;
+
+  void Rprint_actions() {
+    Rprintf("\n[");
+    for (a_table_t::iterator it = actions.begin(); it != actions.end(); it++)
+      Rprintf("(time=%f,%s), ",it->time, it->type, it->event->str().c_str());
+    Rprintf("]\n");
+  }
+
+
 
 class SimImpl {
 public:
