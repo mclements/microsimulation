@@ -170,6 +170,7 @@ namespace fhcrc_example {
     double calculate_mortality_hr(double age_diag);
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
     void opportunistic_rescreening(double psa);
+    void opportunistic_uptake();
     void init();
     void add_costs(string item);
     virtual void handleMessage(const cMessage* msg);
@@ -292,6 +293,35 @@ namespace fhcrc_example {
     }
   }
 
+  void FhcrcPerson::opportunistic_uptake() {
+    // Assume:
+    // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
+    // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
+    // (iii) intermediate cohorts are a weighted mixture of (i) and (ii)
+    double pscreening = 0.9; // cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03;
+    double shapeA = 3.8;
+    double scaleA = 15.0;
+    double shapeT = 2.16;
+    double scaleT = 11.7;
+    double uscreening = R::runif(0.0,1.0);
+    double first_screen;
+    if (cohort > 1960.0) {
+      first_screen = 35.0 + R::rllogis(shapeA,scaleA); // (i) age
+    } else if (cohort < 1945.0) {
+      first_screen = (1995.0 - cohort) + R::rllogis(shapeT,scaleT); // (ii) period
+    } else {
+      double age0 = 1995.0 - cohort;
+      double u = R::runif(0.0,1.0);
+      if ((age0 - 35.0)/15.0 < u) // (iii) mixture
+	first_screen = age0 + R::rllogis_trunc(shapeA,scaleA,age0-35.0);
+      else first_screen = age0 + R::rllogis(shapeT,scaleT);
+    }
+    if (uscreening<pscreening)
+      scheduleAt(first_screen, toScreen);
+    if (debug)
+      Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
+  }
+
   typedef std::pair<double,double> Double;
   Double rbinorm(Double mean, Double sd, double rho) {
     double z1 = R::rnorm(0.0,1.0);
@@ -374,7 +404,7 @@ void FhcrcPerson::init() {
   scheduleAt(t0+35.0,toLocalised);
   scheduleAt(aoc,toOtherDeath);
 
-  // schedule screening events
+  // schedule screening events that depend on screeningCompliance
   rngScreen->set();
   if (R::runif(0.0,1.0)<parameter["screeningCompliance"]) {
     switch(screen) {
@@ -403,47 +433,33 @@ void FhcrcPerson::init() {
     case mixed_screening:
     case stockholm3_goteborg:
     case stockholm3_risk_stratified:
-    case screenUptake: {
-      // Assume:
-      // (i)   cohorts aged <35 in 1995 have a llogis(3.8,15) from age 35 (cohort > 1960)
-      // (ii)  cohorts aged 50+ in 1995 have a llogis(2,10) distribution from 1995 (cohort < 1945)
-      // (iii) intermediate cohorts are a weighted mixture of (i) and (ii)
-      double pscreening = 0.9; // cohort>=1932.0 ? 0.9 : 0.9-(1932.0 - cohort)*0.03;
-      double shapeA = 3.8;
-      double scaleA = 15.0;
-      double shapeT = 2.16;
-      double scaleT = 11.7;
-      double uscreening = R::runif(0.0,1.0);
-      double first_screen;
-      if (cohort > 1960.0) {
-	first_screen = 35.0 + R::rllogis(shapeA,scaleA); // (i) age
-      } else if (cohort < 1945.0) {
-	first_screen = (1995.0 - cohort) + R::rllogis(shapeT,scaleT); // (ii) period
-      } else {
-	double age0 = 1995.0 - cohort;
-	double u = R::runif(0.0,1.0);
-	if ((age0 - 35.0)/15.0 < u) // (iii) mixture
-	  first_screen = age0 + R::rllogis_trunc(shapeA,scaleA,age0-35.0);
-	else first_screen = age0 + R::rllogis(shapeT,scaleT);
-      }
-      if (uscreening<pscreening)
-	scheduleAt(first_screen, toScreen);
-      if (debug)
-	Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
-      if (screen == mixed_screening) {
-	scheduleAt(parameter["start_screening"], toOrganised);
-      }
-      // for re-screening patterns: see handleMessage()
-    } break;
+    case screenUptake:
+      // see below (models compliance)
+      break;
     default:
       REprintf("Screening not matched: %i\n",screen);
       break;
     }
   }
-  if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
-      ((screen == stockholm3_goteborg) || (screen == stockholm3_risk_stratified)) &&
-      (2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"])) {
-    scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
+  //
+  // schedule screening events that already incorporate screening compliance
+  switch(screen) {
+  case mixed_screening:
+    opportunistic_uptake();
+    scheduleAt(parameter["start_screening"], toOrganised);
+    break;
+  case stockholm3_goteborg:
+  case stockholm3_risk_stratified:
+    opportunistic_uptake();
+    if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
+	(2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"])) 
+      scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
+    break;
+  case screenUptake: 
+    opportunistic_uptake();
+    break;
+  default:
+    break;
   }
 
   rngNh->set();
@@ -720,11 +736,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
     if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) { // diagnosed
       scheduleAt(now(), toScreenDiagnosis);
-    } else if (!previousNegativeBiopsy && R::runif(0.0,1.0)<parameter["screeningCompliance"]) { // re-screen after negative biopsy
-      previousNegativeBiopsy = true; // do this once then opportunistic
-      scheduleAt(now() + 1, toBiopsyFollowUpScreen); // schedule one quick psa retest
-    } else if (R::runif(0.0,1.0)<parameter["screeningCompliance"]) { // non-first rescreen after negative biopsy
-      previousNegativeBiopsy = false; // every 2'nd time behaviour (1yr/opportunistic) for some
+    } else if (!previousNegativeBiopsy) {
+      previousNegativeBiopsy = true;
+      // first re-screen after negative biopsy
+      if (R::runif(0.0,1.0)<parameter["rescreeningCompliance"])
+	scheduleAt(now() + 1, toBiopsyFollowUpScreen); // schedule one quick PSA retest
+    } else if (R::runif(0.0,1.0)<parameter["rescreeningCompliance"]) { // next rescreen after negative biopsy
       opportunistic_rescreening(psa); // schedule a routine future screen
     }
     rngNh->set();
