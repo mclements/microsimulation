@@ -718,18 +718,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     add_costs("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
 
-    if (state == Healthy) {
-      previousNegativeBiopsy = true;
-      // Here we want 20% to opportunistic and 80% to re-screen in 12 months with threshold of 4. N.B. also the false negative 6 rows below.
-      if (now() < parameter["stop_screening"] && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
-      // else schedule a routine future screen
-    }
-    else { // state != Healthy
-      if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) {
-	scheduleAt(now(), toScreenDiagnosis);
-      } else { // false negative biopsy
-	if (now() < parameter["stop_screening"] && R::runif(0.0,1.0)<parameter["screeningCompliance"]) scheduleAt(now() + 1.0, toBiopsyFollowUpScreen);
-      }
+    if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) { // diagnosed
+      scheduleAt(now(), toScreenDiagnosis);
+    } else if (!previousNegativeBiopsy && R::runif(0.0,1.0)<parameter["screeningCompliance"]) { // re-screen after negative biopsy
+      previousNegativeBiopsy = true; // do this once then opportunistic
+      scheduleAt(now() + 1, toBiopsyFollowUpScreen); // schedule one quick psa retest
+    } else if (R::runif(0.0,1.0)<parameter["screeningCompliance"]) { // non-first rescreen after negative biopsy
+      previousNegativeBiopsy = false; // every 2'nd time behaviour (1yr/opportunistic) for some
+      opportunistic_rescreening(psa); // schedule a routine future screen
     }
     rngNh->set();
     break;
