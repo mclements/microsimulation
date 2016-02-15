@@ -203,7 +203,7 @@ FhcrcParameters <- list(
     rescreeningCompliance = 0.95,
     biopsyCompliance = 0.858,
     biopsySensitivity = 0.8,
-    studyParticipation = 35.0/260.0,
+    studyParticipation = 50.0/260.0,
     nLifeHistories = 10L, screen = 0L, ## integers
     psaThreshold = 3.0,
     psaThresholdBiopsyFollowUp = 4.0,
