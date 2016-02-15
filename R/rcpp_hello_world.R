@@ -380,11 +380,11 @@ treatmentT <- c("no_treatment","CM","RP","RT")
 psaT <- c("PSA<3","PSA>=3") # not sure where to put this...
 
 callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
-                      screeningCompliance=0.75, seed=12345,
-                      studyParticipation=50/260, psaThreshold=3.0, panel=FALSE,
+                      seed=12345,
+                      panel=FALSE,
                       includePSArecords=FALSE, includeDiagnoses=FALSE,
                       flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
-                      discountRate = 0.03, parms = NULL, mc.cores=1) {
+                      parms = NULL, mc.cores=1, ...) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -395,7 +395,6 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   screen <- match.arg(screen)
   stopifnot(is.na(n) || is.integer(as.integer(n)))
   stopifnot(is.integer(as.integer(nLifeHistories)))
-  stopifnot(is.double(as.double(screeningCompliance)))
   screenIndex <- which(screen == screenT) - 1
   ## NB: sample() calls the random number generator (!)
   if (is.vector(pop)) {
@@ -453,12 +452,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
                       Survival=Survival))
   updateParameters <- c(parms,
                         list(nLifeHistories=as.integer(nLifeHistories),
-                             screeningCompliance=screeningCompliance,
-                             studyParticipation=studyParticipation,
-                             psaThreshold=psaThreshold,
-                             screen=as.integer(screenIndex),
-                             discountRate.costs=discountRate,
-                             discountRate.effectiveness=discountRate))
+                             screen=as.integer(screenIndex)))
   parameter <- FhcrcParameters
   for (name in names(updateParameters))
       parameter[[name]] <- updateParameters[[name]]
@@ -551,8 +545,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,
               parameters=parameters, summary=summary, costs=costs,
               psarecord=psarecord, diagnoses=diagnoses,
-              cohort=data.frame(table(cohort)),
-              discountRate = discountRate,
+              cohort=data.frame(table(cohort)),simulation.parameters=parameter,
               falsePositives=falsePositives)
   class(out) <- "fhcrc"
   out
@@ -561,34 +554,44 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
 ## R --slave -e "options(width=200); require(microsimulation); callFhcrc(100,nLifeHistories=1e5,screen=\"screen50\")[[\"parameters\"]]"
 
 summary.fhcrc <- function(obj) {
-    newobj <- obj[c("n","screen","discountRate")]
+    newobj <- obj[c("n","screen")]
     with(obj,
          structure(.Data=c(newobj,
                        with(obj, list(
+                           discountRate.costs=simulation.parameters$discountRate.costs,
+                           discountRate.effectiveness=simulation.parameters$discountRate.effectiveness,
                            LE=sum(summary$pt$pt)/n,
                            QALE=sum(summary$ut$ut)/n,
                            costs=sum(costs$costs)/n))),
                    class="summary.fhcrc"))
 }
 print.summary.fhcrc <- function(obj)
-    cat(sprintf("Screening scenario: \t%s
-Life expectancy: \t%f
-Discounted QALE: \t%f
-Discounted costs: \t%f
-Discounted rate: \t%f
-",obj$screen,obj$LE,obj$QALE,obj$costs,obj$discountRate))
+    cat(sprintf(
+"Screening scenario:        %s
+Life expectancy:           %f
+Discounted QALE:           %f
+Discounted costs:          %f
+Discounted rate (effect.): %f
+Discounted rate (costs):   %f
+",obj$screen,obj$LE,obj$QALE,obj$costs,
+                obj$discountRate.effectiveness,
+                obj$discountRate.costs))
 
 ICER <- function(object1, object2, ...)
     UseMethod("ICER")
 
 ICER.fhcrc <- function(obj1,obj2,...) {
-    stopifnot(obj1$discountRate == obj2$discountRate)
+    p1 <- obj1$simulation.parameters
+    p2 <- obj2$simulation.parameters
+    stopifnot(p1$discountRate.costs == p2$discountRate.costs)
+    stopifnot(p1$discountRate.effectiveness == p2$discountRate.effectiveness)
     summary1 <- summary(obj1,...)
     summary2 <- summary(obj2,...)
     out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE),
                 delta.QALE=summary1$QALE-summary2$QALE,
                 delta.costs=summary1$costs-summary2$costs)
-    if (obj1$discountRate == 0)
+    if (p1$discountRate.costs == 0 && p2$discountRate.costs == 0 &&
+        p1$discountRate.effectiveness == 0 && p2$discountRate.effectiveness == 0)
         out <- c(out,
                  list(ICER.LE = (summary1$costs-summary2$costs)/(summary1$LE-summary2$LE),
                       delta.LE = summary1$LE-summary2$LE))
