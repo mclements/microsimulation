@@ -30,12 +30,12 @@ cureModel <- function(formula,data=NULL,formula.shape=~1,formula.cure=~1,par=NUL
     y <- model.extract(mf,"response")
     if (ncol(y)==2) { # right censored
         delayed <- FALSE
-        time <- y[,1] 
+        time <- y[,1]
         status <- y[,2]
     }
     if (ncol(y)==3) { # left truncated and right censored
         entry <- y[,1]
-        time <- y[,2] 
+        time <- y[,2]
         status <- y[,3]
         if (delayed <- any(entry>0))
             i <- which(entry>0)
@@ -144,12 +144,12 @@ WeibullRegression <- function(formula,data=NULL,formula.shape=~1,par=NULL,...) {
     y <- model.extract(mf,"response")
     if (ncol(y)==2) { # right censored
         delayed <- FALSE
-        time <- y[,1] 
+        time <- y[,1]
         status <- y[,2]
     }
     if (ncol(y)==3) { # left truncated and right censored
         entry <- y[,1]
-        time <- y[,2] 
+        time <- y[,2]
         status <- y[,3]
         if (delayed <- any(entry>0))
             i <- which(entry>0)
@@ -224,8 +224,8 @@ fit3 <- cureModel(Surv(time,event)~total_cat,
 fit4 <- cureModel(Surv(time,event)~total_cat,
                   formula.cure=~total_cat,
                   data=temp50,
-                  par=c(0.154696663520933, 0.865091437590591, -0.111246732543863, -1.05240102943909, 
--1.48716715943421, -2.04615245632196, -0.0207990798623829, -0.639229272169032, 
+                  par=c(0.154696663520933, 0.865091437590591, -0.111246732543863, -1.05240102943909,
+-1.48716715943421, -2.04615245632196, -0.0207990798623829, -0.639229272169032,
 -1.17752470254301))
 fit5 <- cureModel(Surv(time,event)~total_cat,
                   formula.shape=~total_cat,
@@ -330,7 +330,7 @@ DataFrame testRcpp(DataFrame rescreening, double time, double psa) {
   double u = R::runif(0.0,1.0);
   double t = time + R::rweibull(shape,scale);
   bool brescreened = u<prescreened;
-  return wrap(Rcpp::DataFrame::create(_["u"]=u,_["prescreened"]=prescreened,_["t"]=t,_["shape"]=shape,_["scale"]=scale,_["brescreened"]=brescreened)); 
+  return wrap(Rcpp::DataFrame::create(_["u"]=u,_["prescreened"]=prescreened,_["t"]=t,_["shape"]=shape,_["scale"]=scale,_["brescreened"]=brescreened));
 }
 '
 sourceCpp(code=src)
@@ -432,7 +432,7 @@ switch(TYPEOF(sexp)) {
   return Rf_eval(sexp,env);
   break;
  case LANGSXP:
-  // 
+  //
   break;
 };
 return wrap(0);
@@ -565,7 +565,7 @@ using namespace Rcpp ;
 SEXP fn_impl( List args){
     Language call = args[0] ;
     List data = args[1] ;
-    // now construct the call to eval: 
+    // now construct the call to eval:
     Language eval_call( \"eval\", call, data ) ;
     // and evaluate it
     return Rf_eval( eval_call, R_GlobalEnv ) ;
@@ -638,12 +638,12 @@ cureModel <- function(formula,data=NULL,formula.shape=~1,formula.cure=~1,par=NUL
     y <- model.extract(model.frame(formula,data),"response")
     if (ncol(y)==2) { # right censored
         delayed <- FALSE
-        time <- y[,1] 
+        time <- y[,1]
         status <- y[,2]
     }
     if (ncol(y)==3) { # left truncated and right censored
         entry <- y[,1]
-        time <- y[,2] 
+        time <- y[,2]
         status <- y[,3]
         if (delayed <- any(entry>0))
             i <- which(entry>0)
@@ -682,12 +682,12 @@ cureModel <- function(formula,data=NULL,formula.shape=~1,formula.cure=~1,par=NUL
     y <- model.extract(mf,"response")
     if (ncol(y)==2) { # right censored
         delayed <- FALSE
-        time <- y[,1] 
+        time <- y[,1]
         status <- y[,2]
     }
     if (ncol(y)==3) { # left truncated and right censored
         entry <- y[,1]
-        time <- y[,2] 
+        time <- y[,2]
         status <- y[,3]
         if (delayed <- any(entry>0))
             i <- which(entry>0)
@@ -761,12 +761,12 @@ cureModel <- function(formula,data=NULL,formula.shape=~1,formula.cure=~1,par=NUL
     y <- model.extract(mf,"response")
     if (ncol(y)==2) { # right censored
         delayed <- FALSE
-        time <- y[,1] 
+        time <- y[,1]
         status <- y[,2]
     }
     if (ncol(y)==3) { # left truncated and right censored
         entry <- y[,1]
-        time <- y[,2] 
+        time <- y[,2]
         status <- y[,3]
         if (delayed <- any(entry>0))
             i <- which(entry>0)
@@ -926,7 +926,7 @@ xyplot(y~x|group,
 library(survival)
 library(ggplot2)
 library(scales)
-fortify.survfit <- function(survfit.data) 
+fortify.survfit <- function(survfit.data)
     data.frame(time = survfit.data$time,
                n.risk = survfit.data$n.risk,
                n.event = survfit.data$n.event,
@@ -956,7 +956,7 @@ fortified <-
                          ggplot2::fortify(survfit(Surv(time/365,event)~total_cat,
                                                   data=temp2,
                                                   subset=!is.na(total) & total>0 & age5==age)))))
-fortified <- seq(45,85,by=5) %>% 
+fortified <- seq(45,85,by=5) %>%
     lapply(function(age)
            cbind(age5=sprintf("%i-%i",age,age+4),
                  ggplot2::fortify(survfit(Surv(time/365,event)~total_cat,

@@ -191,7 +191,7 @@ public:
   short kind;
   string name;
   Time sendingTime, timestamp;
-  string str() const { 
+  string str() const {
     std::ostringstream stringStream;
     stringStream << "kind=";
     stringStream << kind;

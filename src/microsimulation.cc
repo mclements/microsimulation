@@ -10,41 +10,41 @@ namespace ssim {
   double rweibullHR(double shape, double scale, double hr){
     return R::rweibull(shape, scale*pow(hr,1.0/shape));
   }
-  
+
   Time now() {
     return Sim::clock();
   }
-  
+
   Time simTime() {
     return Sim::clock();
   }
-  
-  
+
+
   static Rng * default_stream, * current_stream;
   static double rn = 0.0;
-  
+
   Rng::~Rng() {
     if (current_stream->id == this->id)
       current_stream = default_stream;
   }
-  
+
   void Rng::set() {
     current_stream = this;
   }
-  
+
   extern "C" {
-    
+
     void r_create_current_stream()
     {
       default_stream = new Rng();
       current_stream = default_stream;
     }
-    
+
     void r_remove_current_stream()
     {
       delete default_stream;
     }
-    
+
     void r_set_user_random_seed(double * inseed) {
       double seed[6];
       for(int i=0; i<6; i++) {
@@ -53,7 +53,7 @@ namespace ssim {
       Rng::SetPackageSeed(seed);
       default_stream->SetSeed(seed);
     }
-    
+
     void r_get_user_random_seed(double * outseed) {
       double seed[6];
       default_stream->GetState(seed);
@@ -61,11 +61,11 @@ namespace ssim {
 	outseed[i] = (double)seed[i];
       }
     }
-    
+
     void r_next_rng_substream() {
       default_stream->ResetNextSubstream();
     }
-    
+
     double *user_unif_rand ()
     {
       if (!current_stream) {
@@ -75,7 +75,7 @@ namespace ssim {
       rn = current_stream->RandU01();
       return &rn;
     }
-    
+
     void test_rstream2(double * x) {
       Rng * s1 = new Rng();
       Rng * s2 = new Rng();
@@ -86,18 +86,18 @@ namespace ssim {
       delete s1;
       delete s2;
     }
-    
+
   } // extern "C"
-  
+
 } // namespace ssim
-  
+
 namespace R {
   double rnormPos(double mean, double sd) {
     double x;
     while ((x=R::rnorm(mean,sd))<0.0) { }
     return x;
   }
-  
+
   double rllogis(double shape, double scale) {
     double u = R::runif(0.0,1.0);
     return scale*exp(-log(1.0/u-1.0)/shape);
