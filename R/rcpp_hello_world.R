@@ -187,10 +187,10 @@ FhcrcParameters <- list(
     sebeta2=c(0.0913,0.3968, 0.0), # base::grade
     rev_mubeta2=c(0.051, 0.129, 0.1678), # ext::grade
     rev_sebeta2=c(0.064, 0.087, 0.3968), # ext::grade
-    alpha7=0.13,
-    beta7=0.006,
-    alpha8=-4.61,
-    beta8=0.06,
+    alpha7=0.01259131,
+    beta7=0.01582902,
+    alpha8=-4.60448950,
+    beta8=0.08934935,
     ## mubeta2.scale=1.0, # cf. 2.1
     ## beta.rho=0.62,
     c_txlt_interaction = 1.0,
