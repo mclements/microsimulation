@@ -211,7 +211,8 @@ rescreening2 <- lapply(1:nrow(rescreening),
                                               x=x,
                                               p=(1-rescreening$cure[i])*pweibull(x,rescreening$shape[i],rescreening$scale[i])))
 rescreening2 <- do.call("rbind",rescreening2)
-xyplot(p ~ x | factor(total_cat)+factor(age5),data=rescreening2,type="l",subset=age5>=55) 
+xyplot(p ~ x | factor(total_cat)+factor(age5),data=rescreening2,type="l",subset=age5>=55)
+xyplot(p ~ x | factor(age5),data=rescreening2,group=factor(total_cat),type="l",subset=age5>=55,auto.key=TRUE)
 
 
 fit2 <- cureModel(Surv(time,event)~total_cat, data=temp50, par=c(shape=0.147551370026859, scale=c(0.884863166386332, -0.115910931108631, -1.09037223824094, -1.52389713434596), cure=-2.18162256296465))
@@ -257,6 +258,48 @@ ratestab <- xtabs(n~age+year,rates)
 filled.contour(as.numeric(dimnames(ratestab)$age),
                as.numeric(dimnames(ratestab)$year),
                ratestab)
+
+## rllogis
+require(Rcpp)
+require(inline)
+src <- '
+#include <Rcpp.h>
+using namespace Rcpp;
+// [[Rcpp::export]]
+  double rllogis(double shape, double scale) {
+    double u = R::runif(0.0,1.0);
+    return scale*exp(-log(1.0/u-1.0)/shape);
+  }'
+sourceCpp(code=src)
+tmp <- sapply(1:1e4,function(i) rllogis(3.3,1.0))
+plot(density(tmp,from=0))
+require(eha)
+tmp2 <- eha::rllogis(1e5,3.3,1.0)
+lines(density(tmp2,from=0),lty=2)
+
+
+
+## rllogis_trunc
+require(Rcpp)
+require(inline)
+src <- '
+#include <Rcpp.h>
+using namespace Rcpp;
+// [[Rcpp::export]]
+  double rllogis_trunc(double shape, double scale, double left) {
+    double S0 = 1.0/(1.0+exp(log(left/scale)*shape));
+    double u = R::runif(0.0,1.0);
+    return scale*exp(log(1.0/(u*S0)-1.0)/shape);
+  }'
+sourceCpp(code=src)
+tmp <- sapply(1:1e5,function(i) rllogis_trunc(3.3,1.0,3))
+plot(density(tmp,from=3))
+require(eha)
+tmp2 <- eha::rllogis(1e6,3.3,1.0)
+tmp2 <- tmp2[tmp2>=3]
+lines(density(tmp2,from=3),lty=2)
+
+
 
 ## Screening uptake
 require(Rcpp)
