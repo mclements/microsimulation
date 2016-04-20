@@ -191,7 +191,7 @@ public:
   short kind;
   string name;
   Time sendingTime, timestamp;
-  string str() const { 
+  string str() const {
     std::ostringstream stringStream;
     stringStream << "kind=";
     stringStream << kind;
@@ -1018,8 +1018,14 @@ namespace R {
 
   /**
      @brief rllogis function for a random covariate from a log-logistic distribution with shape and scale.
+     S(t) = 1/(1+(t/scale)^shape).
   */
   double rllogis(double shape, double scale);
+  /**
+     @brief rllogis_trunc function for a random covariate from a log-logistic distribution with shape and scale
+     with minimum time left.
+     S(t|t>x)=S(t)/S(x) where S(t)=1/(1+(t/scale)^shape).
+  */
   double rllogis_trunc(double shape, double scale, double left);
 
 }
