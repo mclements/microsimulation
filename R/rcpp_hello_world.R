@@ -603,7 +603,7 @@ print.fhcrc <- function(obj,...)
                 obj$n, obj$screen),
         ...)
 
-plot.fhcrc <- function(obj,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
+predict.fhcrc <- function(obj, type=c("incidence","cancerdeath")) {
     type <- match.arg(type)
     event_types <- switch(type,
                           incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
@@ -616,9 +616,13 @@ plot.fhcrc <- function(obj,type=c("incidence","cancerdeath"),plot.type="l",xlim=
             filter(event %in% event_types) %>%
                 group_by(age) %>%
                     summarise(n=sum(n))
-        out <- left_join(pt,events,by="age") %>% mutate(rate = ifelse(is.na(n), 0, n/pt))
-        if (!add) plot(rate~age, data=out, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=out,  ...)
-    } else error("dplyr is not available for plotting")
+        left_join(pt,events,by="age") %>% mutate(rate = ifelse(is.na(n), 0, n/pt))
+    } else error("dplyr is not available for predict")
+}
+    
+plot.fhcrc <- function(obj,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
+    rates <- predict(obj, type)
+    if (!add) plot(rate~age, data=rates, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=rates,  ...)
 }
 
 lines.fhcrc <- function(obj,...) {

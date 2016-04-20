@@ -710,9 +710,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     dx = ClinicalDiagnosis;
     RemoveKind(toMetastatic); // competing events
     RemoveKind(toScreen);
-    scheduleAt(now(), toClinicalDiagnosticBiopsy); // for reporting (assumes three biopsies per clinical diagnosis)
-    scheduleAt(now(), toClinicalDiagnosticBiopsy);
-    scheduleAt(now(), toClinicalDiagnosticBiopsy);
+    scheduleAt(now(), toClinicalDiagnosticBiopsy); // assumes only one biopsy per clinical diagnosis
     scheduleAt(now(), toTreatment);
     break;
 

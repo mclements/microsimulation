@@ -1415,6 +1415,36 @@ eventRatesOld <- function(obj,pattern="Diagnosis") {
   sqldf("select age, pt, coalesce(n,0.0) as n, coalesce(n,0.0)/pt as rate from (select age, sum(pt) as pt from pt group by age) as t1 natural left outer join (select age, sum(n) as n from events natural join ev group by age) as t2")
 }
 
+require(microsimulation)
+require(dplyr)
+require(splines)
+base <- callFhcrc(1e6,screen="noScreening",mc.cores=3,cohort=1970)
+new <- callFhcrc(1e6,screen="twoYearlyScreen50to70",mc.cores=3,cohort=1970)
+baserate <- predict(base,"cancerdeath") %>% filter(age>=50)
+newrate <- predict(new,"cancerdeath") %>% filter(age>=50)
+merged <- rbind(transform(baserate,group=0), transform(newrate,group=1)) %>% transform(age50=age-50)
+fit1 <- glm(n ~ ns(age,5)+group:ns(age,5)+offset(log(pt)), data=merged, family=poisson)
+RR <- predict(fit1,newdata=transform(baserate,group=1,pt=1,age50=age-50),type="response") /
+predict(fit1,newdata=transform(baserate,group=0,pt=1,age50=age-50),type="response")
+
+pdf("~/work/mortality_rate_reduction_twoYearly50to69.pdf",width=7,height=4)
+par(mfrow=1:2)
+with(predict(new,"incidence") %>% filter(age>=40),
+     plot(age,rate*1e5,type="l",xlab="Age (years)",ylab="Prostate cancer incidence rate per 100,000",main="(a)"))
+legend("topleft",legend=c("No screening","Screening"),lty=2:1, bty="n")
+with(predict(base,"incidence") %>% filter(age>=40),
+     lines(age,rate*1e5,lty=2))
+plot(baserate$age, RR, type="l",ylab="Prostate cancer mortality rate ratio",xlab="Age (years)",
+ylim=c(0.5,1),main="(b)")
+dev.off()
+
+with(predict(new,"cancerdeath") %>% filter(age>=40),
+     plot(age,rate*1e5,type="l",xlab="Age (years)",ylab="Rate per 100,000"))
+with(predict(base,"cancerdeath") %>% filter(age>=40),
+     lines(age,rate*1e5,lty=2))
+
+
+
 ## all(abs(eventRates(temp)-data.table(eventRatesOld(temp)))<1e-8)
 ## system.time(eventRatesOld(temp))
 ## system.time(eventRates(temp))
