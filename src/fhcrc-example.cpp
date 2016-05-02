@@ -695,7 +695,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // for (int i = 0; i < nChunkSize; i++) {
 
   int nthreads, tid, i, chunk=1000;
-
+  
   //#pragma omp parallel shared(nthreads,chunk) private(i,tid,genNh,genOther,genTreatment,genScreen)
 #pragma omp parallel shared(nthreads,chunk) private(i,tid,sim,diffTime,cumTime)
   {
@@ -715,20 +715,24 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
        there are chunks left when it is finished it will start on
        another i.e. dynamic chunk-thread allocation.*/
 
+    boost::rngstream genNh[omp_get_num_threads()],
+      genOther[omp_get_num_threads()],
+      genTreatment[omp_get_num_threads()],
+      genScreen[omp_get_num_threads()];
+    
 #pragma omp for schedule(static,1)
     for (i = 0; i < n; i++) {
       //person = FhcrcPerson(i+firstId,cohort[i],genNh[i],genTreatment[i],genOther[i],genScreen[i]);
-      boost::rngstream genNh, genOther, genTreatment, genScreen;
       //Rprintf("id:%d, tid=%d\n", firstId+i, tid);
-      FhcrcPerson person = FhcrcPerson(i+firstId,cohort[i],genNh,genTreatment,genOther,genScreen, 
+      FhcrcPerson person = FhcrcPerson(i+firstId,cohort[i],genNh[tid],genTreatment[tid],genOther[tid],genScreen[tid], 
 				       &report);
       sim.create_process(&person);
       sim.run_simulation();
       sim.clear();
-      genNh.ResetNextSubstream();
-      genOther.ResetNextSubstream();
-      genScreen.ResetNextSubstream();
-      genTreatment.ResetNextSubstream();
+      genNh[tid].ResetNextSubstream();
+      genOther[tid].ResetNextSubstream();
+      genScreen[tid].ResetNextSubstream();
+      genTreatment[tid].ResetNextSubstream();
     }
 #pragma omp critical (FullReport) 
     {
