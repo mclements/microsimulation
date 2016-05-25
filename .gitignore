@@ -1,0 +1,5 @@
+*~
+*.so
+*.o
+..Rcheck/*
+autom4te.cache/*

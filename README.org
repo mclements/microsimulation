@@ -5,12 +5,12 @@
 #+OPTIONS: html-postamble:nil
 
 # Babel settings
-#+PROPERTY: session *R* 
-#+PROPERTY: cache yes 
-#+PROPERTY: results output graphics 
-#+PROPERTY: exports both 
-#+PROPERTY: tangle yes
-#+PROPERTY: exports both 
+#+PROPERTY: session *R-org* 
+# +PROPERTY: cache yes 
+# +PROPERTY: results output graphics 
+# +PROPERTY: exports both 
+# +PROPERTY: tangle yes
+# +PROPERTY: exports both 
 
 [[https://en.wikipedia.org/wiki/Microsimulation][Microsimulation]] is a form of individual-based stochastic simulation. In continuous time, microsimulation is closely related to [[https://en.wikipedia.org/wiki/Discrete_event_simulation][discrete event simulation]], and in discrete time it is closely related to [[https://en.wikipedia.org/wiki/Agent-based_model][agent-based models]]. In econometrics and health care, microsimulation is often used to model policy changes. Our implementation is in continuous time and uses event-based discrete event simulation for the model specification.
 
@@ -18,7 +18,7 @@ The package provides several approaches for microsimulation and event-based, dis
 
 We specifically developed this package for modelling the cost-effectiveness of cancer screening, where there are many (e.g. 10^7) individuals who are followed from birth to death. Notably, we provide a complete prostate cancer screening model, including tools for cost-effectiveness analysis. 
 
-#+BEGIN_SRC R :session
+#+BEGIN_SRC R
   require(microsimulation)
   sim1 <- callFhcrc(1e4,mc.cores=3,screen="screenUptake")
 #+END_SRC
