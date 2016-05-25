@@ -74,15 +74,16 @@ RNGstate <- function() {
 ## find the concave frontier
 frontier<-function(x,y)
   {
-    ichull <- grDevices::chull(cbind(x,y)) # convex hull
-    ichull <- ichull[order(x[ichull])]     # order by x
-    xi <- x[ichull]
-    yi <- y[ichull]          # subset to convex hull
-    include <- sapply(1:length(ichull),
-                      function(i)       # establish the frontier
-                      all(yi[i] >= yi[ xi<xi[i] ]))
-    ichull[include]
-  }
+      ichull <- grDevices::chull(cbind(x,y)) # convex hull
+      if (length(ichull)<2) return(ichull)
+      xi <- x[ichull]
+      yi <- y[ichull]          # subset to convex hull
+      imin <- which(xi==min(xi))
+      include <- sapply(1:length(ichull),
+                        function(i)       # establish the frontier
+                        i==imin || (i>imin && yi[i-1]<yi[i] && xi[i-1]<xi[i]))
+      ichull[include]
+}
 lines.frontier <- function(x,y,pch=19,type="b",...) {
     index <- frontier(x,y)
     lines(x[index],y[index],pch=pch,type=type,...)
