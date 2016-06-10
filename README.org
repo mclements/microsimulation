@@ -44,9 +44,9 @@ required, way of installing github-packages in R is to use [[https://cran.r-proj
 both of the dependencies and [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] are available on [[https://cran.r-project.org/][CRAN]] just run the
 following in =R=.
 #+BEGIN_SRC R :eval no :exports code
-  install.packages(“BH”)
-  install.packages(“Rcpp”)
-  install.packages(“devtools”)
+  install.packages("BH")
+  install.packages("Rcpp")
+  install.packages("devtools")
 #+END_SRC
 
 ** Installing the microsimulation with devtools
