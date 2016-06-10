@@ -5,32 +5,104 @@
 #+OPTIONS: html-postamble:nil
 
 # Babel settings
-#+PROPERTY: session *R-org* 
-# +PROPERTY: cache yes 
-# +PROPERTY: results output graphics 
-# +PROPERTY: exports both 
+#+PROPERTY: session *R-org*
+# +PROPERTY: cache yes
+# +PROPERTY: results output graphics
+# +PROPERTY: exports both
 # +PROPERTY: tangle yes
-# +PROPERTY: exports both 
+# +PROPERTY: exports both
 
-[[https://en.wikipedia.org/wiki/Microsimulation][Microsimulation]] is a form of individual-based stochastic simulation. In continuous time, microsimulation is closely related to [[https://en.wikipedia.org/wiki/Discrete_event_simulation][discrete event simulation]], and in discrete time it is closely related to [[https://en.wikipedia.org/wiki/Agent-based_model][agent-based models]]. In econometrics and health care, microsimulation is often used to model policy changes. Our implementation is in continuous time and uses event-based discrete event simulation for the model specification.
+* Background
+[[https://en.wikipedia.org/wiki/Microsimulation][Microsimulation]] is a form of individual-based stochastic
+simulation. In continuous time, microsimulation is closely related to
+[[https://en.wikipedia.org/wiki/Discrete_event_simulation][discrete event simulation]], and in discrete time it is closely related
+to [[https://en.wikipedia.org/wiki/Agent-based_model][agent-based models]]. In econometrics and health care,
+microsimulation is often used to model policy changes. Our
+implementation is in continuous time and uses event-based discrete
+event simulation for the model specification.
 
-The package provides several approaches for microsimulation and event-based, discrete event simulation. The package includes an R implementation of discrete event simulation, building on several R5 classes. This implementation is useful from a pedagogical perspective, but it is slow for larger microsimulations. For speed, we also provide C++ classes for discrete event simulation, building on several well established libraries, including the [[http://www.inf.usi.ch/carzaniga/ssim/index.html][SSIM]] C++ discrete event simulation library, the [[http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/][RngStream]] C library for common random numbers, the [[http://www.boost.org/][Boost]] libraries for making many C++11 tools available to C++98, and [[http://www.rcpp.org/][Rcpp]] for providing glue between R, R's C API and C++. 
+The package provides several approaches for microsimulation and
+event-based, discrete event simulation. The package includes an R
+implementation of discrete event simulation, building on several R5
+classes. This implementation is useful from a pedagogical perspective,
+but it is slow for larger microsimulations. For speed, we also provide
+C++ classes for discrete event simulation, building on several well
+established libraries, including the [[http://www.inf.usi.ch/carzaniga/ssim/index.html][SSIM]] C++ discrete event
+simulation library, the [[http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/][RngStream]] C library for common random numbers,
+the [[http://www.boost.org/][Boost]] libraries for making many C++11 tools available to C++98,
+and [[http://www.rcpp.org/][Rcpp]] for providing glue between R, R's C API and C++.
 
-We specifically developed this package for modelling the cost-effectiveness of cancer screening, where there are many (e.g. 10^7) individuals who are followed from birth to death. Notably, we provide a complete prostate cancer screening model, including tools for cost-effectiveness analysis. 
+We specifically developed this package for modelling the
+cost-effectiveness of cancer screening, where there are many
+(e.g. 10^7) individuals who are followed from birth to death. Notably,
+we provide a complete prostate cancer screening model, including tools
+for cost-effectiveness analysis.
+* Installing
+** Dependencies in R
+The microsimulation requires [[http://www.rcpp.org/][Rcpp]] and [[http://www.boost.org/][Boost]]. A convenient, but not
+required, way of installing github-packages in R is to use [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]]. Since
+both of the dependencies and [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] are available on [[https://cran.r-project.org/][CRAN]] just run the
+following in =R=.
+#+BEGIN_SRC R :eval no :exports code
+  install.packages(“BH”)
+  install.packages(“Rcpp”)
+  install.packages(“devtools”)
+#+END_SRC
 
-#+BEGIN_SRC R
+** Installing the microsimulation with devtools
+To install the microsimulation using [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] just run the following in =R=:
+#+BEGIN_SRC R :eval no :exports code
+  require(devtools)
+  install_github("mclements/microsimulation")
+#+END_SRC
+** Alternative install from shell
+# Some thing OS-specific
+If you prefer the =shell= over [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] it is just download the
+microsimulation R-package by running this in your =shell=:
+#+BEGIN_SRC shell :eval no :exports code
+  git clone https://github.com/mclements/microsimulation.git
+#+END_SRC
+
+To install the microsimulation R-package run this in your =shell=:
+#+BEGIN_SRC shell :eval no :exports code
+  R CMD INSTALL path_to_microsimulation
+#+END_SRC
+
+* Running the simulation
+
+#+HEADERS: :var reRunSimulation = 0
+#+BEGIN_SRC R :exports none
   require(microsimulation)
-  sim1 <- callFhcrc(1e4,mc.cores=3,screen="screenUptake")
+  myFile <- file.path("inst","sim1.RData")
+
+  if (reRunSimulation || !file.exists(myFile)){
+      sim1 <- callFhcrc(1e6,mc.cores=3,screen="screenUptake")
+      save(sim1, file=myFile)
+  } else {
+    load(file=myFile)
+  }
+#+END_SRC
+
+#+BEGIN_SRC R :eval no :exports code
+  require(microsimulation)
+  sim1 <- callFhcrc(1e6,mc.cores=3,screen="screenUptake")
 #+END_SRC
 
 #+RESULTS:
-
-#+BEGIN_SRC R :file inst/1.png :session :results output graphics :exports both
-plot(sim1,ylab="Incidence rate",xlab="Age (years)")
+:      user  system elapsed
+:   179.828   0.188  65.240
+* Plotting rates
+#+BEGIN_SRC R :file inst/inc.png :results output graphics :exports both
+  plot(sim1, ylab="Incidence rate", xlab="Age (years)")
 #+END_SRC
 
 #+RESULTS:
-[[file:inst/1.png]]
+[[file:inst/inc.png]]
 
+#+BEGIN_SRC R :file inst/mort.png :results output graphics :exports both
+  plot(sim1, type="cancerdeath", ylab="Cancer specific mortality rate",
+       xlab="Age (years)")
+#+END_SRC
 
-
+#+RESULTS:
+[[file:inst/mort.png]]
