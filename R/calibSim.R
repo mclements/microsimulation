@@ -22,7 +22,7 @@ callCalibrationPerson <- function(seed=12345,n=500,runpar=c(4,0.5,0.05,10,3,0.5)
   states <- c("DiseaseFree","Precursor","PreClinical","Clinical")
   out <- lapply(out, function(o){
     curnames <- names(o)
-    mat <- matrix(0,nr=10,ncol=length(states))
+    mat <- matrix(0,nrow=10,ncol=length(states))
     colnames(mat) <- states; rownames(mat) <- seq(10,100,10)
     mat[,states[states %in% curnames]]<-data.matrix(transform(as.data.frame(o[states[states %in% curnames]])))
     list(StateOccupancy=mat, TimeAtRisk=o$TimeAtRisk)

@@ -1,6 +1,6 @@
 
 ## Use the R_HOME indirection to support installations of multiple R version
-PKG_LIBS = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "cat(base::gsub('\\x5C\\x5C', '/', utils::shortPathName(Rcpp:::RcppLdFlags(static = Rcpp:::staticLinking()))))")
+PKG_LIBS = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()")
 
 PKG_CXXFLAGS = -I. -DVERSION=\"1.7.6\"
 PKG_CFLAGS = -I.

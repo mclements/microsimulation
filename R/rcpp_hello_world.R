@@ -554,9 +554,9 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
 
 ## R --slave -e "options(width=200); require(microsimulation); callFhcrc(100,nLifeHistories=1e5,screen=\"screen50\")[[\"parameters\"]]"
 
-summary.fhcrc <- function(obj) {
-    newobj <- obj[c("n","screen")]
-    with(obj,
+summary.fhcrc <- function(object, ...) {
+    newobj <- object[c("n","screen")]
+    with(object,
          structure(.Data=c(newobj,
                        with(obj, list(
                            discountRate.costs=simulation.parameters$discountRate.costs,
@@ -566,7 +566,8 @@ summary.fhcrc <- function(obj) {
                            costs=sum(costs$costs)/n))),
                    class="summary.fhcrc"))
 }
-print.summary.fhcrc <- function(obj)
+print.summary.fhcrc <- function(x, ...) {
+    obj <- x
     cat(sprintf(
 "Screening scenario:        %s
 Life expectancy:           %f
@@ -576,18 +577,19 @@ Discounted rate (effect.): %f
 Discounted rate (costs):   %f
 ",obj$screen,obj$LE,obj$QALE,obj$costs,
                 obj$discountRate.effectiveness,
-                obj$discountRate.costs))
+        obj$discountRate.costs))
+}
 
 ICER <- function(object1, object2, ...)
     UseMethod("ICER")
 
-ICER.fhcrc <- function(obj1,obj2,...) {
-    p1 <- obj1$simulation.parameters
-    p2 <- obj2$simulation.parameters
+ICER.fhcrc <- function(object1,object2,...) {
+    p1 <- object1$simulation.parameters
+    p2 <- object2$simulation.parameters
     stopifnot(p1$discountRate.costs == p2$discountRate.costs)
     stopifnot(p1$discountRate.effectiveness == p2$discountRate.effectiveness)
-    summary1 <- summary(obj1,...)
-    summary2 <- summary(obj2,...)
+    summary1 <- summary(object1,...)
+    summary2 <- summary(object2,...)
     out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE),
                 delta.QALE=summary1$QALE-summary2$QALE,
                 delta.costs=summary1$costs-summary2$costs)
@@ -599,35 +601,35 @@ ICER.fhcrc <- function(obj1,obj2,...) {
     out
 }
 
-print.fhcrc <- function(obj,...)
+print.fhcrc <- function(x, ...)
     cat(sprintf("FHCRC prostate cancer model with %i individual(s) under scenario '%s'.\n",
-                obj$n, obj$screen),
+                x$n, x$screen),
         ...)
 
-predict.fhcrc <- function(obj, type=c("incidence","cancerdeath")) {
+predict.fhcrc <- function(object, type=c("incidence","cancerdeath"), ...) {
     type <- match.arg(type)
     event_types <- switch(type,
                           incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
                           cancerdeath="toCancerDeath")
-    if (require(dplyr)) {
-        pt <- obj$summary$pt %>%
+    ##if (require(dplyr)) {
+        pt <- object$summary$pt %>%
             group_by(age) %>%
                 summarise(pt=sum(pt))
-        events <- obj$summary$events %>%
+        events <- object$summary$events %>%
             filter(event %in% event_types) %>%
                 group_by(age) %>%
                     summarise(n=sum(n))
         left_join(pt,events,by="age") %>% mutate(rate = ifelse(is.na(n), 0, n/pt))
-    } else error("dplyr is not available for predict")
+    ##} else stop("dplyr is not available for predict")
 }
     
-plot.fhcrc <- function(obj,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
-    rates <- predict(obj, type)
+plot.fhcrc <- function(x,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
+    rates <- predict(x, type)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=rates,  ...)
 }
 
-lines.fhcrc <- function(obj,...) {
-    plot(obj, ..., add=TRUE)
+lines.fhcrc <- function(x,...) {
+    plot(x, ..., add=TRUE)
 }
 
 
@@ -639,7 +641,7 @@ assignList <- function(lst,...)
 ## assignList(formals(callFhcrc),pos=1)
 
 NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
-    if (require(dplyr)) {
+    ##if (require(dplyr)) {
         pNNS <- function(thisScenario) {
             as.numeric((thisScenario$summary$events %>%
                         filter(event=="toCancerDeath" & age>=startAge & age<stopAge) %>%
@@ -660,7 +662,7 @@ NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
         NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
         ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
         return(list(NNS=NNS,NND=NND))
-    } else error("NN.fhcrc: require dplyr to calculate NNS and NND")
+    ##} else stop("NN.fhcrc: require dplyr to calculate NNS and NND")
 }
 
 ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"),ages=c(50,85), ...) {
@@ -673,7 +675,7 @@ ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","c
                           cancerdeath="toCancerDeath",
                           alldeath=c("toCancerDeath","toOtherDeath"))
     if(class(obj)!="list"){obj <- list(obj)}
-    if (require(ggplot2) & require(dplyr)) {
+    ##if (require(ggplot2) & require(dplyr)) {
         pt <- do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))) %>%
             group_by(pattern,age) %>%
                 summarise(pt=sum(pt))
@@ -686,7 +688,7 @@ ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","c
                 filter(age >= min(ages),
                        age <= max(ages))
         ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
-    } else error("ggplot.fhcrc: require both ggplot2 and dplyr")
+    ##} else error("ggplot.fhcrc: require both ggplot2 and dplyr")
 }
 
 .testPackage <- function() {
@@ -696,63 +698,88 @@ ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","c
 }
 
 EventQueue <-
-  setRefClass("EventQueue",
-              fields = list(times = "numeric", events = "list"),
-              methods = list(
-                insert = function(time,event) {
-                  ord <- order(newtimes <- c(times,time))
-                  times <<- newtimes[ord]
-                  events <<- c(events,list(event))[ord]
-                },
-                pop = function() {
-                  head <- structure(events[[1]], time=times[1])
-                  times <<- times[-1]
-                  events <<- events[-1]
-                  return(head)
-                },
-                empty = function() length(times) == 0,
-                clear = function() {
-                  times <<- numeric()
-                  events <<- list()
-                },
-                remove = function(predicate, ...) {
-                  i <- sapply(events, predicate, ...)
-                  stopifnot(is.logical(i))
-                  i[is.na(i)] <- TRUE
-                  times <<- times[!i]
-                  events <<- events[!i]
-                }))
+    setRefClass("EventQueue",
+                fields = list(times = "numeric", events = "list"),
+                methods = list(
+                    help = function() {
+                        'Reference class implementation of an event queue. Fields for the event times and the events list.'
+                    },
+                    insert = function(time,event) {
+                        'Method to insert the event at the given time'
+                        insert.ord <- findInterval(time,times)
+                        times <<- append(times,time,insert.ord)
+                        events <<- append(events,event,insert.ord)
+                    },
+                    pop = function() {
+                        'Method to remove the head of the event queue and return its value'
+                        head <- structure(events[[1]], time=times[1])
+                        times <<- times[-1]
+                        events <<- events[-1]
+                        return(head)
+                    },
+                    empty = function() {
+                        'Method to check whether there are no events in the queue'
+                        length(times) == 0
+                        },
+                    clear = function() {
+                        'Method to clear the event queue'
+                        times <<- numeric()
+                        events <<- list()
+                    },
+                    remove = function(predicate, ...) {
+                        'Method to remove events that satisfy some predicate'
+                        i <- sapply(events, predicate, ...)
+                        stopifnot(is.logical(i))
+                        i[is.na(i)] <- TRUE
+                        times <<- times[!i]
+                        events <<- events[!i]
+                    }))
 
 BaseDiscreteEventSimulation <-
-  setRefClass("BaseDiscreteEventSimulation",
-              contains = "EventQueue",
-              fields = list(currentTime = "numeric",
-                previousEventTime = "numeric"),
-              methods = list(
-                  scheduleAt = function(time, event) {
-                      attr(event,"time") <- time
-                      attr(event,"sendingTime") <- currentTime
-                      insert(time, event)
-                  },
-                init = function() stop("VIRTUAL!"),
-                handleMessage = function(event) stop("VIRTUAL!"),
-                final = function() {},
-                now = function() currentTime,
-                reset = function(startTime = 0.0) {
-                    clear()
-                    previousEventTime <<- currentTime <<- startTime
-                },
-                run = function(startTime = 0.0) {
-                  reset(startTime)
-                  init()
-                  while(!empty()) {
-                    event <- pop()
-                    currentTime <<- attr(event, "time")
-                    handleMessage(event)
-                    previousEventTime <<- currentTime
-                  }
-                  final()
-                }))
+    setRefClass("BaseDiscreteEventSimulation",
+                contains = "EventQueue",
+                fields = list(currentTime = "numeric",
+                    previousEventTime = "numeric"),
+                methods = list(
+                    help = function() {
+                        'Reference class implementation of an event-oriented discrete event simulation. Fields for the event times and the events list.'
+                    },
+                    scheduleAt = function(time, event) {
+                        'Method that adds attributes for the event time and the sendingTime, and then insert the event into the event queue'
+                        attr(event,"time") <- time
+                        attr(event,"sendingTime") <- currentTime
+                        insert(time, event)
+                    },
+                    init = function() {
+                        'Virtual method to initialise the event queue and attributes'
+                        stop("VIRTUAL!")
+                    },
+                    handleMessage = function(event) {
+                        'Virtual method to handle the messages as they arrive'
+                        stop("VIRTUAL!")
+                    },
+                    final = function() {
+                        'Method for finalising the simulation'
+                        NULL
+                    },
+                    now = function() currentTime,
+                    reset = function(startTime = 0.0) {
+                        'Method to reset the event queue'
+                        clear()
+                        previousEventTime <<- currentTime <<- startTime
+                    },
+                    run = function(startTime = 0.0) {
+                        'Method to run the simulation'
+                        reset(startTime)
+                        init()
+                        while(!empty()) {
+                            event <- pop()
+                            currentTime <<- attr(event, "time")
+                            handleMessage(event)
+                            previousEventTime <<- currentTime
+                        }
+                        final()
+                    }))
 
 RNGStream <- function(nextStream = TRUE, iseed = NULL) {
   stopifnot(exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE) || !is.null(iseed))
@@ -764,9 +791,9 @@ RNGStream <- function(nextStream = TRUE, iseed = NULL) {
   current <- if (nextStream) parallel::nextRNGStream(.Random.seed) else .Random.seed
   .Random.seed <<- startOfStream <- startOfSubStream <- current
   structure(list(resetRNGkind = function() {
-    if (!is.null(oldseed))
-      assign(".Random.seed", oldseed, envir = .GlobalEnv)
-    else rm(.Random.seed, envir = .GlobalEnv)
+      if (!is.null(oldseed))
+          assign(".Random.seed", oldseed, envir = .GlobalEnv)
+      else rm(.Random.seed, envir = .GlobalEnv)
   },
                  seed = function() current,
                  open = function() .Random.seed <<- current,
