@@ -616,11 +616,14 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
     do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
 }
 
-predict.fhcrc <- function(object, type=c("incidence","cancerdeath"), ...) {
-    type <- match.arg(type)
+predict.fhcrc <- function(object, type= "incidence", ...) {
     event_types <- switch(type,
-                          incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
-                          cancerdeath="toCancerDeath")
+                          psa="toScreen",
+                          biopsies=c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
+                          incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
+                          metastatic="toMetastatic",
+                          cancerdeath="toCancerDeath",
+                          alldeath=c("toCancerDeath", "toOtherDeath"))
     pt <- with(object$summary$pt,
                grp_apply(pt, age, sum))
     events <- with(subset(object$summary$events, event %in% event_types),
@@ -632,7 +635,9 @@ predict.fhcrc <- function(object, type=c("incidence","cancerdeath"), ...) {
                     rate = ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)))
 }
 
-plot.fhcrc <- function(x,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
+plot.fhcrc <- function(x,
+                       type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
+                       plot.type="l", xlim=c(40,100), add=FALSE, ...) {
     rates <- predict(x, type)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=rates,  ...)
 }
@@ -670,7 +675,11 @@ NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
     return(list(NNS=NNS,NND=NND))
 }
 
-ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"),ages=c(50,85), ...) {
+## TODO:
+## 1. make a predict function with input varible: by_group
+## 2. Use ggplot's OO structure better
+## 3. Fix so S3 work's when "obj"" is a list of the class
+ggplot.fhcrc <- function(obj, type="incidence", ages=c(50,85), ...) {
     type <- match.arg(type)
     event_types <- switch(type,
                           psa="toScreen",
@@ -680,20 +689,19 @@ ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","c
                           cancerdeath="toCancerDeath",
                           alldeath=c("toCancerDeath","toOtherDeath"))
     if(class(obj)!="list"){obj <- list(obj)}
-    ##if (require(ggplot2) & require(dplyr)) {
-        pt <- do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))) %>%
-            group_by(pattern,age) %>%
-                summarise(pt=sum(pt))
-        events <-  do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$events,pattern=obj$screen))) %>%
-            filter(is.element(event, event_types)) %>%
-                group_by(pattern,age) %>%
-                    summarise(n=sum(n))
-        out <- left_join(pt,events,by=c("pattern","age")) %>%
-            mutate(rate = 1000*ifelse(is.na(n), 0, n/pt)) %>%
-                filter(age >= min(ages),
-                       age <= max(ages))
-        ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
-    ##} else error("ggplot.fhcrc: require both ggplot2 and dplyr")
+    pt <- with(do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))),
+               grp_apply(pt, list(pattern, age), sum))
+    events <- with(subset(do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$events,pattern=obj$screen))),
+                          event %in% event_types),
+                   grp_apply(n, list(pattern, age), sum))
+    out <- subset(with(merge(pt, events, by = c("Var1", "Var2"), all = TRUE),
+                       data.frame(pattern = Var1,
+                                  age = as.numeric(levels(Var2))[Var2], #important factor conversion
+                                  pt = Freq.x,
+                                  n = Freq.y,
+                                  rate = ifelse(is.na(Freq.y), 0, 1000 * Freq.y/Freq.x))),
+                  age >= min(ages) & age <= max(ages))
+    ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
 }
 
 .testPackage <- function() {
