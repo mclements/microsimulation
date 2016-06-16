@@ -606,23 +606,32 @@ print.fhcrc <- function(x, ...)
                 x$n, x$screen),
         ...)
 
+## fast operations by group using base-R
+## http://stackoverflow.com/questions/3685492/r-speeding-up-group-by-operations
+grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
+  FUN = match.fun(FUN)
+  if (!is.list(XS))
+    XS = list(XS)
+  as.data.frame(as.table(tapply(1:length(XS[[1L]]), INDEX, function(s, ...)
+    do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
+}
+
 predict.fhcrc <- function(object, type=c("incidence","cancerdeath"), ...) {
     type <- match.arg(type)
     event_types <- switch(type,
                           incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
                           cancerdeath="toCancerDeath")
-    ##if (require(dplyr)) {
-        pt <- object$summary$pt %>%
-            group_by(age) %>%
-                summarise(pt=sum(pt))
-        events <- object$summary$events %>%
-            filter(event %in% event_types) %>%
-                group_by(age) %>%
-                    summarise(n=sum(n))
-        left_join(pt,events,by="age") %>% mutate(rate = ifelse(is.na(n), 0, n/pt))
-    ##} else stop("dplyr is not available for predict")
+    pt <- with(object$summary$pt,
+               grp_apply(pt, age, sum))
+    events <- with(subset(object$summary$events, event %in% event_types),
+                    grp_apply(n, age, sum))
+    with(merge(pt, events, by = "Var1", all = TRUE),
+         data.frame(age = as.numeric(levels(Var1))[Var1], #important factor conversion
+                    pt = Freq.x,
+                    n = Freq.y,
+                    rate = ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)))
 }
-    
+
 plot.fhcrc <- function(x,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
     rates <- predict(x, type)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=rates,  ...)
@@ -631,8 +640,6 @@ plot.fhcrc <- function(x,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(
 lines.fhcrc <- function(x,...) {
     plot(x, ..., add=TRUE)
 }
-
-
 
 ## utility - not exported
 assignList <- function(lst,...)
