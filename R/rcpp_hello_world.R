@@ -648,28 +648,26 @@ assignList <- function(lst,...)
 ## assignList(formals(callFhcrc),pos=1)
 
 NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
-    ##if (require(dplyr)) {
-        pNNS <- function(thisScenario) {
-            as.numeric((thisScenario$summary$events %>%
-                        filter(event=="toCancerDeath" & age>=startAge & age<stopAge) %>%
-                        summarise(sumEvents=sum(n))) / # divided by
-                       (thisScenario$summary$prev %>%
-                        filter(age==round(startAge)) %>%
-                        summarise(sumPop=sum(count))))
-        }
-        pNND <- function(thisScenario) {
-            as.numeric(thisScenario$summary$events %>%
-                       filter(event=="toCancerDeath" & age>=startAge & age<stopAge) %>%
-                       summarise(sumEvents=sum(n)) /
-                       thisScenario$summary$events %>%
-                       filter(is.element(event,c("toScreenDiagnosis","toClinicalDiagnosis")) & age>=startAge & age<stopAge) %>%
-                       summarise(sumEvents=sum(n)))
-        }
-        NNS <- 1 / (pNNS(ref.obj) - pNNS(obj)) #number needed to screen to prevent 1 PCa death
-        NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
-        ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
-        return(list(NNS=NNS,NND=NND))
-    ##} else stop("NN.fhcrc: require dplyr to calculate NNS and NND")
+    pNNS <- function(thisScenario) {
+        with(subset(thisScenario$summary$events,
+                    event=="toCancerDeath" & age>=startAge & age<stopAge),
+             sum(n)) / # divided by
+            with(subset(thisScenario$summary$prev,
+                        age==round(startAge)),
+                 sum(count))
+    }
+    pNND <- function(thisScenario) {
+        with(subset(thisScenario$summary$events,
+                    event=="toCancerDeath" & age>=startAge & age<stopAge),
+             sum(n)) / # divided by
+            with(subset(thisScenario$summary$events,
+                        event %in% c("toScreenDiagnosis","toClinicalDiagnosis") & age>=startAge & age<stopAge),
+                 sum(n))
+    }
+    NNS <- 1 / (pNNS(ref.obj) - pNNS(obj)) #number needed to screen to prevent 1 PCa death
+    NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
+    ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
+    return(list(NNS=NNS,NND=NND))
 }
 
 ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"),ages=c(50,85), ...) {
