@@ -558,7 +558,7 @@ summary.fhcrc <- function(object, ...) {
     newobj <- object[c("n","screen")]
     with(object,
          structure(.Data=c(newobj,
-                       with(obj, list(
+                       with(object, list(
                            discountRate.costs=simulation.parameters$discountRate.costs,
                            discountRate.effectiveness=simulation.parameters$discountRate.effectiveness,
                            LE=sum(summary$pt$pt)/n,
@@ -812,3 +812,4 @@ with.RNGStream <- function(data,expr,...) {
   out
 }
 setOldClass("RNGStream")
+
