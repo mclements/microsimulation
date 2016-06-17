@@ -606,24 +606,38 @@ print.fhcrc <- function(x, ...)
                 x$n, x$screen),
         ...)
 
-predict.fhcrc <- function(object, type=c("incidence","cancerdeath"), ...) {
-    type <- match.arg(type)
-    event_types <- switch(type,
-                          incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
-                          cancerdeath="toCancerDeath")
-    ##if (require(dplyr)) {
-        pt <- object$summary$pt %>%
-            group_by(age) %>%
-                summarise(pt=sum(pt))
-        events <- object$summary$events %>%
-            filter(event %in% event_types) %>%
-                group_by(age) %>%
-                    summarise(n=sum(n))
-        left_join(pt,events,by="age") %>% mutate(rate = ifelse(is.na(n), 0, n/pt))
-    ##} else stop("dplyr is not available for predict")
+## fast operations by group using base-R
+## http://stackoverflow.com/questions/3685492/r-speeding-up-group-by-operations
+grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
+  FUN = match.fun(FUN)
+  if (!is.list(XS))
+    XS = list(XS)
+  as.data.frame(as.table(tapply(1:length(XS[[1L]]), INDEX, function(s, ...)
+    do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
 }
-    
-plot.fhcrc <- function(x,type=c("incidence","cancerdeath"),plot.type="l",xlim=c(40,100), add=FALSE, ...) {
+
+predict.fhcrc <- function(object, type= "incidence", ...) {
+    event_types <- switch(type,
+                          psa="toScreen",
+                          biopsies=c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
+                          incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
+                          metastatic="toMetastatic",
+                          cancerdeath="toCancerDeath",
+                          alldeath=c("toCancerDeath", "toOtherDeath"))
+    pt <- with(object$summary$pt,
+               grp_apply(pt, age, sum))
+    events <- with(subset(object$summary$events, event %in% event_types),
+                    grp_apply(n, age, sum))
+    with(merge(pt, events, by = "Var1", all = TRUE),
+         data.frame(age = as.numeric(levels(Var1))[Var1], #important factor conversion
+                    pt = Freq.x,
+                    n = Freq.y,
+                    rate = ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)))
+}
+
+plot.fhcrc <- function(x,
+                       type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
+                       plot.type="l", xlim=c(40,100), add=FALSE, ...) {
     rates <- predict(x, type)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=rates,  ...)
 }
@@ -632,8 +646,6 @@ lines.fhcrc <- function(x,...) {
     plot(x, ..., add=TRUE)
 }
 
-
-
 ## utility - not exported
 assignList <- function(lst,...)
   for(i in 1:length(lst))
@@ -641,31 +653,33 @@ assignList <- function(lst,...)
 ## assignList(formals(callFhcrc),pos=1)
 
 NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
-    ##if (require(dplyr)) {
-        pNNS <- function(thisScenario) {
-            as.numeric((thisScenario$summary$events %>%
-                        filter(event=="toCancerDeath" & age>=startAge & age<stopAge) %>%
-                        summarise(sumEvents=sum(n))) / # divided by
-                       (thisScenario$summary$prev %>%
-                        filter(age==round(startAge)) %>%
-                        summarise(sumPop=sum(count))))
-        }
-        pNND <- function(thisScenario) {
-            as.numeric(thisScenario$summary$events %>%
-                       filter(event=="toCancerDeath" & age>=startAge & age<stopAge) %>%
-                       summarise(sumEvents=sum(n)) /
-                       thisScenario$summary$events %>%
-                       filter(is.element(event,c("toScreenDiagnosis","toClinicalDiagnosis")) & age>=startAge & age<stopAge) %>%
-                       summarise(sumEvents=sum(n)))
-        }
-        NNS <- 1 / (pNNS(ref.obj) - pNNS(obj)) #number needed to screen to prevent 1 PCa death
-        NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
-        ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
-        return(list(NNS=NNS,NND=NND))
-    ##} else stop("NN.fhcrc: require dplyr to calculate NNS and NND")
+    pNNS <- function(thisScenario) {
+        with(subset(thisScenario$summary$events,
+                    event=="toCancerDeath" & age>=startAge & age<stopAge),
+             sum(n)) / # divided by
+            with(subset(thisScenario$summary$prev,
+                        age==round(startAge)),
+                 sum(count))
+    }
+    pNND <- function(thisScenario) {
+        with(subset(thisScenario$summary$events,
+                    event=="toCancerDeath" & age>=startAge & age<stopAge),
+             sum(n)) / # divided by
+            with(subset(thisScenario$summary$events,
+                        event %in% c("toScreenDiagnosis","toClinicalDiagnosis") & age>=startAge & age<stopAge),
+                 sum(n))
+    }
+    NNS <- 1 / (pNNS(ref.obj) - pNNS(obj)) #number needed to screen to prevent 1 PCa death
+    NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
+    ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
+    return(list(NNS=NNS,NND=NND))
 }
 
-ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","cancerdeath","alldeath"),ages=c(50,85), ...) {
+## TODO:
+## 1. make a predict function with input varible: by_group
+## 2. Use ggplot's OO structure better
+## 3. Fix so S3 work's when "obj"" is a list of the class
+ggplot.fhcrc <- function(obj, type="incidence", ages=c(50,85), ...) {
     type <- match.arg(type)
     event_types <- switch(type,
                           psa="toScreen",
@@ -675,20 +689,19 @@ ggplot.fhcrc <- function(obj,type=c("psa","biopsies","incidence","metastatic","c
                           cancerdeath="toCancerDeath",
                           alldeath=c("toCancerDeath","toOtherDeath"))
     if(class(obj)!="list"){obj <- list(obj)}
-    ##if (require(ggplot2) & require(dplyr)) {
-        pt <- do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))) %>%
-            group_by(pattern,age) %>%
-                summarise(pt=sum(pt))
-        events <-  do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$events,pattern=obj$screen))) %>%
-            filter(is.element(event, event_types)) %>%
-                group_by(pattern,age) %>%
-                    summarise(n=sum(n))
-        out <- left_join(pt,events,by=c("pattern","age")) %>%
-            mutate(rate = 1000*ifelse(is.na(n), 0, n/pt)) %>%
-                filter(age >= min(ages),
-                       age <= max(ages))
-        ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
-    ##} else error("ggplot.fhcrc: require both ggplot2 and dplyr")
+    pt <- with(do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))),
+               grp_apply(pt, list(pattern, age), sum))
+    events <- with(subset(do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$events,pattern=obj$screen))),
+                          event %in% event_types),
+                   grp_apply(n, list(pattern, age), sum))
+    out <- subset(with(merge(pt, events, by = c("Var1", "Var2"), all = TRUE),
+                       data.frame(pattern = Var1,
+                                  age = as.numeric(levels(Var2))[Var2], #important factor conversion
+                                  pt = Freq.x,
+                                  n = Freq.y,
+                                  rate = ifelse(is.na(Freq.y), 0, 1000 * Freq.y/Freq.x))),
+                  age >= min(ages) & age <= max(ages))
+    ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
 }
 
 .testPackage <- function() {

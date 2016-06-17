@@ -37,33 +37,33 @@ cost-effectiveness of cancer screening, where there are many
 (e.g. 10^7) individuals who are followed from birth to death. Notably,
 we provide a complete prostate cancer screening model, including tools
 for cost-effectiveness analysis.
-* Installing
-** Dependencies in R
+* Installing the microsimulation
++ 1 Dependencies: ::
 The microsimulation requires [[http://www.rcpp.org/][Rcpp]] and [[http://www.boost.org/][Boost]]. A convenient, but not
-required, way of installing github-packages in R is to use [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]]. Since
-both of the dependencies and [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] are available on [[https://cran.r-project.org/][CRAN]] just run the
-following in =R=.
+required, way of installing github-packages in R is to use
+[[https://cran.r-project.org/web/packages/devtools/README.html][devtools]]. Since both of the dependencies and [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] are available on
+[[https://cran.r-project.org/][CRAN]] just run the following in R.
 #+BEGIN_SRC R :eval no :exports code
   install.packages("BH")
   install.packages("Rcpp")
   install.packages("devtools")
 #+END_SRC
 
-** Installing the microsimulation with devtools
-To install the microsimulation using [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] just run the following in =R=:
++ 2a Installation with devtools: ::
+To install the microsimulation using [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] just run the following in R:
 #+BEGIN_SRC R :eval no :exports code
   require(devtools)
   install_github("mclements/microsimulation")
 #+END_SRC
-** Alternative install from shell
++ 2b Alternative installation from shell: ::
 # Some thing OS-specific
-If you prefer the =shell= over [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] it is just download the
-microsimulation R-package by running this in your =shell=:
+If you prefer the shell over [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] it is just download the
+microsimulation R-package by running this in your shell:
 #+BEGIN_SRC shell :eval no :exports code
   git clone https://github.com/mclements/microsimulation.git
 #+END_SRC
 
-To install the microsimulation R-package run this in your =shell=:
+To install the microsimulation R-package run this in your shell:
 #+BEGIN_SRC shell :eval no :exports code
   R CMD INSTALL path_to_microsimulation
 #+END_SRC
@@ -106,3 +106,7 @@ To install the microsimulation R-package run this in your =shell=:
 
 #+RESULTS:
 [[file:inst/mort.png]]
+
+# Local Variables:
+# org-confirm-babel-evaluate: nil
+# End:
