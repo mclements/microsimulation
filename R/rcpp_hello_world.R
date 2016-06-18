@@ -616,23 +616,36 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
     do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
 }
 
-predict.fhcrc <- function(object, type= "incidence", ...) {
+predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metastatic", "cancerdeath", "alldeath"), group = "age", ...) {
+    type <- match.arg(type)
+    group <- match.arg(group,
+                       c("state", "grade", "dx", "psa", "age", "year"),
+                       several.ok = TRUE)
+    #include prevalences in switch
     event_types <- switch(type,
+                          incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
                           psa="toScreen",
                           biopsies=c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
-                          incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
                           metastatic="toMetastatic",
                           cancerdeath="toCancerDeath",
                           alldeath=c("toCancerDeath", "toOtherDeath"))
+
+    name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
     pt <- with(object$summary$pt,
-               grp_apply(pt, age, sum))
+               name_grp(grp_apply(pt,
+                                  lapply(as.list(group), function(x) eval(parse(text = x))),
+                                  sum)))
     events <- with(subset(object$summary$events, event %in% event_types),
-                    grp_apply(n, age, sum))
-    with(merge(pt, events, by = "Var1", all = TRUE),
-         data.frame(age = as.numeric(levels(Var1))[Var1], #important factor conversion
-                    pt = Freq.x,
-                    n = Freq.y,
-                    rate = ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)))
+                   name_grp(grp_apply(n,
+                                      lapply(as.list(group), function(x) eval(parse(text = x))),
+                                      sum)))
+    within(merge(pt, events, by = group, all = TRUE),{
+        if("age" %in% group) age <- as.numeric(levels(age))[age] #important factor conversion
+        if("year" %in% group) year <- as.numeric(levels(year))[year] #important factor conversion
+        rate <- ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)
+        n <- Freq.y
+        pt <- Freq.x
+        rm(Freq.x,Freq.y)})
 }
 
 plot.fhcrc <- function(x,
