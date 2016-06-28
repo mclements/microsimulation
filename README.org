@@ -82,6 +82,41 @@ To install the microsimulation R-package run this in your shell:
     load(file=myFile)
   }
 #+END_SRC
+** Available screening scenarios
+There are a number of available testing scenarios. They determine
+testing frequencies and re-testing intervals over calendar period and
+ages.
++ =noScreening= - no screening test, only diagnosis from symptoms
+# + =randomScreen50to70=
++ =twoYearlyScreen50to70= - two-yearly screening from age 50 to 70
++ =fourYearlyScreen50to70= - four-yearly screening from age 50 to 70
++ =screen50= - one screen at age 50
++ =screen60= - one screen at age 60
++ =screen70= - one screen at age 70
++ =screenUptake= - current testing pattern in Sweden
+# + =stockholm3_goteborg=
+# + =stockholm3_risk_stratified=
++ =goteborg= - risk stratified re-screening 2+4 from age 50 to 70
++ =risk_stratified= - risk stratified re-screening 4+8 from age 50 to 70
++ =mixed_screening= - risk stratified re-screening 2+4 from age 50 to
+  70 & opportunistic testing for other ages
+# + =regular_screen=
+# + =single_screen=
+
+# | Screening scenario name | Pattern of screening                             | Age at testing |
+# |-------------------------+--------------------------------------------------+----------------|
+# | No screening            | Only clinical diagnosis                          |                |
+# | 2-yearly                | 2-yearly testing                                 |          50-70 |
+# | 4-yearly                | 4-yearly testing                                 |          50-70 |
+# | 50 only                 | Single test at age 50 years                      |             50 |
+# | 60 only                 | Single test at age 60 years                      |             60 |
+# | 70 only                 | Single test at age 70 years                      |             70 |
+# | Opportunistic 1930      | Opportunistic testing for the 1930 birth cohort  |       All ages |
+# | Current                 | Opportunistic testing for the 1960 birth cohort  |       All ages |
+# | Risk stratified (2+4)   | Risk stratified re-screening 2+4                 |          50-70 |
+# | Risk stratified (4+8)   | Risk stratified re-screening 4+8                 |          50-70 |
+# | Mixed screening         | Risk stratified re-screening 2+4 & opportunistic |  50-70 & other |
+
 
 #+BEGIN_SRC R :eval no :exports code
   require(microsimulation)
@@ -91,21 +126,85 @@ To install the microsimulation R-package run this in your shell:
 #+RESULTS:
 :      user  system elapsed
 :   179.828   0.188  65.240
-* Plotting rates
+
+* Results
+# ** Simulation output
+# The simulation
+** Event rates
+Some of the more commonly used event-rates are provided through a plot
+and a predict function. The available rates are:
++ =incidence= - rate of /clinical diagnosis/ & /screen initiated diagnosis/
++ =psa= - rate of /screening tests/
++ =biopsies= - rate of /clinical diagnostic biopsies/ & /screen initiated biopsies/
++ =metastatic= - rate of natural history transitions to /metastatic/ cancer
++ =cancerdeath= - rate of /cancer deaths/
++ =alldeath= - rate of /cancer deaths/ & /other deaths/
+To construct a rate not listed above you can use the events in
+~sim1$summary$events~ and the person-time in ~sim1$summary$pt~.
+
+To simply plot e.g. the /incidence rate/ of the simulated screening scenario
+the following line can be used:
 #+BEGIN_SRC R :file inst/inc.png :results output graphics :exports both
-  plot(sim1, ylab="Incidence rate", xlab="Age (years)")
+  plot(sim1, type = "incidence", ylab="Incidence rate", xlab="Age (years)")
 #+END_SRC
 
 #+RESULTS:
 [[file:inst/inc.png]]
 
-#+BEGIN_SRC R :file inst/mort.png :results output graphics :exports both
-  plot(sim1, type="cancerdeath", ylab="Cancer specific mortality rate",
-       xlab="Age (years)")
+# #+BEGIN_SRC R :file inst/mort.png :results output graphics :exports both
+#   plot(sim1, type="cancerdeath", ylab="Cancer specific mortality rate",
+#        xlab="Age (years)")
+# #+END_SRC
+
+# #+RESULTS:
+# [[file:inst/mort.png]]
+** Event rates by group
+The predict-function can also be used to calculate the various rates
+described above. The predict-function also has the ability to predict
+rates by a number of subgroups. The available subgroups are two
+time-scales and four natural history categories:
++ =age= - grouping by single /year of age/ this is the default time-scale
++ =year= - grouping by single /calendar year/ as an alternative time-scale
++ =state= - grouping by /healthy/, /localised/ & /metastatic/
++ =grade= - grouping by /gleason grade/ ~<=6~, ~7~ & ~>=8~
++ =dx= - grouping by /not diagnosed/, /screen diagnosis/ & /clinical diagnosis/
++ =psa= - grouping by psa ~<3~ & ~>=3~
+
+Below is the PSA testing rate by calendar period predicted and
+displayed with =ggplot=.
+#+BEGIN_SRC R :file inst/psa.png :results output graphics :exports both
+  require(ggplot2)
+  ggplot(predict(sim1, group = "year", type="psa"),aes(x=year, y=rate)) +
+      xlim(1990, 2020) + geom_line() +
+      ylab("PSA testing rate") + xlab("Calendar period (years)")
 #+END_SRC
 
 #+RESULTS:
-[[file:inst/mort.png]]
+[[file:inst/psa.png]]
+
+The rates can also be predicted by several subgroups. Plotted below
+are the rates of biopsies by age, gleason and health state. The groups
+with lower numbers are a little jumpy due to the stochasticity of the
+simulation. A larger simulation reduces the Monte-Carlo variation.
+#+BEGIN_SRC R :file inst/biop.png :results output graphics :exports both
+  ggplot(predict(sim1, group = c("age", "grade", "state"), type="biopsies"),
+         aes(x=age, y=rate, colour = grade)) + geom_line() + xlim(50, 80) +
+      ylab("Biopsy rate") + xlab("Age (years)") + facet_grid(. ~ state)
+#+END_SRC
+
+#+RESULTS:
+[[file:inst/biop.png]]
+
+# This looks strange investigate
+# #+BEGIN_SRC R :file inst/gginc.png :results output graphics :exports both
+#   ggplot(predict(sim1, group = c("age", "grade", "psa"), type="incidence"),
+#          aes(x=age, y=rate, colour = grade)) + xlim(50, 80) +
+#          geom_line() + ylab("Incidence rate") + xlab("Age (years)") + facet_grid(. ~ psa)
+# #+END_SRC
+
+# #+RESULTS:
+
+
 
 # Local Variables:
 # org-confirm-babel-evaluate: nil
