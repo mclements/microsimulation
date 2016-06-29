@@ -648,6 +648,15 @@ predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metas
         rm(Freq.x,Freq.y)})
 }
 
+## Input is list of fhcrc objects (ie S3 naming won't work)
+predict_scenarios <- function(object_list, ...) {
+
+    ## predictions from objects as rows and append scenario as column
+    do.call(rbind, lapply(object_list,
+    {function(object, ...)
+        cbind(predict.fhcrc(object, ...), scenario = object$screen)}, ...))
+}
+
 plot.fhcrc <- function(x,
                        type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
                        plot.type="l", xlim=c(40,100), add=FALSE, ...) {

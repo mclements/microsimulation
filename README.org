@@ -131,8 +131,8 @@ ages.
 # ** Simulation output
 # The simulation
 ** Event rates
-Some of the more commonly used event-rates are provided through a plot
-and a predict function. The available rates are:
+Some of the more commonly used event-rates are provided through a =plot=
+and a =predict= function. The available rates are:
 + =incidence= - rate of /clinical diagnosis/ & /screen initiated diagnosis/
 + =psa= - rate of /screening tests/
 + =biopsies= - rate of /clinical diagnostic biopsies/ & /screen initiated biopsies/
@@ -159,10 +159,10 @@ the following line can be used:
 # #+RESULTS:
 # [[file:inst/mort.png]]
 ** Event rates by group
-The predict-function can also be used to calculate the various rates
-described above. The predict-function also has the ability to predict
-rates by a number of subgroups. The available subgroups are two
-time-scales and four natural history categories:
+The =predict= function returns the various rates described above. It
+can also be used to predict rates by a number of subgroups. The
+available subgroups are two time-scales and four natural history
+categories:
 + =age= - grouping by single /year of age/ this is the default time-scale
 + =year= - grouping by single /calendar year/ as an alternative time-scale
 + =state= - grouping by /healthy/, /localised/ & /metastatic/
@@ -204,6 +204,20 @@ simulation. A larger simulation reduces the Monte-Carlo variation.
 
 # #+RESULTS:
 
+In order to compare multiple screening scenarios, place the simulation
+objects in a list and call the =predict_scenarios= function. The
+=type= and =group= argument works as described with the =predict=
+function. Below is the incidence with the /current uptake/ pattern
+compared with the hypothetical /no screening/ scenario.
+#+BEGIN_SRC R :file inst/scen.png :results output graphics :exports both
+  sim2 <- callFhcrc(1e5, mc.cores=3, screen="noScreening")
+  ggplot(predict_scenarios(list(sim1, sim2), group= "age", type = "incidence"),
+            aes(x=age, y=rate, colour = scenario)) + geom_line() + xlim(50, 85) +
+      ylab("Incidence rate") + xlab("Age (years)")
+#+END_SRC
+
+#+RESULTS:
+[[file:inst/scen.png]]
 
 
 # Local Variables:
