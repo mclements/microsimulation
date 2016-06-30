@@ -370,7 +370,7 @@ screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "four
              "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
              "stockholm3_risk_stratified", "goteborg", "risk_stratified", "mixed_screening","regular_screen","single_screen")
 stateT <- c("Healthy","Localised","Metastatic")
-gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8")
+gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8","Healthy")
 eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
             "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
             "toScreenInitiatedBiopsy","toClinicalDiagnosticBiopsy","toScreenDiagnosis",
