@@ -35,10 +35,10 @@ namespace fhcrc_example {
   // declarations
 
   namespace base {
-    enum grade_t {Gleason_le_7,Gleason_ge_8};
+    enum grade_t {Gleason_le_7,Gleason_ge_8,Healthy};
   }
   namespace ext {
-    enum grade_t {Gleason_le_6,Gleason_7,Gleason_ge_8};
+    enum grade_t {Gleason_le_6,Gleason_7,Gleason_ge_8,Healthy};
   }
 
   enum state_t {Healthy,Localised,Metastatic}; // stage?
@@ -154,8 +154,8 @@ namespace fhcrc_example {
     double t0, y0, tm, tc, tmc, aoc;
     state_t state;
     diagnosis_t dx;
-    base::grade_t grade;
-    ext::grade_t ext_grade;
+    base::grade_t future_grade, grade;
+    ext::grade_t future_ext_grade, ext_grade;
     treatment_t tx;
     bool adt;
     double txhaz;
@@ -360,23 +360,25 @@ void FhcrcPerson::init() {
 
   // change state variables
   state = Healthy;
+  grade = base::Healthy;
+  ext_grade = ext::Healthy;
   dx = NotDiagnosed;
   everPSA = previousNegativeBiopsy = organised = adt = false;
   rngNh->set();
   t0 = sqrt(2*R::rexp(1.0)/parameter["g0"]);
   if (!bparameter["revised_natural_history"]){
-    grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
-    beta2 = R::rnormPos(mubeta2[grade],sebeta2[grade]);
+    future_grade = (R::runif(0.0, 1.0)>=1+parameter["c_low_grade_slope"]*t0) ? base::Gleason_ge_8 : base::Gleason_le_7;
+    beta2 = R::rnormPos(mubeta2[future_grade],sebeta2[future_grade]);
   }
   else {
     double u = R::runif(0.0,1.0);
     if (u < exp(parameter["alpha8"] + parameter["beta8"] * t0))
-      ext_grade = ext::Gleason_ge_8;
+      future_ext_grade = ext::Gleason_ge_8;
     else if (u > 1 - (parameter["alpha7"] + parameter["beta7"] * t0))
-      ext_grade = ext::Gleason_7;
-    else ext_grade = ext::Gleason_le_6;
-    grade = ext_grade == ext::Gleason_ge_8 ? base::Gleason_ge_8 : base::Gleason_le_7;
-    beta2 = R::rnormPos(mubeta2[ext_grade],sebeta2[ext_grade]);
+      future_ext_grade = ext::Gleason_7;
+    else future_ext_grade = ext::Gleason_le_6;
+    future_grade = future_ext_grade == ext::Gleason_ge_8 ? base::Gleason_ge_8 : base::Gleason_le_7;
+    beta2 = R::rnormPos(mubeta2[future_ext_grade],sebeta2[future_ext_grade]);
   }
   beta0 = R::rnorm(parameter["mubeta0"],parameter["sebeta0"]);
   beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
@@ -388,14 +390,14 @@ void FhcrcPerson::init() {
   tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
   aoc = rmu0.rand(R::runif(0.0,1.0));
   if (!bparameter["revised_natural_history"]){
-    ext_grade= (grade==base::Gleason_le_7) ?
+    future_ext_grade= (future_grade==base::Gleason_le_7) ?
       (R::runif(0.0,1.0)<=interp_prob_grade7.approx(beta2) ? ext::Gleason_7 : ext::Gleason_le_6) :
       ext::Gleason_ge_8;
   }
 
 
   if (debug) {
-    Rprintf("id=%i, grade=%i, ext_grade=%i, beta0=%f, beta1=%f, beta2=%f, mubeta0=%f, sebeta0=%f, mubeta1=%f, sebeta1=%f, mubeta2=%f, sebeta2=%f\n", id, grade, ext_grade, beta0, beta1, beta2, double(parameter["mubeta0"]), double(parameter["sebeta0"]), double(parameter["mubeta1"]), double(parameter["sebeta1"]), mubeta2[grade], sebeta2[grade]);
+    Rprintf("id=%i, future_grade=%i, future_ext_grade=%i, beta0=%f, beta1=%f, beta2=%f, mubeta0=%f, sebeta0=%f, mubeta1=%f, sebeta1=%f, mubeta2=%f, sebeta2=%f\n", id, future_grade, future_ext_grade, beta0, beta1, beta2, double(parameter["mubeta0"]), double(parameter["sebeta0"]), double(parameter["mubeta1"]), double(parameter["sebeta1"]), mubeta2[future_grade], sebeta2[future_grade]);
   }
 
   tx = no_treatment;
@@ -488,6 +490,7 @@ void FhcrcPerson::init() {
     outParameters.record("ym",ym);
     outParameters.record("aoc",aoc);
     outParameters.record("cohort",cohort);
+    outParameters.record("future_ext_grade",future_ext_grade);
     outParameters.record("ext_grade",ext_grade);
     outParameters.record("age_psa",-1.0);
     outParameters.record("pca_death",0.0);
@@ -552,6 +555,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toLocalised:
     state = Localised;
+    ext_grade = future_ext_grade;
+    grade = future_grade;
     scheduleAt(tc+35.0,toClinicalDiagnosis);
     scheduleAt(tm+35.0,toMetastatic);
     break;

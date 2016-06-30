@@ -205,7 +205,7 @@ temp2 <- transform(temp2,
                    logpsa=log(psa),
                    logZ=log(Z),
                    logZstar=beta0+beta1*(age-35)+pos(beta2*(age-35-t0)),
-                   grade=ifelse(ext_grade %in% 0:1,1,2))
+                   grade=ifelse(ext_grade %in% 0:1,1,ext_grade))
 temp2 <- within(temp2, {
     ext_grade <- ifelse(cancer, ext_grade, NA)
 })
@@ -864,7 +864,6 @@ psaSimCor <- function(n,age=50,rho=0.62,max.psa=50,mubeta2.scale) {
     ## psa <- exp(lpsa)
     data.frame(age=age,
                cancer=age_o<age,
-               ## advCancer=age_o<age & ext_grade>=7,
                advCancer=age_o<age, ### !!!!!!!
                lpsa=lpsa[,1],
                lbp=lpsa[,2],
