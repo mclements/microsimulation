@@ -617,6 +617,7 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
 }
 
 predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metastatic", "cancerdeath", "alldeath"), group = "age", ...) {
+    if(!class(object)=="fhcrc") stop("Expecting object to be of fhcrc class")
     type <- match.arg(type)
     group <- match.arg(group,
                        c("state", "grade", "dx", "psa", "age", "year"),
@@ -635,6 +636,11 @@ predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metas
                name_grp(grp_apply(pt,
                                   lapply(as.list(group), function(x) eval(parse(text = x))),
                                   sum)))
+    ## temp fix: no events causes angst
+    ## todo: if subset has no dim replace with zeros
+    if(!any(object$summary$event$event %in% event_types)) {
+        stop(paste("The event(s)", paste(event_types, collapse = ", "), "was not found in the", object$screen, "scenario"))
+    }
     events <- with(subset(object$summary$events, event %in% event_types),
                    name_grp(grp_apply(n,
                                       lapply(as.list(group), function(x) eval(parse(text = x))),
@@ -650,6 +656,7 @@ predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metas
 
 ## Input is list of fhcrc objects (ie S3 naming won't work)
 predict_scenarios <- function(object_list, ...) {
+    if(!all(lapply(object_list, class) %in% "fhcrc")) stop("Expecting list of fhcrc objects")
 
     ## predictions from objects as rows and append scenario as column
     do.call(rbind, lapply(object_list,
