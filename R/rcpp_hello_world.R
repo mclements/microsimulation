@@ -648,7 +648,7 @@ predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metas
     within(merge(pt, events, by = group, all = TRUE),{
         if("age" %in% group) age <- as.numeric(levels(age))[age] #important factor conversion
         if("year" %in% group) year <- as.numeric(levels(year))[year] #important factor conversion
-        rate <- ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)
+        rate <- ifelse(is.na(Freq.y) & !is.na(Freq.x), 0, Freq.y/Freq.x) #no events but some pt -> 0
         n <- Freq.y
         pt <- Freq.x
         rm(Freq.x,Freq.y)})
