@@ -120,7 +120,7 @@ ages.
 
 #+BEGIN_SRC R :eval no :exports code
   require(microsimulation)
-  sim1 <- callFhcrc(1e6,mc.cores=3,screen="screenUptake")
+  sim1 <- callFhcrc(1e6, mc.cores=3, screen="screenUptake")
 #+END_SRC
 
 #+RESULTS:
@@ -149,7 +149,7 @@ the following line can be used:
 #+END_SRC
 
 #+RESULTS:
-[[file:inst/inc.png]]
+
 
 # #+BEGIN_SRC R :file inst/mort.png :results output graphics :exports both
 #   plot(sim1, type="cancerdeath", ylab="Cancer specific mortality rate",
@@ -180,12 +180,13 @@ displayed with =ggplot=.
 #+END_SRC
 
 #+RESULTS:
-[[file:inst/psa.png]]
 
-The rates can also be predicted by several subgroups. Plotted below
-are the rates of biopsies by age, gleason and health state. The groups
-with lower numbers are a little jumpy due to the stochasticity of the
-simulation. A larger simulation reduces the Monte-Carlo variation.
+
+The rates can also be predicted by several subgroups at once. Plotted
+below are the rates of biopsies by age, gleason and health state. The
+groups with lower numbers are a little jumpy due to the stochasticity
+of the simulation. A larger simulation reduces the Monte-Carlo
+variation.
 #+BEGIN_SRC R :file inst/biop.png :results output graphics :exports both
   ggplot(predict(sim1, group = c("age", "grade", "state"), type="biopsies"),
          aes(x=age, y=rate, colour = grade)) + geom_line() + xlim(50, 80) +
@@ -193,7 +194,7 @@ simulation. A larger simulation reduces the Monte-Carlo variation.
 #+END_SRC
 
 #+RESULTS:
-[[file:inst/biop.png]]
+
 
 # This looks strange investigate
 # #+BEGIN_SRC R :file inst/gginc.png :results output graphics :exports both
@@ -204,14 +205,16 @@ simulation. A larger simulation reduces the Monte-Carlo variation.
 
 # #+RESULTS:
 
-In order to compare multiple screening scenarios, place the simulation
-objects in a list and call the =predict_scenarios= function. The
-=type= and =group= argument works as described with the =predict=
-function. Below is the incidence with the /current uptake/ pattern
-compared with the hypothetical /no screening/ scenario.
+In order to compare multiple screening scenarios the =predict=
+function has a second argument for simulation objects. It can be used
+to pass a second simulation objects if you which to compare two
+screening scenarios or a list of simulation objects for comparing
+several screening scenarios. The =type= and =group= argument works as
+described earlier. Below is the incidence with the /current uptake/
+pattern compared with the hypothetical /no screening/ scenario.
 #+BEGIN_SRC R :file inst/scen.png :results output graphics :exports both
   sim2 <- callFhcrc(1e5, mc.cores=3, screen="noScreening")
-  ggplot(predict_scenarios(list(sim1, sim2), group= "age", type = "incidence"),
+  ggplot(predict(sim1, sim2, group= "age", type = "incidence"),
             aes(x=age, y=rate, colour = scenario)) + geom_line() + xlim(50, 85) +
       ylab("Incidence rate") + xlab("Age (years)")
 #+END_SRC
