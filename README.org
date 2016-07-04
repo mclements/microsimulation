@@ -87,19 +87,19 @@ There are a number of available testing scenarios. They determine
 testing frequencies and re-testing intervals over calendar period and
 ages.
 + =noScreening= - no screening test, only diagnosis from symptoms
-# + =randomScreen50to70=
 + =twoYearlyScreen50to70= - two-yearly screening from age 50 to 70
 + =fourYearlyScreen50to70= - four-yearly screening from age 50 to 70
 + =screen50= - one screen at age 50
 + =screen60= - one screen at age 60
 + =screen70= - one screen at age 70
 + =screenUptake= - current testing pattern in Sweden
-# + =stockholm3_goteborg=
-# + =stockholm3_risk_stratified=
 + =goteborg= - risk stratified re-screening 2+4 from age 50 to 70
 + =risk_stratified= - risk stratified re-screening 4+8 from age 50 to 70
 + =mixed_screening= - risk stratified re-screening 2+4 from age 50 to
   70 & opportunistic testing for other ages
+# + =randomScreen50to70=
+# + =stockholm3_goteborg=
+# + =stockholm3_risk_stratified=
 # + =regular_screen=
 # + =single_screen=
 
@@ -149,6 +149,7 @@ the following line can be used:
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/inc.png]]
 
 
 # #+BEGIN_SRC R :file inst/mort.png :results output graphics :exports both
@@ -180,6 +181,7 @@ displayed with =ggplot=.
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/psa.png]]
 
 
 The rates can also be predicted by several subgroups at once. Plotted
@@ -194,6 +196,7 @@ variation.
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/biop.png]]
 
 
 # This looks strange investigate
