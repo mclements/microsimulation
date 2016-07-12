@@ -133,6 +133,11 @@ namespace Rcpp {
     SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string name1, std::string name2, std::string name3);
 
+  template <class T1, class T2, class T3, class T4, class T5>
+    SEXP wrap_map(const boost::unordered_map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v,
+		  std::string name1, std::string name2);
+
+  
 } // namespace Rcpp
 
 #include <Rcpp.h>
@@ -1005,6 +1010,36 @@ namespace Rcpp {
     return out;
    }
 
+  template <class T1, class T2, class T3, class T4, class T5>
+    SEXP wrap_map(const boost::unordered_map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v,
+		  std::string name1, std::string name2) {
+    typedef boost::tuple<T1,T2,T3> Tuple;
+    typedef std::pair<Tuple,T4> Pair;
+    int i;
+    int n = v.size();
+    vector<T1> x1(n);
+    vector<T2> x2(n);
+    vector<T3> x3(n);
+    vector<T4> x4(n);
+    vector<T5> y(n);
+    typename boost::unordered_map<Pair,T5>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      Tuple tuple = (*it).first.first;
+      x1[i] = boost::get<0>(tuple);
+      x2[i] = boost::get<1>(tuple);
+      x3[i] = boost::get<2>(tuple);
+      x4[i] = (*it).first.second;
+      y[i] = (*it).second;
+    }
+    DataFrame out = Rcpp::DataFrame::create(Rcpp::Named("col1")=wrap(x1),
+					    Rcpp::Named("col2")=wrap(x2),
+					    Rcpp::Named("col3")=wrap(x3),
+					    Rcpp::Named(name1)=wrap(x4),
+					    Rcpp::Named(name2)=wrap(y));
+    return out;
+   }
+
+  
 
 } // Rcpp namespace
 

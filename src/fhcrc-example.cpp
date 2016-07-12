@@ -59,6 +59,8 @@ namespace fhcrc_example {
 
   enum biomarker_model_t {random_correction, psa_informed_correction};
 
+  enum cost_t {Direct,Indirect};
+  
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
@@ -80,7 +82,8 @@ namespace fhcrc_example {
 
   EventReport<FullState::Type,short,double> report;
   EventReport<int,short,double> shortReport;
-  typedef pair<string,double> CostKey;
+  // typedef boost::tuple<int,string,double> CostKey; // (cost_type,cost_name,cohort)
+  typedef std::pair<int,string> CostKey; // (cost_type,cost_name)
   CostReport<CostKey> costs;
   vector<LifeHistory::Type> lifeHistories;
   SimpleReport<double> outParameters;
@@ -115,20 +118,11 @@ namespace fhcrc_example {
   LogicalVector bparameter;
 
   // read in the parameters
-  NumericVector cost_parameters, utility_estimates, utility_duration;
+  NumericVector cost_parameters, utility_estimates, utility_duration, lost_production_proportions;
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
   bool includePSArecords, panel, includeDiagnoses;
-
-  // an alternative approach to specifying costs and compliance (not currently used)
-  class cMessageScreen : public cMessage {
-  public:
-    cMessageScreen(bool formal_compliance = false, bool formal_costs = false) :
-      cMessage(toScreen),
-      formal_compliance(formal_compliance),
-      formal_costs(formal_costs) { }
-    bool formal_compliance, formal_costs;
-  };
+  Table<double,double> production;
 
   class cMessageUtilityChange : public cMessage {
   public:
@@ -173,7 +167,8 @@ namespace fhcrc_example {
     void opportunistic_rescreening(double psa);
     void opportunistic_uptake();
     void init();
-    void add_costs(string item);
+    void add_costs(string item, cost_t cost_type = Direct);
+    void lost_productivity(string item);
     virtual void handleMessage(const cMessage* msg);
     void scheduleUtilityChange(double at, std::string category, bool transient = true,
 			       double sign = -1.0);
@@ -199,8 +194,16 @@ namespace fhcrc_example {
   /**
       Report on costs for a given item
   */
-  void FhcrcPerson::add_costs(string item) {
-    costs.add(CostKey(item,cohort),now(),cost_parameters[item]);
+  void FhcrcPerson::add_costs(string item, cost_t cost_type) {
+    costs.add(CostKey((int) cost_type,item),now(),cost_parameters[item]);
+  }
+
+  /**
+      Report on lost productivity 
+  */
+  void FhcrcPerson::lost_productivity(string item) {
+    double loss = lost_production_proportions[item] * production(now());
+    costs.add(CostKey((int) Indirect,item),now(),loss);
   }
 
   /**
@@ -579,7 +582,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toOtherDeath:
-    add_costs("Death"); // cost for death, should this be zero???
+    // add_costs("Death"); // cost for death, should this be zero???
 
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
@@ -634,10 +637,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     }
     if (formal_costs) {
       add_costs("Invitation");
+      lost_productivity(panel && psa>=1.0 ? "Formal panel" : "Formal PSA");
       add_costs(panel && psa>=1.0 ? "FormalPSABiomarker" : "FormalPSA");
       scheduleUtilityChange(now(), "FormalPSA");
     } else { // opportunistic costs
       add_costs(panel && psa>=1.0 ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
+      lost_productivity(panel && psa>=1.0 ? "Opportunistic panel" : "Opportunistic PSA");
       scheduleUtilityChange(now(), "OpportunisticPSA");
     }
     compliance = formal_compliance ?
@@ -766,12 +771,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
     add_costs("Biopsy");
+    if (formal_costs)
+      lost_productivity(panel ? "Biopsy (formal panel)" : "Biopsy (formal PSA)");
+    else 
+      lost_productivity(panel ? "Biopsy (opportunistic panel)" : "Biopsy (opportunistic PSA)");
     scheduleUtilityChange(now(), "Biopsy");
     break;
 
   case toScreenInitiatedBiopsy:
     rngScreen->set();
     add_costs("Biopsy");
+    if (formal_costs)
+      lost_productivity(panel ? "Biopsy (formal panel)" : "Biopsy (formal PSA)");
+    else 
+      lost_productivity(panel ? "Biopsy (opportunistic panel)" : "Biopsy (opportunistic PSA)");
     scheduleUtilityChange(now(), "Biopsy");
 
     if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) { // diagnosed
@@ -792,6 +805,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_tx = R::runif(0.0,1.0);
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
+      lost_productivity("Metastatic cancer");
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
     }
     else { // Loco-regional
@@ -880,6 +894,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toRP:
     add_costs("Prostatectomy");
+    lost_productivity("Prostatectomy");
     // Scheduling utilities for the first 2 months after procedure
     scheduleUtilityChange(now(), "ProstatectomyPart1");
     // Scheduling utilities for the first 3-12 months after procedure
@@ -889,6 +904,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toRT:
     add_costs("RadiationTherapy");
+    lost_productivity("Radiation therapy");
     // Scheduling utilities for the first 2 months after procedure
     scheduleUtilityChange(now(), "RadiationTherapyPart1");
     // Scheduling utilities for the first 3-12 months after procedure
@@ -898,6 +914,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   case toCM:
     add_costs("ActiveSurveillance"); // expand here
+    lost_productivity("Active surveillance");
     scheduleUtilityChange(now(), "ActiveSurveillance");
     break;
 
@@ -963,6 +980,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   cost_parameters = as<NumericVector>(otherParameters["cost_parameters"]);
   utility_estimates = as<NumericVector>(otherParameters["utility_estimates"]);
   utility_duration = as<NumericVector>(otherParameters["utility_duration"]);
+  
+  production = Table<double,double>(as<DataFrame>(otherParameters["production"]), "ages", "values");
+  lost_production_proportions = as<NumericVector>(otherParameters["lost_production_proportions"]);
 
   int n = as<int>(parms["n"]);
   includePSArecords = as<bool>(parms["includePSArecords"]);

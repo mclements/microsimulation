@@ -266,9 +266,22 @@ FhcrcParameters <- list(
         Prostatectomy = 117171,
         RadiationTherapy = 117171,
         ActiveSurveillance = 141358,
-        CancerDeath = 585054,
-        Death = 0),
+        CancerDeath = 585054),
     ## IHE doesn't use the postrecovery period (as reported in the Heijnsdijk 2012 reference), should we?
+    production = data.frame(ages = c(0, 55, 65, 75),
+                            values=c(467433.137375286, 369392.309986899, 45759.6141748681, 0.0)),
+    lost_production_proportions= c("Formal PSA"=0.0011,
+                                   "Biopsy (formal PSA)"=0.0044,
+                                   "Formal panel"=0.0011,
+                                   "Biopsy (formal  panel)"=0.0044,
+                                   "Opportunistic PSA"=0.0025,
+                                   "Biopsy (opportunistic PSA)"=0.0044,
+                                   "Opportunistic panel"=0.0025,
+                                   "Biopsy (opportunistic panel)"=0.0044,
+                                   "Prostatectomy"=0.1083,
+                                   "Radiation therapy"=0.1250,
+                                   "Active surveillance"=0.0833,
+                                   "Metastatic cancer"=0.7602),
     utility_estimates = 1 - c(Invitation = 1,
         FormalPSA = 0.99,
         FormalPSABiomarker = 0.90,
@@ -532,7 +545,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
   costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs)))
-  names(costs) <- c("item","cohort","age","costs")
+  ## names(costs) <- c("type","item","cohort","age","costs")
+  names(costs) <- c("type","item","age","costs")
   names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
