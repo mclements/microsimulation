@@ -624,7 +624,9 @@ predict.fhcrc <- function(object, scenarios=NULL, type= c("incidence", "psa", "b
     group <- match.arg(group,
                        c("state", "grade", "dx", "psa", "age", "year"),
                        several.ok = TRUE)
-    # todo: include prevalences, and relative rate-ratios in switch
+    # todo: include prevalences and relative rate-ratios in
+    # switch. Also allow for ceiling on groups to allow for other than
+    # yearly rates for the time scales.
     event_types <- switch(type,
                           incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
                           psa="toScreen",

@@ -56,9 +56,9 @@ To install the microsimulation using [[https://cran.r-project.org/web/packages/d
   install_github("mclements/microsimulation")
 #+END_SRC
 + 2b Alternative installation from shell: ::
-# Some thing OS-specific
-If you prefer the shell over [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] it is just download the
-microsimulation R-package by running this in your shell:
+# Some thing OS-specific?
+If you prefer the shell over [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]], just run the following to download the
+microsimulation R-package:
 #+BEGIN_SRC shell :eval no :exports code
   git clone https://github.com/mclements/microsimulation.git
 #+END_SRC
