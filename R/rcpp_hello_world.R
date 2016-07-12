@@ -616,13 +616,15 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
     do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
 }
 
-predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metastatic", "cancerdeath", "alldeath"), group = "age", ...) {
-    if(!class(object)=="fhcrc") stop("Expecting object to be of fhcrc class")
+predict.fhcrc <- function(object, scenarios=NULL, type= c("incidence", "psa", "biopsies", "metastatic", "cancerdeath", "alldeath"), group = "age", ...) {
+    if(!inherits(object,"fhcrc")) stop("Expecting object to be an fhcrc object")
+    if(!(is.null(scenarios) || all(sapply(scenarios,inherits,"fhcrc")) || inherits(object,"fhcrc")))
+        stop("Expecting scenarios is NULL, a fhcrc object or a list of fhcrc objects")
     type <- match.arg(type)
     group <- match.arg(group,
                        c("state", "grade", "dx", "psa", "age", "year"),
                        several.ok = TRUE)
-    #include prevalences in switch
+    # todo: include prevalences, and relative rate-ratios in switch
     event_types <- switch(type,
                           incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
                           psa="toScreen",
@@ -631,39 +633,47 @@ predict.fhcrc <- function(object, type= c("incidence", "psa", "biopsies", "metas
                           cancerdeath="toCancerDeath",
                           alldeath=c("toCancerDeath", "toOtherDeath"))
 
-    name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
-    pt <- with(object$summary$pt,
-               name_grp(grp_apply(pt,
-                                  lapply(as.list(group), function(x) eval(parse(text = x))),
-                                  sum)))
-    ## temp fix: no events causes angst
-    ## todo: if subset has no dim replace with zeros
-    if(!any(object$summary$event$event %in% event_types)) {
-        stop(paste("The event(s)", paste(event_types, collapse = ", "), "was not found in the", object$screen, "scenario"))
-    }
-    events <- with(subset(object$summary$events, event %in% event_types),
-                   name_grp(grp_apply(n,
+    ## Calculates rates of specific events by specified groups
+    calc_rate <- function(object, event_types, group){
+        name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
+        pt <- with(object$summary$pt,
+                   name_grp(grp_apply(pt,
                                       lapply(as.list(group), function(x) eval(parse(text = x))),
                                       sum)))
-    within(merge(pt, events, by = group, all = TRUE),{
-        if("age" %in% group) age <- as.numeric(levels(age))[age] #important factor conversion
-        if("year" %in% group) year <- as.numeric(levels(year))[year] #important factor conversion
-        rate <- ifelse(is.na(Freq.y), 0, Freq.y/Freq.x)
-        n <- Freq.y
-        pt <- Freq.x
-        rm(Freq.x,Freq.y)})
+        ## temp fix: no events causes angst
+        ## todo: if subset has no dim replace with zeros
+        if(!any(object$summary$event$event %in% event_types)) {
+            stop(paste("The event(s)", paste(event_types, collapse = ", "), "was not found in the", object$screen, "scenario"))
+        }
+        events <- with(subset(object$summary$events, event %in% event_types),
+                       name_grp(grp_apply(n,
+                                          lapply(as.list(group), function(x) eval(parse(text = x))),
+                                          sum)))
+        within(merge(pt, events, by = group, all = TRUE),{
+            if("age" %in% group) age <- as.numeric(levels(age))[age] #important factor conversion
+            if("year" %in% group) year <- as.numeric(levels(year))[year] #important factor conversion
+            rate <- ifelse(is.na(Freq.y) & !is.na(Freq.x), 0, Freq.y/Freq.x) #no events but some pt -> 0
+            n <- Freq.y
+            pt <- Freq.x
+            rm(Freq.x,Freq.y)})
+    }
+
+    ## Calculate rate for fhcrc objects in a list and place object
+    ## rates as rows and append scenario name as column
+    predict_scenarios <- function(scenarios, event_types, group) {
+        do.call(rbind, lapply(scenarios,
+        {function(object, event_types, group)
+            cbind(calc_rate(object, event_types, group), scenario = object$screen)}, event_types, group))
+    }
+
+    ## Add reference object to scenario list for plain rates, make
+    ## sure object and scenarios are lists and remove duplicates
+    all_unique_scenarios <- unique(c(list(object),
+                                     if(inherits(scenarios, "fhcrc")) list(scenarios) else scenarios))
+    predict_scenarios(all_unique_scenarios, event_types, group)
 }
 
-## Input is list of fhcrc objects (ie S3 naming won't work)
-predict_scenarios <- function(object_list, ...) {
-    if(!all(lapply(object_list, class) %in% "fhcrc")) stop("Expecting list of fhcrc objects")
-
-    ## predictions from objects as rows and append scenario as column
-    do.call(rbind, lapply(object_list,
-    {function(object, ...)
-        cbind(predict.fhcrc(object, ...), scenario = object$screen)}, ...))
-}
-
+<<<<<<< HEAD
 plot.fhcrc <- function(x,
                        type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
                        plot.type="l", add=FALSE, xlab="Age (years)", ylab=NULL, ...) {
@@ -671,6 +681,12 @@ plot.fhcrc <- function(x,
     rates <- predict(x, type)
     rates$rate = rates$rate*switch(type, psa=1000,biopsies=1000,incidence=1e5, metastatic=1e5,cancerdeath=1e5,alldeath=1e5)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlab=xlab, ylab=ylab, ...) else lines(rate~age, data=rates,  ...)
+=======
+plot.fhcrc <- function(x, type="incidence", plot.type="l",
+                       xlim=c(40,100), add=FALSE, ...) {
+    rates <- predict(x, type = type)
+    if (!add) plot(rate~age, data=rates, type=plot.type, xlim=xlim, ...) else lines(rate~age, data=rates,  ...)
+>>>>>>> b351e0a29c50e5718bdfb5744c408f2cdcc7f7ce
 }
 
 lines.fhcrc <- function(x,...) {
@@ -856,4 +872,3 @@ with.RNGStream <- function(data,expr,...) {
   out
 }
 setOldClass("RNGStream")
-
