@@ -46,7 +46,7 @@ namespace fhcrc_example {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
 
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen,
-		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toUtility, toSTHLM3, toOpportunistic };
+		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toBaselineUtility, toSTHLM3, toOpportunistic };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70,
 		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified,
@@ -136,9 +136,9 @@ namespace fhcrc_example {
     double change;
   };
 
-  class cMessageUtility : public cMessage {
+  class cMessageBaselineUtility : public cMessage {
   public:
-    cMessageUtility(double utility) : cMessage(toUtility), utility(utility) { }
+    cMessageBaselineUtility(double utility) : cMessage(toBaselineUtility), utility(utility) { }
     double utility;
   };
 
@@ -160,10 +160,11 @@ namespace fhcrc_example {
     bool adt;
     double txhaz;
     int id;
-    double cohort, utility;
+    double cohort, baseline_utility, delta_utility;
     bool everPSA, previousNegativeBiopsy, organised;
     FhcrcPerson(const int id = 0, const double cohort = 1950) :
-      id(id), cohort(cohort), utility(1.0) { };
+      id(id), cohort(cohort), baseline_utility(1.0), delta_utility(0.0) { };
+    double utility() { return baseline_utility + delta_utility; }
     double psamean(double age);
     double psameasured(double age);
     treatment_t calculate_treatment(double u, double age, double year);
@@ -467,14 +468,47 @@ void FhcrcPerson::init() {
   rngNh->set();
 
   // utilities
+  // | LowerAge | UpperAge | Males | Females |
+  // |----------+----------+-------+---------|
+  // |        0 |       17 |  1.00 |    1.00 |
+  // |       18 |       24 |  0.89 |    0.83 |
+  // |       25 |       29 |  0.89 |    0.84 |
+  // |       30 |       34 |  0.88 |    0.85 |
+  // |       35 |       39 |  0.87 |    0.83 |
+  // |       40 |       44 |  0.84 |    0.81 |
+  // |       45 |       49 |  0.84 |    0.80 |
+  // |       50 |       54 |  0.83 |    0.78 |
+  // |       55 |       59 |  0.83 |    0.77 |
+  // |       60 |       64 |  0.82 |    0.77 |
+  // |       65 |       69 |  0.83 |    0.79 |
+  // |       70 |       74 |  0.81 |    0.75 |
+  // |       75 |       79 |  0.79 |    0.73 |
+  // |       80 |       84 |  0.74 |    0.69 |
   // (i) set initial baseline utility
-  utility = 0.98;
-  // (ii) schedule changes in the baseline by age
-  scheduleAt(20.0, new cMessageUtility(0.97));
-  scheduleAt(40.0, new cMessageUtility(0.96));
-  scheduleAt(60.0, new cMessageUtility(0.95));
-  scheduleAt(80.0, new cMessageUtility(0.91));
-  // Mark, which reference do/should we use for this?
+  baseline_utility = 1.00;
+  // (ii) schedule changes in the baseline utility by age
+  // Burström and Rehnberg (2006)
+  // (require 'cl)
+  // (let ((utilities
+  // 	 (list 1 0.89 0.89 0.88 0.87 0.84 0.84 0.83 0.83 0.82 0.83 0.81 0.79 0.74)) 
+  // 	(ages
+  // 	 (append (list 0 18) (loop for i from 25 to 80 by 5 collect i))))
+  //  (loop for utility in utilities for age in ages
+  //   do (message (format "scheduleAt(%g, new cMessageBaselineUtility(%g));" age utility))))
+  scheduleAt(0, new cMessageBaselineUtility(1));
+  scheduleAt(18, new cMessageBaselineUtility(0.89));
+  scheduleAt(25, new cMessageBaselineUtility(0.89));
+  scheduleAt(30, new cMessageBaselineUtility(0.88));
+  scheduleAt(35, new cMessageBaselineUtility(0.87));
+  scheduleAt(40, new cMessageBaselineUtility(0.84));
+  scheduleAt(45, new cMessageBaselineUtility(0.84));
+  scheduleAt(50, new cMessageBaselineUtility(0.83));
+  scheduleAt(55, new cMessageBaselineUtility(0.83));
+  scheduleAt(60, new cMessageBaselineUtility(0.82));
+  scheduleAt(65, new cMessageBaselineUtility(0.83));
+  scheduleAt(70, new cMessageBaselineUtility(0.81));
+  scheduleAt(75, new cMessageBaselineUtility(0.79));
+  scheduleAt(80, new cMessageBaselineUtility(0.74));
 
   // record some parameters using SimpleReport - too many for a tuple
   if (id<nLifeHistories) {
@@ -524,8 +558,8 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record information
   if (parameter["full_report"] == 1.0)
-    report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility);
-  shortReport.add(1, msg->kind, previousEventTime, age, utility);
+    report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility());
+  shortReport.add(1, msg->kind, previousEventTime, age, utility());
 
   if (id<nLifeHistories) { // only record up to the first n individuals
     lifeHistories.push_back(LifeHistory::Type(id,state,ext_grade,dx,msg->kind,previousEventTime,age,year,psa));
@@ -758,7 +792,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_tx = R::runif(0.0,1.0);
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
-      RemoveKind(toUtility);
       scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
     }
     else { // Loco-regional
@@ -872,13 +905,13 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     // costs & utilities??
     break;
 
-  case toUtility:
+  case toBaselineUtility:
     {
-      const cMessageUtility * msgUtility;
-      if ((msgUtility = dynamic_cast<const cMessageUtility *>(msg)) != 0) {
-	utility = msgUtility->utility;
+      const cMessageBaselineUtility * msgUtility;
+      if ((msgUtility = dynamic_cast<const cMessageBaselineUtility *>(msg)) != 0) {
+	baseline_utility = msgUtility->utility;
       } else {
-	REprintf("Could not cast to cMessageUtility.");
+	REprintf("Could not cast to cMessageBaselineUtility.");
       }
     } break;
 
@@ -886,7 +919,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     {
       const cMessageUtilityChange * msgUtilityChange;
       if ((msgUtilityChange = dynamic_cast<const cMessageUtilityChange *>(msg)) != 0) {
-	utility += msgUtilityChange->change;
+	delta_utility += msgUtilityChange->change;
       } else {
 	REprintf("Could not cast to cMessageUtilityChange.");
       }
