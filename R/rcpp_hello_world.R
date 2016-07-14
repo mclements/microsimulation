@@ -271,11 +271,8 @@ FhcrcParameters <- list(
     production = data.frame(ages = c(0, 55, 65, 75),
                             values=c(467433.137375286, 369392.309986899, 45759.6141748681, 0.0)),
     lost_production_proportions= c("Formal PSA"=0.0011,
-
                                    "Formal panel"=0.0011,
-
                                    "Opportunistic PSA"=0.0025,
-
                                    "Opportunistic panel"=0.0025,
                                    "Biopsy"=0.0044,
                                    "Prostatectomy"=0.1083,
@@ -284,8 +281,9 @@ FhcrcParameters <- list(
                                    "Metastatic cancer"=0.7602),
     utility_estimates = 1 - c("Invitation" = 1,
                               "Formal PSA" = 0.99,
-                              "Formal panel" = 0.90,
+                              "Formal panel" = 0.99,
                               "Opportunistic PSA" = 0.99,
+                              "Opportunistic panel" = 0.99,
                               "Biopsy" = 0.90,
                               "Prostatectomy part 1" = 0.67,
                               "Prostatectomy part 2" = 0.77,
@@ -299,8 +297,9 @@ FhcrcParameters <- list(
     ## Utility duration is given in years.
     utility_duration = c("Invitation" = 0.0,
                          "Formal PSA" = 1/52,
-                         "Formal panel" = 3/52,
+                         "Formal panel" = 1/52,
                          "Opportunistic PSA" = 1/52,
+                         "Opportunistic panel" = 1/52,
                          "Biopsy" = 3/52,
                          "Prostatectomy part 1" = 2/12,
                          "Prostatectomy part 2" = 10/12,
