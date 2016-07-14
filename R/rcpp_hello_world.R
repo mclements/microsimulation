@@ -257,59 +257,59 @@ FhcrcParameters <- list(
                                    0.7508363, 0.7464595)),
     hr_metastatic=data.frame(age=c(50, 60, 70),
                              hr=c(0.9708992, 0.9802660, 0.8508497)),
-    cost_parameters = c(Invitation = 50,
-        FormalPSA = 130,
-        OpportunisticPSA = 1910,
-        FormalPSABiomarker = 730,
-        OpportunisticPSABiomarker = 2510, #N.B. This one is new and should be used
-        Biopsy = 12348,
-        Prostatectomy = 117171,
-        RadiationTherapy = 117171,
-        ActiveSurveillance = 141358,
-        CancerDeath = 585054),
+    cost_parameters = c("Invitation" = 50,
+                        "Formal PSA" = 130,
+                        "Formal panel" = 730,
+                        "Opportunistic PSA" = 1910,
+                        "Opportunistic panel" = 2510, #N.B. This one is new and should be used
+                        "Biopsy" = 12348,
+                        "Prostatectomy" = 117171,
+                        "Radiation therapy" = 117171,
+                        "Active surveillance" = 141358,
+                        "Cancer death" = 585054),
     ## IHE doesn't use the postrecovery period (as reported in the Heijnsdijk 2012 reference), should we?
-    production = data.frame(age = c(0.0, 55.0, 65.0, 75.0),
-                            production=c(467433.137375286, 369392.309986899, 45759.6141748681, 0.0)),
+    production = data.frame(ages = c(0, 55, 65, 75),
+                            values=c(467433.137375286, 369392.309986899, 45759.6141748681, 0.0)),
     lost_production_proportions= c("Formal PSA"=0.0011,
-                                   "Biopsy (formal PSA)"=0.0044,
+
                                    "Formal panel"=0.0011,
-                                   "Biopsy (formal panel)"=0.0044,
+
                                    "Opportunistic PSA"=0.0025,
-                                   "Biopsy (opportunistic PSA)"=0.0044,
+
                                    "Opportunistic panel"=0.0025,
-                                   "Biopsy (opportunistic panel)"=0.0044,
+                                   "Biopsy"=0.0044,
                                    "Prostatectomy"=0.1083,
                                    "Radiation therapy"=0.1250,
                                    "Active surveillance"=0.0833,
                                    "Metastatic cancer"=0.7602),
-    utility_estimates = 1 - c(Invitation = 1,
-        FormalPSA = 0.99,
-        FormalPSABiomarker = 0.90,
-        Biopsy = 0.90,
-        OpportunisticPSA = 0.99,
-        ProstatectomyPart1 = 0.67,
-        ProstatectomyPart2 = 0.77,
-        RadiationTherapyPart1 = 0.73,
-        RadiationTherapyPart2 = 0.78,
-        ActiveSurveillance = 0.97,
-        PalliativeTherapy = 0.60,
-        TerminalIllness = 0.40,
-        MetastaticCancer = 0.85,
-        Death = 0.00),
+    utility_estimates = 1 - c("Invitation" = 1,
+                              "Formal PSA" = 0.99,
+                              "Formal panel" = 0.90,
+                              "Opportunistic PSA" = 0.99,
+                              "Biopsy" = 0.90,
+                              "Prostatectomy part 1" = 0.67,
+                              "Prostatectomy part 2" = 0.77,
+                              "Radiation therapy part 1" = 0.73,
+                              "Radiation therapy part 2" = 0.78,
+                              "Active surveillance" = 0.97,
+                              "Palliative therapy" = 0.60,
+                              "Terminal illness" = 0.40,
+                              "Metastatic cancer" = 0.85,
+                              "Death" = 0.00),
     ## Utility duration is given in years.
-    utility_duration = c(Invitation = 0.0,
-        FormalPSA = 1/52,
-        FormalPSABiomarker = 3/52,
-        Biopsy = 3/52,
-        OpportunisticPSA = 1/52,
-        ProstatectomyPart1 = 2/12,
-        ProstatectomyPart2 = 10/12,
-        RadiationTherapyPart1 = 2/12,
-        RadiationTherapyPart2 = 10/12,
-        ActiveSurveillance = 7,
-        PalliativeTherapy = 30/12,
-        TerminalIllness = 6/12)
-    )
+    utility_duration = c("Invitation" = 0.0,
+                         "Formal PSA" = 1/52,
+                         "Formal panel" = 3/52,
+                         "Opportunistic PSA" = 1/52,
+                         "Biopsy" = 3/52,
+                         "Prostatectomy part 1" = 2/12,
+                         "Prostatectomy part 2" = 10/12,
+                         "Radiation therapy part 1" = 2/12,
+                         "Radiation therapy part 2" = 10/12,
+                         "Active surveillance" = 7,
+                         "Palliative therapy" = 30/12,
+                         "Terminal illness" = 6/12)
+)
 IHE <- list(prtx=data.frame(Age=50.0,DxY=1973.0,G=1:2,CM=0.6,RP=0.26,RT=0.14)) ## assumed constant across ages and periods
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
@@ -544,9 +544,11 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
-  costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs)))
+  societal.costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs))) #split in sociatal and healthcare perspective
   ## names(costs) <- c("type","item","cohort","age","costs")
-  names(costs) <- c("type","item","age","costs")
+  names(societal.costs) <- c("type","item","age","costs")
+  societal.costs$type <- ifelse(societal.costs$type, "Productivity loss", "Health sector cost") # societal perspective
+  healthsector.costs <- societal.costs[societal.costs["type"] == "Health sector cost", c("item", "age", "costs")] # healthcare perspective
   names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
@@ -558,7 +560,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,
-              parameters=parameters, summary=summary, costs=costs,
+              parameters=parameters, summary=summary,
+              healthsector.costs=healthsector.costs, societal.costs=societal.costs,
               psarecord=psarecord, diagnoses=diagnoses,
               cohort=data.frame(table(cohort)),simulation.parameters=parameter,
               falsePositives=falsePositives)
@@ -577,21 +580,25 @@ summary.fhcrc <- function(object, ...) {
                            discountRate.effectiveness=simulation.parameters$discountRate.effectiveness,
                            LE=sum(summary$pt$pt)/n,
                            QALE=sum(summary$ut$ut)/n,
-                           costs=sum(costs$costs)/n))),
+                           healthsector.costs=sum(healthsector.costs$costs)/n,
+                           societal.costs=sum(societal.costs$costs)/n))),
                    class="summary.fhcrc"))
 }
+
 print.summary.fhcrc <- function(x, ...) {
     obj <- x
     cat(sprintf(
-"Screening scenario:        %s
-Life expectancy:           %f
-Discounted QALE:           %f
-Discounted costs:          %f
-Discounted rate (effect.): %f
-Discounted rate (costs):   %f
-",obj$screen,obj$LE,obj$QALE,obj$costs,
-                obj$discountRate.effectiveness,
-        obj$discountRate.costs))
+"Screening scenario:            %s
+Life expectancy:                %f
+Discounted QALE:                %f
+Discounted health sector costs: %f
+Discounted societal costs:      %f
+Discounted rate (effect.):      %f
+Discounted rate (costs):        %f
+", obj$screen, obj$LE, obj$QALE,
+obj$healthsector.costs, obj$societal.costs,
+obj$discountRate.effectiveness,
+obj$discountRate.costs))
 }
 
 ICER <- function(object1, object2, ...)
@@ -604,13 +611,13 @@ ICER.fhcrc <- function(object1,object2,...) {
     stopifnot(p1$discountRate.effectiveness == p2$discountRate.effectiveness)
     summary1 <- summary(object1,...)
     summary2 <- summary(object2,...)
-    out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE),
+    out <- list(ICER.QALE=(summary1$societal.costs-summary2$societal.costs)/(summary1$QALE-summary2$QALE),
                 delta.QALE=summary1$QALE-summary2$QALE,
-                delta.costs=summary1$costs-summary2$costs)
+                delta.costs=summary1$societal.costs-summary2$societal.costs)
     if (p1$discountRate.costs == 0 && p2$discountRate.costs == 0 &&
         p1$discountRate.effectiveness == 0 && p2$discountRate.effectiveness == 0)
         out <- c(out,
-                 list(ICER.LE = (summary1$costs-summary2$costs)/(summary1$LE-summary2$LE),
+                 list(ICER.LE = (summary1$societal.costs-summary2$societal.costs)/(summary1$LE-summary2$LE),
                       delta.LE = summary1$LE-summary2$LE))
     out
 }

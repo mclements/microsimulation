@@ -60,7 +60,7 @@ namespace fhcrc_example {
   enum biomarker_model_t {random_correction, psa_informed_correction};
 
   enum cost_t {Direct,Indirect};
-  
+
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
@@ -94,14 +94,14 @@ namespace fhcrc_example {
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
   typedef Table<boost::tuple<double,int,int>,double> TableLocoHR; // Age, G, PSA10+
-  typedef Table<double,double> TableDD; // Age
+  typedef Table<double,double> TableMetastaticHR; // Age
   typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
   typedef Table<pair<double,double>,double> TableBiopsyCompliance;
   typedef Table<pair<double,double>,double> TableDDD; // as per TableBiopsyCompliance
   typedef map<int,NumericInterpolate> H_dist_t;
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
   TableLocoHR hr_locoregional;
-  TableDD hr_metastatic, production;
+  TableMetastaticHR hr_metastatic;
   TablePrtx prtxCM, prtxRP;
   TablePradt pradt;
   TableBiopsyCompliance tableOpportunisticBiopsyCompliance, tableFormalBiopsyCompliance;
@@ -122,6 +122,7 @@ namespace fhcrc_example {
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
   bool includePSArecords, panel, includeDiagnoses;
+  Table<double,double> production;
 
   class cMessageUtilityChange : public cMessage {
   public:
@@ -198,7 +199,7 @@ namespace fhcrc_example {
   }
 
   /**
-      Report on lost productivity 
+      Report on lost productivity
   */
   void FhcrcPerson::lost_productivity(string item) {
     double loss = lost_production_proportions[item] * production(now());
@@ -457,10 +458,10 @@ void FhcrcPerson::init() {
   case stockholm3_risk_stratified:
     opportunistic_uptake();
     if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
-	(2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"])) 
+	(2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"]))
       scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
     break;
-  case screenUptake: 
+  case screenUptake:
     opportunistic_uptake();
     break;
   default:
@@ -492,7 +493,7 @@ void FhcrcPerson::init() {
   // Burström and Rehnberg (2006)
   // (require 'cl)
   // (let ((utilities
-  // 	 (list 1 0.89 0.89 0.88 0.87 0.84 0.84 0.83 0.83 0.82 0.83 0.81 0.79 0.74)) 
+  // 	 (list 1 0.89 0.89 0.88 0.87 0.84 0.84 0.83 0.83 0.82 0.83 0.81 0.79 0.74))
   // 	(ages
   // 	 (append (list 0 18) (loop for i from 25 to 80 by 5 collect i))))
   //  (loop for utility in utilities for age in ages
@@ -572,7 +573,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-    add_costs("CancerDeath"); // cost for death, should this be zero???
+    add_costs("Cancer death"); // cost for death, should this be zero???
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
       outParameters.revise("pca_death",1.0);
@@ -637,12 +638,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (formal_costs) {
       add_costs("Invitation");
       lost_productivity(panel && psa>=1.0 ? "Formal panel" : "Formal PSA");
-      add_costs(panel && psa>=1.0 ? "FormalPSABiomarker" : "FormalPSA");
-      scheduleUtilityChange(now(), "FormalPSA");
+      add_costs(panel && psa>=1.0 ? "Formal panel" : "Formal PSA");
+      scheduleUtilityChange(now(), "Formal PSA");
     } else { // opportunistic costs
-      add_costs(panel && psa>=1.0 ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
+      add_costs(panel && psa>=1.0 ? "Opportunistic panel" : "Opportunistic PSA");
       lost_productivity(panel && psa>=1.0 ? "Opportunistic panel" : "Opportunistic PSA");
-      scheduleUtilityChange(now(), "OpportunisticPSA");
+      scheduleUtilityChange(now(), "Opportunistic PSA");
     }
     compliance = formal_compliance ?
       tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
@@ -770,20 +771,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
     add_costs("Biopsy");
-    if (formal_costs)
-      lost_productivity(panel ? "Biopsy (formal panel)" : "Biopsy (formal PSA)");
-    else 
-      lost_productivity(panel ? "Biopsy (opportunistic panel)" : "Biopsy (opportunistic PSA)");
+    lost_productivity("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
     break;
 
   case toScreenInitiatedBiopsy:
     rngScreen->set();
     add_costs("Biopsy");
-    if (formal_costs)
-      lost_productivity(panel ? "Biopsy (formal panel)" : "Biopsy (formal PSA)");
-    else 
-      lost_productivity(panel ? "Biopsy (opportunistic panel)" : "Biopsy (opportunistic PSA)");
+    lost_productivity("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
 
     if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) { // diagnosed
@@ -805,7 +800,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
       lost_productivity("Metastatic cancer");
-      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
+      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["Metastatic cancer"]));
     }
     else { // Loco-regional
       tx = calculate_treatment(u_tx,now(),year);
@@ -855,26 +850,26 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (!cured) {
       scheduleAt(age_cancer_death, toCancerDeath);
       // Disutilities prior to a cancer death
-      double age_palliative = age_cancer_death - utility_duration["PalliativeTherapy"] - utility_duration["TerminalIllness"];
-      double age_terminal = age_cancer_death - utility_duration["TerminalIllness"];
+      double age_palliative = age_cancer_death - utility_duration["Palliative therapy"] - utility_duration["Terminal illness"];
+      double age_terminal = age_cancer_death - utility_duration["Terminal illness"];
       // Reset utilities for those in with a Metatatic diagnosis
       if (state == Metastatic) {
 	if (age_palliative > now())
-	  scheduleUtilityChange(age_palliative, "MetastaticCancer",false);
+	  scheduleUtilityChange(age_palliative, "Metastatic cancer",false);
 	else
-	  scheduleUtilityChange(now(), "MetastaticCancer", false);
+	  scheduleUtilityChange(now(), "Metastatic cancer", false);
       }
       if (age_palliative>now()) { // cancer death more than 36 months after diagnosis
-	scheduleUtilityChange(age_palliative, "PalliativeTherapy");
-	scheduleUtilityChange(age_terminal, "TerminalIllness");
+	scheduleUtilityChange(age_palliative, "Palliative therapy");
+	scheduleUtilityChange(age_terminal, "Terminal illness");
       }
       else if (age_terminal>now()) { // cancer death between 36 and 6 months of diagnosis
-	scheduleUtilityChange(now(), "PalliativeTherapy",false, -1.0);
-	scheduleUtilityChange(age_terminal, "PalliativeTherapy", false, 1.0); // reset
-	scheduleUtilityChange(age_terminal,"TerminalIllness");
+	scheduleUtilityChange(now(), "Palliative therapy",false, -1.0);
+	scheduleUtilityChange(age_terminal, "Palliative therapy", false, 1.0); // reset
+	scheduleUtilityChange(age_terminal,"Terminal illness");
       }
       else // cancer death within 6 months of diagnosis/treatment
-	scheduleUtilityChange(now(), "TerminalIllness");
+	scheduleUtilityChange(now(), "Terminal illness");
     }
     if (includeDiagnoses) {
       diagnoses.record("id",id);
@@ -895,26 +890,26 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     add_costs("Prostatectomy");
     lost_productivity("Prostatectomy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleUtilityChange(now(), "ProstatectomyPart1");
+    scheduleUtilityChange(now(), "Prostatectomy part 1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleUtilityChange(now() + utility_duration["ProstatectomyPart1"],
-			  "ProstatectomyPart2");
+    scheduleUtilityChange(now() + utility_duration["Prostatectomy part 1"],
+			  "Prostatectomy part 2");
     break;
 
   case toRT:
-    add_costs("RadiationTherapy");
+    add_costs("Radiation therapy");
     lost_productivity("Radiation therapy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleUtilityChange(now(), "RadiationTherapyPart1");
+    scheduleUtilityChange(now(), "Radiation therapy part 1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleUtilityChange(now() + utility_duration["RadiationTherapyPart1"],
-			  "RadiationTherapyPart2");
+    scheduleUtilityChange(now() + utility_duration["Radiation therapy part 1"],
+			  "Radiation therapy part 2");
     break;
 
   case toCM:
-    add_costs("ActiveSurveillance"); // expand here
+    add_costs("Active surveillance"); // expand here
     lost_productivity("Active surveillance");
-    scheduleUtilityChange(now(), "ActiveSurveillance");
+    scheduleUtilityChange(now(), "Active surveillance");
     break;
 
   case toADT:
@@ -979,7 +974,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   cost_parameters = as<NumericVector>(otherParameters["cost_parameters"]);
   utility_estimates = as<NumericVector>(otherParameters["utility_estimates"]);
   utility_duration = as<NumericVector>(otherParameters["utility_duration"]);
-  
+
+  production = Table<double,double>(as<DataFrame>(otherParameters["production"]), "ages", "values");
+  lost_production_proportions = as<NumericVector>(otherParameters["lost_production_proportions"]);
 
   int n = as<int>(parms["n"]);
   includePSArecords = as<bool>(parms["includePSArecords"]);
@@ -993,7 +990,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
   hr_locoregional = TableLocoHR(as<DataFrame>(otherParameters["hr_locoregional"]),"age","ext_grade","psa10","hr");
-  hr_metastatic = TableDD(as<DataFrame>(otherParameters["hr_metastatic"]),"age","hr");
+  hr_metastatic = TableMetastaticHR(as<DataFrame>(otherParameters["hr_metastatic"]),"age","hr");
   tableOpportunisticBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyOpportunisticComplianceTable"]),
 						"psa","age","compliance");
   tableFormalBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyFormalComplianceTable"]),
@@ -1001,9 +998,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   rescreen_shape = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "shape");
   rescreen_scale = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "scale");
   rescreen_cure  = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "cure");
-  production = TableDD(as<DataFrame>(otherParameters["production"]), "age", "production");
-  lost_production_proportions = as<NumericVector>(otherParameters["lost_production_proportions"]);
-  
+
   H_dist.clear();
   DataFrame df_survival_dist = as<DataFrame>(tables["survival_dist"]); // Grade,Time,Survival
   DataFrame df_survival_local = as<DataFrame>(tables["survival_local"]); // Age,Grade,Time,Survival
