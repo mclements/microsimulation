@@ -544,9 +544,11 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
   parameters <- map2df(out[[1]]$parameters)
   ## Identifying elements without name which also need to be rbind:ed
-  costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs)))
+  societal.costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs))) #split in sociatal and healthcare perspective
   ## names(costs) <- c("type","item","cohort","age","costs")
-  names(costs) <- c("type","item","age","costs")
+  names(societal.costs) <- c("type","item","age","costs")
+  societal.costs$type <- ifelse(societal.costs$type, "Productivity loss", "Health sector cost") # societal perspective
+  healthsector.costs <- societal.costs[societal.costs["type"] == "Health sector cost", c("item", "age", "costs")] # healthcare perspective
   names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
@@ -558,7 +560,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
                psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,
-              parameters=parameters, summary=summary, costs=costs,
+              parameters=parameters, summary=summary,
+              healthsector.costs=healthsector.costs, societal.costs=societal.costs,
               psarecord=psarecord, diagnoses=diagnoses,
               cohort=data.frame(table(cohort)),simulation.parameters=parameter,
               falsePositives=falsePositives)
@@ -577,21 +580,25 @@ summary.fhcrc <- function(object, ...) {
                            discountRate.effectiveness=simulation.parameters$discountRate.effectiveness,
                            LE=sum(summary$pt$pt)/n,
                            QALE=sum(summary$ut$ut)/n,
-                           costs=sum(costs$costs)/n))),
+                           healthsector.costs=sum(healthsector.costs$costs)/n,
+                           societal.costs=sum(societal.costs$costs)/n))),
                    class="summary.fhcrc"))
 }
+
 print.summary.fhcrc <- function(x, ...) {
     obj <- x
     cat(sprintf(
-"Screening scenario:        %s
-Life expectancy:           %f
-Discounted QALE:           %f
-Discounted costs:          %f
-Discounted rate (effect.): %f
-Discounted rate (costs):   %f
-",obj$screen,obj$LE,obj$QALE,obj$costs,
-                obj$discountRate.effectiveness,
-        obj$discountRate.costs))
+"Screening scenario:            %s
+Life expectancy:                %f
+Discounted QALE:                %f
+Discounted health sector costs: %f
+Discounted societal costs:      %f
+Discounted rate (effect.):      %f
+Discounted rate (costs):        %f
+", obj$screen, obj$LE, obj$QALE,
+obj$healthsector.costs, obj$societal.costs,
+obj$discountRate.effectiveness,
+obj$discountRate.costs))
 }
 
 ICER <- function(object1, object2, ...)
@@ -604,13 +611,13 @@ ICER.fhcrc <- function(object1,object2,...) {
     stopifnot(p1$discountRate.effectiveness == p2$discountRate.effectiveness)
     summary1 <- summary(object1,...)
     summary2 <- summary(object2,...)
-    out <- list(ICER.QALE=(summary1$costs-summary2$costs)/(summary1$QALE-summary2$QALE),
+    out <- list(ICER.QALE=(summary1$societal.costs-summary2$societal.costs)/(summary1$QALE-summary2$QALE),
                 delta.QALE=summary1$QALE-summary2$QALE,
-                delta.costs=summary1$costs-summary2$costs)
+                delta.costs=summary1$societal.costs-summary2$societal.costs)
     if (p1$discountRate.costs == 0 && p2$discountRate.costs == 0 &&
         p1$discountRate.effectiveness == 0 && p2$discountRate.effectiveness == 0)
         out <- c(out,
-                 list(ICER.LE = (summary1$costs-summary2$costs)/(summary1$LE-summary2$LE),
+                 list(ICER.LE = (summary1$societal.costs-summary2$societal.costs)/(summary1$LE-summary2$LE),
                       delta.LE = summary1$LE-summary2$LE))
     out
 }
