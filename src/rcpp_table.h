@@ -110,7 +110,7 @@ class NumericInterpolate {
 
 template<class T>
 T set_lower_bound(set<T,greater<T> > aset, T value) {
-  return *aset.lower_bound(value);
+  return value<*aset.rbegin() ? *aset.rbegin() : *aset.lower_bound(value);
 }
 
 template <class T>
@@ -151,15 +151,14 @@ template<class key_type, class mapped_type>
     data[value.first].push_back(value.second);
   }
   virtual mapped_type operator()(key_type key) {
-    if (key<*axis.begin()) return data[*axis.begin()];
-    else return data[*axis.lower_bound(key)];
+    return data[set_lower_bound(axis,key)];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1) {
     DataFrameSelect<key_type> df0(df,s0);
     DataFrameSelect<mapped_type> df1(df,s1);
     for (int i=0; i<df0.size(); i++) {
-      insert(key_type(df0[i]), df1[i]);
+      insert(key_type(df0[i]), mapped_type(df1[i]));
     }
   }
  private:
@@ -183,8 +182,8 @@ template<class Key0, class Key1, class Outcome>
     data[key] = outcome;
   }
   virtual Outcome operator()(key_type key) {
-    return data[key_type(*(axis.first.lower_bound(key.first)),
-			 *(axis.second.lower_bound(key.second)))];
+    return data[key_type(set_lower_bound(axis.first,key.first),
+			 set_lower_bound(axis.second, key.second))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2) {
@@ -215,8 +214,8 @@ template<class I0, class I1, class Outcome>
     data[key] = outcome;
   }
   virtual Outcome operator()(key_type key) {
-    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
-			 *get<1>(axis).lower_bound(get<1>(key)))];
+    return data[key_type(set_lower_bound(get<0>(axis), get<0>(key)),
+			 set_lower_bound(get<1>(axis), get<1>(key)))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2) {
@@ -245,10 +244,9 @@ template<class I0, class I1, class I2, class Outcome>
     data[key] = outcome;
   }
   virtual Outcome operator()(key_type key) {
-    return data[key_type(*axis0.lower_bound(get<0>(key)),
-			 *axis1.lower_bound(get<1>(key)),
-			 *axis2.lower_bound(get<2>(key))
-			 )];
+    return data[key_type(set_lower_bound(axis0, get<0>(key)),
+			 set_lower_bound(axis1, get<1>(key)),
+			 set_lower_bound(axis2, get<2>(key)))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2, string s3) {
@@ -286,11 +284,10 @@ template<class I0, class I1, class I2, class I3, class Outcome>
     data[key] = outcome;
   }
   virtual Outcome operator()(key_type key) {
-    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
-		      *get<1>(axis).lower_bound(get<1>(key)),
-		      *get<2>(axis).lower_bound(get<2>(key)),
-		      *get<3>(axis).lower_bound(get<3>(key))
-		      )];
+    return data[key_type(set_lower_bound(get<0>(axis), get<0>(key)),
+			 set_lower_bound(get<1>(axis), get<1>(key)),
+			 set_lower_bound(get<2>(axis), get<2>(key)),
+			 set_lower_bound(get<3>(axis), get<3>(key)))];
   }
   Table() {}
   Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4) {
@@ -330,12 +327,11 @@ template<class I0, class I1, class I2, class I3, class I4, class Outcome>
     data[key] = outcome;
   }
   virtual Outcome operator()(key_type key) {
-    return data[key_type(*get<0>(axis).lower_bound(get<0>(key)),
-		      *get<1>(axis).lower_bound(get<1>(key)),
-		      *get<2>(axis).lower_bound(get<2>(key)),
-		      *get<3>(axis).lower_bound(get<3>(key)),
-		      *get<4>(axis).lower_bound(get<4>(key))
-		      )];
+    return data[key_type(set_lower_bound(get<0>(axis), get<0>(key)),
+			 set_lower_bound(get<1>(axis), get<1>(key)),
+			 set_lower_bound(get<2>(axis), get<2>(key)),
+			 set_lower_bound(get<3>(axis), get<3>(key)),
+			 set_lower_bound(get<4>(axis), get<4>(key)))];
   }
   Table(const DataFrame & df, string s0, string s1, string s2, string s3, string s4, string s5) {
     DataFrameSelect<I0> df0(df,s0);

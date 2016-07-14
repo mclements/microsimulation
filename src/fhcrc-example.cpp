@@ -94,14 +94,14 @@ namespace fhcrc_example {
 
   typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
   typedef Table<boost::tuple<double,int,int>,double> TableLocoHR; // Age, G, PSA10+
-  typedef Table<double,double> TableMetastaticHR; // Age
+  typedef Table<double,double> TableDD; // Age
   typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
   typedef Table<pair<double,double>,double> TableBiopsyCompliance;
   typedef Table<pair<double,double>,double> TableDDD; // as per TableBiopsyCompliance
   typedef map<int,NumericInterpolate> H_dist_t;
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
   TableLocoHR hr_locoregional;
-  TableMetastaticHR hr_metastatic;
+  TableDD hr_metastatic, production;
   TablePrtx prtxCM, prtxRP;
   TablePradt pradt;
   TableBiopsyCompliance tableOpportunisticBiopsyCompliance, tableFormalBiopsyCompliance;
@@ -122,7 +122,6 @@ namespace fhcrc_example {
   NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
   int screen, nLifeHistories;
   bool includePSArecords, panel, includeDiagnoses;
-  Table<double,double> production;
 
   class cMessageUtilityChange : public cMessage {
   public:
@@ -981,8 +980,6 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   utility_estimates = as<NumericVector>(otherParameters["utility_estimates"]);
   utility_duration = as<NumericVector>(otherParameters["utility_duration"]);
   
-  production = Table<double,double>(as<DataFrame>(otherParameters["production"]), "ages", "values");
-  lost_production_proportions = as<NumericVector>(otherParameters["lost_production_proportions"]);
 
   int n = as<int>(parms["n"]);
   includePSArecords = as<bool>(parms["includePSArecords"]);
@@ -996,7 +993,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 			       "Age","DxY","G","RP");
   pradt = TablePradt(as<DataFrame>(tables["pradt"]),"Tx","Age","DxY","Grade","ADT");
   hr_locoregional = TableLocoHR(as<DataFrame>(otherParameters["hr_locoregional"]),"age","ext_grade","psa10","hr");
-  hr_metastatic = TableMetastaticHR(as<DataFrame>(otherParameters["hr_metastatic"]),"age","hr");
+  hr_metastatic = TableDD(as<DataFrame>(otherParameters["hr_metastatic"]),"age","hr");
   tableOpportunisticBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyOpportunisticComplianceTable"]),
 						"psa","age","compliance");
   tableFormalBiopsyCompliance = TableBiopsyCompliance(as<DataFrame>(tables["biopsyFormalComplianceTable"]),
@@ -1004,7 +1001,9 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   rescreen_shape = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "shape");
   rescreen_scale = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "scale");
   rescreen_cure  = TableDDD(as<DataFrame>(tables["rescreening"]), "age5", "total", "cure");
-
+  production = TableDD(as<DataFrame>(otherParameters["production"]), "age", "production");
+  lost_production_proportions = as<NumericVector>(otherParameters["lost_production_proportions"]);
+  
   H_dist.clear();
   DataFrame df_survival_dist = as<DataFrame>(tables["survival_dist"]); // Grade,Time,Survival
   DataFrame df_survival_local = as<DataFrame>(tables["survival_local"]); // Age,Grade,Time,Survival
