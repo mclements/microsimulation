@@ -137,7 +137,7 @@ namespace Rcpp {
     SEXP wrap_map(const boost::unordered_map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v,
 		  std::string name1, std::string name2);
 
-  
+
 } // namespace Rcpp
 
 #include <Rcpp.h>
@@ -1039,7 +1039,7 @@ namespace Rcpp {
     return out;
    }
 
-  
+
 
 } // Rcpp namespace
 

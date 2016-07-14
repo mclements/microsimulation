@@ -60,7 +60,7 @@ namespace fhcrc_example {
   enum biomarker_model_t {random_correction, psa_informed_correction};
 
   enum cost_t {Direct,Indirect};
-  
+
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
     enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
@@ -199,7 +199,7 @@ namespace fhcrc_example {
   }
 
   /**
-      Report on lost productivity 
+      Report on lost productivity
   */
   void FhcrcPerson::lost_productivity(string item) {
     double loss = lost_production_proportions[item] * production(now());
@@ -458,10 +458,10 @@ void FhcrcPerson::init() {
   case stockholm3_risk_stratified:
     opportunistic_uptake();
     if (R::runif(0.0,1.0)<parameter["studyParticipation"] &&
-	(2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"])) 
+	(2013.0-cohort>=parameter["start_screening"] && 2013.0-cohort<parameter["stop_screening"]))
       scheduleAt(R::runif(2013.0,2015.0) - cohort, toSTHLM3);
     break;
-  case screenUptake: 
+  case screenUptake:
     opportunistic_uptake();
     break;
   default:
@@ -493,7 +493,7 @@ void FhcrcPerson::init() {
   // Burström and Rehnberg (2006)
   // (require 'cl)
   // (let ((utilities
-  // 	 (list 1 0.89 0.89 0.88 0.87 0.84 0.84 0.83 0.83 0.82 0.83 0.81 0.79 0.74)) 
+  // 	 (list 1 0.89 0.89 0.88 0.87 0.84 0.84 0.83 0.83 0.82 0.83 0.81 0.79 0.74))
   // 	(ages
   // 	 (append (list 0 18) (loop for i from 25 to 80 by 5 collect i))))
   //  (loop for utility in utilities for age in ages
@@ -980,7 +980,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   cost_parameters = as<NumericVector>(otherParameters["cost_parameters"]);
   utility_estimates = as<NumericVector>(otherParameters["utility_estimates"]);
   utility_duration = as<NumericVector>(otherParameters["utility_duration"]);
-  
+
   production = Table<double,double>(as<DataFrame>(otherParameters["production"]), "ages", "values");
   lost_production_proportions = as<NumericVector>(otherParameters["lost_production_proportions"]);
 
