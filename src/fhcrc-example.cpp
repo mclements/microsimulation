@@ -573,7 +573,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   switch(msg->kind) {
 
   case toCancerDeath:
-    add_costs("CancerDeath"); // cost for death, should this be zero???
+    add_costs("Cancer death"); // cost for death, should this be zero???
     if (id<nLifeHistories) {
       outParameters.record("age_d",now());
       outParameters.revise("pca_death",1.0);
@@ -638,12 +638,12 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (formal_costs) {
       add_costs("Invitation");
       lost_productivity(panel && psa>=1.0 ? "Formal panel" : "Formal PSA");
-      add_costs(panel && psa>=1.0 ? "FormalPSABiomarker" : "FormalPSA");
-      scheduleUtilityChange(now(), "FormalPSA");
+      add_costs(panel && psa>=1.0 ? "Formal panel" : "Formal PSA");
+      scheduleUtilityChange(now(), "Formal PSA");
     } else { // opportunistic costs
-      add_costs(panel && psa>=1.0 ? "OpportunisticPSABiomarker" : "OpportunisticPSA");
+      add_costs(panel && psa>=1.0 ? "Opportunistic panel" : "Opportunistic PSA");
       lost_productivity(panel && psa>=1.0 ? "Opportunistic panel" : "Opportunistic PSA");
-      scheduleUtilityChange(now(), "OpportunisticPSA");
+      scheduleUtilityChange(now(), "Opportunistic PSA");
     }
     compliance = formal_compliance ?
       tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
@@ -771,20 +771,14 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   // record additional biopsies for clinical diagnoses
   case toClinicalDiagnosticBiopsy:
     add_costs("Biopsy");
-    if (formal_costs)
-      lost_productivity(panel ? "Biopsy (formal panel)" : "Biopsy (formal PSA)");
-    else 
-      lost_productivity(panel ? "Biopsy (opportunistic panel)" : "Biopsy (opportunistic PSA)");
+    lost_productivity("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
     break;
 
   case toScreenInitiatedBiopsy:
     rngScreen->set();
     add_costs("Biopsy");
-    if (formal_costs)
-      lost_productivity(panel ? "Biopsy (formal panel)" : "Biopsy (formal PSA)");
-    else 
-      lost_productivity(panel ? "Biopsy (opportunistic panel)" : "Biopsy (opportunistic PSA)");
+    lost_productivity("Biopsy");
     scheduleUtilityChange(now(), "Biopsy");
 
     if (state == Metastatic || (state == Localised && R::runif(0.0, 1.0) < parameter["biopsySensitivity"])) { // diagnosed
@@ -806,7 +800,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     double u_adt = R::runif(0.0,1.0);
     if (state == Metastatic) {
       lost_productivity("Metastatic cancer");
-      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["MetastaticCancer"]));
+      scheduleAt(now(), new cMessageUtilityChange(-utility_estimates["Metastatic cancer"]));
     }
     else { // Loco-regional
       tx = calculate_treatment(u_tx,now(),year);
@@ -856,26 +850,26 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     if (!cured) {
       scheduleAt(age_cancer_death, toCancerDeath);
       // Disutilities prior to a cancer death
-      double age_palliative = age_cancer_death - utility_duration["PalliativeTherapy"] - utility_duration["TerminalIllness"];
-      double age_terminal = age_cancer_death - utility_duration["TerminalIllness"];
+      double age_palliative = age_cancer_death - utility_duration["Palliative therapy"] - utility_duration["Terminal illness"];
+      double age_terminal = age_cancer_death - utility_duration["Terminal illness"];
       // Reset utilities for those in with a Metatatic diagnosis
       if (state == Metastatic) {
 	if (age_palliative > now())
-	  scheduleUtilityChange(age_palliative, "MetastaticCancer",false);
+	  scheduleUtilityChange(age_palliative, "Metastatic cancer",false);
 	else
-	  scheduleUtilityChange(now(), "MetastaticCancer", false);
+	  scheduleUtilityChange(now(), "Metastatic cancer", false);
       }
       if (age_palliative>now()) { // cancer death more than 36 months after diagnosis
-	scheduleUtilityChange(age_palliative, "PalliativeTherapy");
-	scheduleUtilityChange(age_terminal, "TerminalIllness");
+	scheduleUtilityChange(age_palliative, "Palliative therapy");
+	scheduleUtilityChange(age_terminal, "Terminal illness");
       }
       else if (age_terminal>now()) { // cancer death between 36 and 6 months of diagnosis
-	scheduleUtilityChange(now(), "PalliativeTherapy",false, -1.0);
-	scheduleUtilityChange(age_terminal, "PalliativeTherapy", false, 1.0); // reset
-	scheduleUtilityChange(age_terminal,"TerminalIllness");
+	scheduleUtilityChange(now(), "Palliative therapy",false, -1.0);
+	scheduleUtilityChange(age_terminal, "Palliative therapy", false, 1.0); // reset
+	scheduleUtilityChange(age_terminal,"Terminal illness");
       }
       else // cancer death within 6 months of diagnosis/treatment
-	scheduleUtilityChange(now(), "TerminalIllness");
+	scheduleUtilityChange(now(), "Terminal illness");
     }
     if (includeDiagnoses) {
       diagnoses.record("id",id);
@@ -896,26 +890,26 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     add_costs("Prostatectomy");
     lost_productivity("Prostatectomy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleUtilityChange(now(), "ProstatectomyPart1");
+    scheduleUtilityChange(now(), "Prostatectomy part 1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleUtilityChange(now() + utility_duration["ProstatectomyPart1"],
-			  "ProstatectomyPart2");
+    scheduleUtilityChange(now() + utility_duration["Prostatectomy part 1"],
+			  "Prostatectomy part 2");
     break;
 
   case toRT:
-    add_costs("RadiationTherapy");
+    add_costs("Radiation therapy");
     lost_productivity("Radiation therapy");
     // Scheduling utilities for the first 2 months after procedure
-    scheduleUtilityChange(now(), "RadiationTherapyPart1");
+    scheduleUtilityChange(now(), "Radiation therapy part 1");
     // Scheduling utilities for the first 3-12 months after procedure
-    scheduleUtilityChange(now() + utility_duration["RadiationTherapyPart1"],
-			  "RadiationTherapyPart2");
+    scheduleUtilityChange(now() + utility_duration["Radiation therapy part 1"],
+			  "Radiation therapy part 2");
     break;
 
   case toCM:
-    add_costs("ActiveSurveillance"); // expand here
+    add_costs("Active surveillance"); // expand here
     lost_productivity("Active surveillance");
-    scheduleUtilityChange(now(), "ActiveSurveillance");
+    scheduleUtilityChange(now(), "Active surveillance");
     break;
 
   case toADT:
