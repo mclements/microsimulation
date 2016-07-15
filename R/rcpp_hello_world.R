@@ -698,14 +698,15 @@ predict.fhcrc <- function(object, scenarios=NULL, type= c("incidence", "psa", "b
 plot.fhcrc <- function(x,
                        type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
                        plot.type="l", add=FALSE, xlab="Age (years)", ylab=NULL, ...) {
-    if (is.null(ylab)) ylab <- switch(type,
-                                      psa="PSA rates per 1000",
-                                      biopsies="Biopsies per 1000",
-                                      incidence="Prostate cancer incidence rates per 100,000",
-                                      metastatic="Metastatic onset per 100,000",
-                                      cancerdeath="Cancer mortality rates per 100,000",
-                                      alldeath="All cause mortality rates per 100,000")
-    rates <- predict(x, type)
+    type <- match.arg(type)
+    if (is.null(ylab)) {ylab <- switch(type,
+                                       psa="PSA rates per 1000",
+                                       biopsies="Biopsies per 1000",
+                                       incidence="Prostate cancer incidence rates per 100,000",
+                                       metastatic="Metastatic onset per 100,000",
+                                       cancerdeath="Cancer mortality rates per 100,000",
+                                       alldeath="All cause mortality rates per 100,000")}
+    rates <- predict(object = x, type = type)
     rates$rate = rates$rate*switch(type, psa=1000,biopsies=1000,incidence=1e5, metastatic=1e5,cancerdeath=1e5,alldeath=1e5)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlab=xlab, ylab=ylab, ...) else lines(rate~age, data=rates,  ...)
 }

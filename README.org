@@ -117,16 +117,14 @@ ages.
 # | Risk stratified (4+8)   | Risk stratified re-screening 4+8                 |          50-70 |
 # | Mixed screening         | Risk stratified re-screening 2+4 & opportunistic |  50-70 & other |
 
-
-#+BEGIN_SRC R :eval no :exports code
+#+BEGIN_SRC R :eval no :exports both
   require(microsimulation)
   sim1 <- callFhcrc(1e6, mc.cores=3, screen="screenUptake")
 #+END_SRC
 
 #+RESULTS:
 :      user  system elapsed
-:   179.828   0.188  65.240
-
+:   140.653   0.152  83.658
 * Results
 # ** Simulation output
 # The simulation
@@ -145,12 +143,11 @@ To construct a rate not listed above you can use the events in
 To simply plot e.g. the /incidence rate/ of the simulated screening scenario
 the following line can be used:
 #+BEGIN_SRC R :file inst/inc.png :results output graphics :exports both
-  plot(sim1, type = "incidence", ylab="Incidence rate", xlab="Age (years)")
+  plot(sim1, type = "incidence", xlab="Age (years)")
 #+END_SRC
 
 #+RESULTS:
 [[file:inst/inc.png]]
-
 
 # #+BEGIN_SRC R :file inst/mort.png :results output graphics :exports both
 #   plot(sim1, type="cancerdeath", ylab="Cancer specific mortality rate",
@@ -199,7 +196,7 @@ variation.
 [[file:inst/biop.png]]
 
 
-# This looks strange investigate
+# This seems to be fixed!
 # #+BEGIN_SRC R :file inst/gginc.png :results output graphics :exports both
 #   ggplot(predict(sim1, group = c("age", "grade", "psa"), type="incidence"),
 #          aes(x=age, y=rate, colour = grade)) + xlim(50, 80) +
