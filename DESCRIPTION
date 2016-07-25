@@ -7,7 +7,7 @@ Author: Mark Clements, Alexandra Jauhiainen, Andreas Karlsson.
 Maintainer: Mark Clements <mark.clements@ki.se>
 Description: Microsimulation using discrete event simulation in R and C++. This includes a full prostate cancer model.
 License: GPL (>= 3)
-Depends: Rcpp (>= 0.10.2), methods, BH, dplyr, ggplot2
+Depends: Rcpp (>= 0.10.2), methods, BH
 Imports: parallel, grDevices
 LinkingTo: Rcpp, BH
 LazyData: true

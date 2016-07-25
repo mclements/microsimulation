@@ -637,7 +637,13 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
     do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
 }
 
-predict.fhcrc <- function(object, scenarios=NULL, type= c("incidence", "psa", "biopsies", "metastatic", "cancerdeath", "alldeath"), group = "age", ...) {
+## TODO: include prevalences and relative rate-ratios in switch. Also
+## allow for ceiling on groups to allow for other than yearly rates
+## for the time
+predict.fhcrc <- function(object, scenarios=NULL,
+                          type= c("incidence", "psa", "biopsies",
+                                  "metastatic", "cancerdeath",
+                                  "alldeath"), group = "age", ...) {
     if(!inherits(object,"fhcrc")) stop("Expecting object to be an fhcrc object")
     if(!(is.null(scenarios) || all(sapply(scenarios,inherits,"fhcrc")) || inherits(object,"fhcrc")))
         stop("Expecting scenarios is NULL, a fhcrc object or a list of fhcrc objects")
@@ -645,9 +651,6 @@ predict.fhcrc <- function(object, scenarios=NULL, type= c("incidence", "psa", "b
     group <- match.arg(group,
                        c("state", "grade", "dx", "psa", "age", "year"),
                        several.ok = TRUE)
-    # todo: include prevalences and relative rate-ratios in
-    # switch. Also allow for ceiling on groups to allow for other than
-    # yearly rates for the time scales.
     event_types <- switch(type,
                           incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
                           psa="toScreen",
@@ -742,35 +745,6 @@ NN.fhcrc <- function(obj, ref.obj, startAge = 50, stopAge = Inf) {
     NND <- 1 / (pNND(ref.obj) - pNND(obj)) #number needed to detect to prevent 1 PCa death
     ## Include additional number needed to treat (NNT) [Gulati 2011] to show overdiagnosis?
     return(list(NNS=NNS,NND=NND))
-}
-
-## TODO:
-## 1. make a predict function with input varible: by_group
-## 2. Use ggplot's OO structure better
-## 3. Fix so S3 work's when "obj"" is a list of the class
-ggplot.fhcrc <- function(obj, type="incidence", ages=c(50,85), ...) {
-    type <- match.arg(type)
-    event_types <- switch(type,
-                          psa="toScreen",
-                          biopsies=c("toClinicalDiagnosticBiopsy","toScreenInitiatedBiopsy"),
-                          incidence=c("toClinicalDiagnosis","toScreenDiagnosis"),
-                          metastatic="toMetastatic",
-                          cancerdeath="toCancerDeath",
-                          alldeath=c("toCancerDeath","toOtherDeath"))
-    if(class(obj)!="list"){obj <- list(obj)}
-    pt <- with(do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$pt,pattern=obj$screen))),
-               grp_apply(pt, list(pattern, age), sum))
-    events <- with(subset(do.call("rbind",lapply(obj,function(obj) cbind(obj$summary$events,pattern=obj$screen))),
-                          event %in% event_types),
-                   grp_apply(n, list(pattern, age), sum))
-    out <- subset(with(merge(pt, events, by = c("Var1", "Var2"), all = TRUE),
-                       data.frame(pattern = Var1,
-                                  age = as.numeric(levels(Var2))[Var2], #important factor conversion
-                                  pt = Freq.x,
-                                  n = Freq.y,
-                                  rate = ifelse(is.na(Freq.y), 0, 1000 * Freq.y/Freq.x))),
-                  age >= min(ages) & age <= max(ages))
-    ggplot(out, aes(age, rate, group=pattern, colour=pattern)) + ...
 }
 
 .testPackage <- function() {

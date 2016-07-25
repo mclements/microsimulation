@@ -2,8 +2,7 @@ useDynLib(microsimulation)
 exportPattern("^[[:alpha:]]+")
 exportClasses("RNGStream")
 exportClasses("BaseDiscreteEventSimulation")
-import(Rcpp,BH,methods,dplyr,ggplot2)
+import(Rcpp,BH,methods)
 
 importFrom("graphics", "lines", "plot")
 importFrom("stats", "predict", "rnorm")
-
