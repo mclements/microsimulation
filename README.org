@@ -12,6 +12,7 @@
 # +PROPERTY: tangle yes
 # +PROPERTY: exports both
 
+[[http://www.gnu.org/licenses/gpl-3.0.html][http://img.shields.io/:license-gpl3-blue.svg]]
 * Background
 [[https://en.wikipedia.org/wiki/Microsimulation][Microsimulation]] is a form of individual-based stochastic
 simulation. In continuous time, microsimulation is closely related to
@@ -143,7 +144,7 @@ To construct a rate not listed above you can use the events in
 To simply plot e.g. the /incidence rate/ of the simulated screening scenario
 the following line can be used:
 #+BEGIN_SRC R :file inst/inc.png :results output graphics :exports both
-  plot(sim1, type = "incidence", xlab="Age (years)")
+  plot(sim1, type = "incidence", xlab="Age (years)", xlim=c(40, 90))
 #+END_SRC
 
 #+RESULTS:
