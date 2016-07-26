@@ -118,14 +118,20 @@ ages.
 # | Risk stratified (4+8)   | Risk stratified re-screening 4+8                 |          50-70 |
 # | Mixed screening         | Risk stratified re-screening 2+4 & opportunistic |  50-70 & other |
 
-#+BEGIN_SRC R :eval no :exports both
+#+name: commentify
+#+begin_src emacs-lisp :var result="" :exports none
+(concat "# > "(mapconcat 'identity (split-string result "\n") "\n# > "))
+#+end_src
+
+#+BEGIN_SRC R :post commentify(*this*) :results output :exports both :eval never
   require(microsimulation)
   sim1 <- callFhcrc(1e6, mc.cores=3, screen="screenUptake")
 #+END_SRC
 
 #+RESULTS:
-:      user  system elapsed
-:   140.653   0.152  83.658
+: # >    user  system elapsed
+: # > 144.180   0.180  91.173
+
 * Results
 # ** Simulation output
 # The simulation
