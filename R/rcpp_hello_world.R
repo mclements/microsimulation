@@ -604,21 +604,27 @@ obj$discountRate.costs))
 ICER <- function(object1, object2, ...)
     UseMethod("ICER")
 
-ICER.fhcrc <- function(object1,object2,...) {
+ICER.fhcrc <- function(object1, object2,
+                       perspective = c("societal.costs",
+                                       "healthsector.costs"), ...) {
+    perspective <- match.arg(perspective)
     p1 <- object1$simulation.parameters
     p2 <- object2$simulation.parameters
     stopifnot(p1$discountRate.costs == p2$discountRate.costs)
     stopifnot(p1$discountRate.effectiveness == p2$discountRate.effectiveness)
-    summary1 <- summary(object1,...)
-    summary2 <- summary(object2,...)
-    out <- list(ICER.QALE=(summary1$societal.costs-summary2$societal.costs)/(summary1$QALE-summary2$QALE),
-                delta.QALE=summary1$QALE-summary2$QALE,
-                delta.costs=summary1$societal.costs-summary2$societal.costs)
+    summary1 <- summary(object1, ...)
+    summary2 <- summary(object2, ...)
+    out <- list(ICER.QALE=(summary1[[perspective]] - summary2[[perspective]]) /
+                    (summary1$QALE - summary2$QALE),
+                delta.QALE=summary1$QALE - summary2$QALE,
+                delta.costs=summary1[[perspective]] - summary2[[perspective]])
     if (p1$discountRate.costs == 0 && p2$discountRate.costs == 0 &&
-        p1$discountRate.effectiveness == 0 && p2$discountRate.effectiveness == 0)
+        p1$discountRate.effectiveness == 0 && p2$discountRate.effectiveness == 0) {
         out <- c(out,
-                 list(ICER.LE = (summary1$societal.costs-summary2$societal.costs)/(summary1$LE-summary2$LE),
-                      delta.LE = summary1$LE-summary2$LE))
+                 list(ICER.LE = (summary1[[perspective]] - summary2[[perspective]]) /
+                          (summary1$LE - summary2$LE),
+                      delta.LE = summary1$LE - summary2$LE))
+    }
     out
 }
 
