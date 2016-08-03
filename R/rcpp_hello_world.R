@@ -549,7 +549,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   names(societal.costs) <- c("type","item","age","costs")
   societal.costs$type <- ifelse(societal.costs$type, "Productivity loss", "Health sector cost") # societal perspective
   healthsector.costs <- societal.costs[societal.costs["type"] == "Health sector cost", c("item", "age", "costs")] # healthcare perspective
-  names(lifeHistories) <- c("id","state","ext_grade","dx","event","begin","end","year","psa")
+  names(lifeHistories) <- c("id", "state", "ext_grade", "dx", "event", "begin", "end", "year", "psa", "utility")
   enum(lifeHistories$state) <- stateT
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT

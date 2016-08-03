@@ -67,8 +67,8 @@ namespace fhcrc_example {
     // string names[5] = {"state","ext_grade","dx","psa_ge_3","cohort"};
   }
   namespace LifeHistory {
-    typedef boost::tuple<int,short,short,int,short,double,double,double,double> Type;
-    enum Fields {id,state,ext_grade,dx,event,begin,end,year,psa};
+    typedef boost::tuple<int, short, short, int, short, double, double, double, double, double> Type;
+    enum Fields {id, state, ext_grade, dx, event, begin, end, year, psa, utility};
   }
 
   RcppExport SEXP rllogis_(SEXP shape, SEXP scale) {
@@ -565,7 +565,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   shortReport.add(1, msg->kind, previousEventTime, age, utility());
 
   if (id<nLifeHistories) { // only record up to the first n individuals
-    lifeHistories.push_back(LifeHistory::Type(id,state,ext_grade,dx,msg->kind,previousEventTime,age,year,psa));
+    lifeHistories.push_back(LifeHistory::Type(id, state, ext_grade, dx, msg->kind, previousEventTime, age, year, psa, utility()));
   }
 
   // handle messages by kind
