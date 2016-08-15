@@ -313,9 +313,11 @@ FhcrcParameters <- list(
 IHE <- list(prtx=data.frame(Age=50.0,DxY=1973.0,G=1:2,CM=0.6,RP=0.26,RT=0.14)) ## assumed constant across ages and periods
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
-swedenOpportunisticBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
-                                compliance=c(0.7, 0.75, 0.6, 0.7, 0.4, 0.5))
-swedenFormalBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
+swedenOpportunisticBiopsyCompliance <- data.frame(
+    psa = c(3, 5, 10, 3, 5, 10, 3, 5, 10, 3, 5, 10, 3, 5, 10),
+    age = c(40, 40, 40, 50, 50, 50, 60, 60, 60, 70, 70, 70, 80, 80, 80),
+    compliance = c(0.3764045, 0.5680751, 0.7727273, 0.3110770, 0.5726548, 0.7537372, 0.2385155, 0.4814588, 0.6929770, 0.1754264, 0.3685056, 0.5602030, 0.1629213, 0.2697368, 0.5010052))
+swedenFormalBiopsyCompliance <- cbind(expand.grid(psa=c(3,5,10),age=seq(40,80,10)),
                                 compliance=0.9)
 stockholmTreatment <-
     data.frame(DxY=2008,
