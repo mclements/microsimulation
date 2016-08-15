@@ -120,7 +120,7 @@ ages.
 
 #+name: commentify
 #+begin_src emacs-lisp :var result="" :exports none
-(concat "# > "(mapconcat 'identity (split-string result "\n") "\n# > "))
+(concat "#> "(mapconcat 'identity (split-string result "\n") "\n#> "))
 #+end_src
 
 #+BEGIN_SRC R :post commentify(*this*) :results output :exports both :eval never
@@ -129,8 +129,8 @@ ages.
 #+END_SRC
 
 #+RESULTS:
-: # >    user  system elapsed
-: # > 144.180   0.180  91.173
+: #>    user  system elapsed
+: #> 144.180   0.180  91.173
 
 * Results
 # ** Simulation output
@@ -229,7 +229,7 @@ pattern compared with the hypothetical /no screening/ scenario.
 #+RESULTS:
 [[file:inst/scen.png]]
 
-
+* COMMENT
 # Local Variables:
 # org-confirm-babel-evaluate: nil
 # End:
