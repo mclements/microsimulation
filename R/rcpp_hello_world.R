@@ -649,7 +649,7 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
 ## allow for ceiling on groups to allow for other than yearly rates
 ## for the time
 predict.fhcrc <- function(object, scenarios=NULL,
-                          type = "incidence", group = "age", ...) {
+                          type = "incidence.rate", group = "age", ...) {
     if(!inherits(object,"fhcrc")) stop("Expecting object to be an fhcrc object")
     if(!(is.null(scenarios) || all(sapply(scenarios,inherits,"fhcrc")) || inherits(object,"fhcrc")))
         stop("Expecting scenarios is NULL, a fhcrc object or a list of fhcrc objects")
@@ -657,9 +657,10 @@ predict.fhcrc <- function(object, scenarios=NULL,
     ## Stripping of potential rate ratio option before matching
     abbr_type <- match.arg(sub(".?rr$|.?rate.?ratio$",
                                "", type, ignore.case = TRUE),
-                           c("incidence", "psa", "biopsies",
-                             "metastatic", "cancerdeath", "alldeath",
-                             "prevalence"))
+                           c("incidence.rate", "testing.rate",
+                             "biopsy.rate", "metastasis.rate",
+                             "pc.mortality.rate",
+                             "allcause.mortality.rate", "prevalence"))
 
     ## Allowing for several groups
     group <- match.arg(group,
@@ -667,12 +668,12 @@ predict.fhcrc <- function(object, scenarios=NULL,
                        several.ok = TRUE)
 
     event_types <- switch(abbr_type,
-                          incidence = c("toClinicalDiagnosis", "toScreenDiagnosis"),
-                          psa = "toScreen",
-                          biopsies = c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
-                          metastatic = "toMetastatic",
-                          cancerdeath = "toCancerDeath",
-                          alldeath = c("toCancerDeath", "toOtherDeath"))
+                          incidence.rate = c("toClinicalDiagnosis", "toScreenDiagnosis"),
+                          testing.rate = "toScreen",
+                          biopsy.rate = c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
+                          metastasis.rate = "toMetastatic",
+                          pc.mortality.rate = "toCancerDeath",
+                          allcause.mortality.rate = c("toCancerDeath", "toOtherDeath"))
 
     ## Fixes colnames after group operation
     name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
@@ -751,19 +752,22 @@ predict.fhcrc <- function(object, scenarios=NULL,
     }
 }
 
-plot.fhcrc <- function(x,
-                       type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
-                       plot.type="l", add=FALSE, xlab="Age (years)", ylab=NULL, ...) {
+plot.fhcrc <- function(x, type=c("incidence.rate", "testing.rate",
+                                 "biopsy.rate", "metastasis.rate",
+                                 "pc.mortality.rate",
+                                 "allcause.mortality.rate"),
+                       plot.type="l", add=FALSE, xlab="Age (years)",
+                       ylab=NULL, ...) {
     type <- match.arg(type)
     if (is.null(ylab)) {ylab <- switch(type,
-                                       psa="PSA rates per 1000",
-                                       biopsies="Biopsies per 1000",
-                                       incidence="Prostate cancer incidence rates per 100,000",
-                                       metastatic="Metastatic onset per 100,000",
-                                       cancerdeath="Cancer mortality rates per 100,000",
-                                       alldeath="All cause mortality rates per 100,000")}
+                                       incidence.rate="Prostate cancer incidence rates per 100,000",
+                                       testing.rate="PSA rates per 1000",
+                                       biopsy.rate="Biopsies per 1000",
+                                       metastasis.rate="Metastatic onset per 100,000",
+                                       pc.mortality.rate="Cancer mortality rates per 100,000",
+                                       allcause.mortality.rate="All cause mortality rates per 100,000")}
     rates <- predict(object = x, type = type)
-    rates$rate = rates$rate*switch(type, psa=1000,biopsies=1000,incidence=1e5, metastatic=1e5,cancerdeath=1e5,alldeath=1e5)
+    rates$rate = rates$rate*switch(type, testing.rate=1000, biopsy.rate=1000, incidence.rate=1e5, metastasis.rate=1e5,pc.mortality.rate=1e5,allcause.mortality.rate=1e5)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlab=xlab, ylab=ylab, ...) else lines(rate~age, data=rates,  ...)
 }
 lines.fhcrc <- function(x,...) {

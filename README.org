@@ -44,7 +44,7 @@ The microsimulation requires [[http://www.rcpp.org/][Rcpp]] and [[http://www.boo
 required, way of installing github-packages in R is to use
 [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]]. Since both of the dependencies and [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] are available on
 [[https://cran.r-project.org/][CRAN]] just run the following in R.
-#+BEGIN_SRC R :eval no :exports code
+#+BEGIN_SRC R :exports code :eval never
   install.packages("BH")
   install.packages("Rcpp")
   install.packages("devtools")
@@ -52,7 +52,7 @@ required, way of installing github-packages in R is to use
 
 + 2a Installation with devtools: ::
 To install the microsimulation using [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]] just run the following in R:
-#+BEGIN_SRC R :eval no :exports code
+#+BEGIN_SRC R :exports code :eval never
   require(devtools)
   install_github("mclements/microsimulation")
 #+END_SRC
@@ -60,12 +60,12 @@ To install the microsimulation using [[https://cran.r-project.org/web/packages/d
 # Some thing OS-specific?
 If you prefer the shell over [[https://cran.r-project.org/web/packages/devtools/README.html][devtools]], just run the following to download the
 microsimulation R-package:
-#+BEGIN_SRC shell :eval no :exports code
+#+BEGIN_SRC shell :exports code :eval never
   git clone https://github.com/mclements/microsimulation.git
 #+END_SRC
 
 To install the microsimulation R-package run this in your shell:
-#+BEGIN_SRC shell :eval no :exports code
+#+BEGIN_SRC shell :exports code :eval never
   R CMD INSTALL path_to_microsimulation
 #+END_SRC
 
@@ -74,7 +74,7 @@ To install the microsimulation R-package run this in your shell:
 #+HEADERS: :var reRunSimulation = 0
 #+BEGIN_SRC R :exports none
   require(microsimulation)
-  myFile <- file.path("inst","sim.RData")
+  myFile <- file.path("~/Dropbox/microsimulation_runs","README_sim.RData")
 
   if (reRunSimulation || !file.exists(myFile)){
       sim1 <- callFhcrc(n=1e6, mc.cores=3, screen="screenUptake")
@@ -110,7 +110,7 @@ ages.
 (concat "#> "(mapconcat 'identity (split-string result "\n") "\n#> "))
 #+end_src
 
-#+BEGIN_SRC R :post commentify(*this*) :results output :exports both :eval never
+#+BEGIN_SRC R :post commentify(*this*) :results output :exports both :eval never-export
   require(microsimulation)
   sim1 <- callFhcrc(n=1e6, mc.cores=3, screen="screenUptake")
 #+END_SRC
@@ -120,37 +120,37 @@ ages.
 : #> 144.180   0.180  91.173
 
 * Results
-** Type of outcomes: prevalence, event rates and rate ratios
+** Type of outcome: prevalence, event rates or rate ratios
 Some of the more commonly used outcomes are provided through a =plot=
 and a =predict= function. The available outcomes are:
 + =prevalence= - proportion of a population in the groups described below
-+ =incidence= - rate of /clinical diagnosis/ & /screen initiated diagnosis/
-+ =psa= - rate of /screening tests/
-+ =biopsies= - rate of /clinical diagnostic biopsies/ & /screen initiated biopsies/
-+ =metastatic= - rate of natural history transitions to /metastatic/ cancer
-+ =cancerdeath= - rate of /cancer deaths/
-+ =alldeath= - rate of /cancer deaths/ & /other deaths/
-+ =incidence.rate.ratio= - rate ratio of /clinical diagnosis/ & /screen initiated diagnosis/
-+ =psa.rate.ratio= - rate ratio of /screening tests/
-+ =biopsies.rate.ratio= - rate ratio of /clinical diagnostic biopsies/ & /screen initiated biopsies/
-+ =metastatic.rate.ratio= - rate ratio of natural history transitions to /metastatic/ cancer
-+ =cancerdeath.rate.ratio= - rate ratio of /cancer deaths/
-+ =alldeath.rate.ratio= - rate ratio of /cancer deaths/ & /other deaths/
++ =incidence.rate= - rate of /clinical diagnosis/ & /screen initiated diagnosis/
++ =testing.rate= - rate of /screening tests/ (e.g. psa tests)
++ =biopsy.rate= - rate of /clinical diagnostic biopsies/ & /screen initiated biopsies/
++ =metastasis.rate= - rate of natural history transitions to /metastatic/ cancer
++ =pc.mortality.rate= - rate of /cancer deaths/
++ =allcause.mortality.rate= - rate of /cancer deaths/ & /other deaths/
++ =incidence.rr= - rate ratio of /clinical diagnosis/ & /screen initiated diagnosis/
++ =testing.rr= - rate ratio of /screening tests/ (e.g. psa tests)
++ =biopsy.rr= - rate ratio of /clinical diagnostic biopsies/ & /screen initiated biopsies/
++ =metastasis.rr= - rate ratio of natural history transitions to /metastatic/ cancer
++ =pc.mortality.rr= - rate ratio of /cancer deaths/
++ =allcause.mortality.rr= - rate ratio of /cancer deaths/ & /other deaths/
 To construct an outcome not listed above you can use the objects in
 ~sim1$summary~ to construct them.
 
-To simply plot e.g. the /incidence rate/ of the simulated screening scenario
-the following line can be used:
+To simply plot e.g. the /incidence rate/ of the simulated screening
+scenario the following line can be used:
 #+BEGIN_SRC R :file inst/inc.png :results output graphics :exports both
-  plot(sim1, type = "incidence", xlab="Age (years)", xlim=c(40, 90))
+  plot(sim1, type = "incidence.rate", xlab="Age (years)", xlim=c(40, 90))
 #+END_SRC
 
 #+RESULTS:
 [[file:inst/inc.png]]
 
 ** Groups in natural and clinical history
-The =predict= function returns various outcomes (rate, rate ratios
-or prevalence) as described above. It can also be used to predict
+The =predict= function returns various outcomes (/rate/, /rate ratios/
+or /prevalence/) as described above. It can also be used to predict
 outcomes by a number of subgroups. The available subgroups are two
 time-scales and four natural history categories:
 
@@ -165,7 +165,7 @@ Below is the PSA testing rate by calendar period predicted and
 displayed with =ggplot=.
 #+BEGIN_SRC R :file inst/psa.png :results output graphics :exports both
   require(ggplot2)
-  ggplot(predict(sim1, group = "year", type="psa"),aes(x=year, y=rate)) +
+  ggplot(predict(sim1, group = "year", type="testing.rate"),aes(x=year, y=rate)) +
       xlim(1990, 2020) + geom_line() +
       ylab("PSA testing rate") + xlab("Calendar period (years)")
 #+END_SRC
@@ -198,7 +198,7 @@ described earlier. Below is the incidence rate with the /current
 uptake/ pattern compared with the hypothetical /no screening/
 scenario.
 
-#+BEGIN_SRC R :post commentify(*this*) :results output :exports both :eval never
+#+BEGIN_SRC R :post commentify(*this*) :results output :exports both :eval never-export
   sim2 <- callFhcrc(n=1e6, mc.cores=3, screen="noScreening")
 #+END_SRC
 
@@ -216,11 +216,14 @@ scenario.
 #+RESULTS:
 [[file:inst/scen.png]]
 
-** Rate ratios
+** Rate ratios and reference scenarios
 If you which to investigate e.g. the /prostate cancer mortality rate
 ratio/ between the /current uptake pattern/ and the /no screening/
-scenarios simply use =cancerdeath.rate.ratio= as =type= and note that
-the first argument will be used for the reference rate.
+scenarios simply use =pc.mortality.rr= as
+=type=. Note that the first argument (expects a simulation object)
+will be used for the reference rate against which the rates in the
+second argument (expects a simulation object or a list of simulation
+objects) will be compared.
 
 When we look at rare events such at prostate cancer death the outcomes
 appear a little jumpy due to the stochasticity of the simulation. When
@@ -228,7 +231,7 @@ we look at rate ratios this effect will get even more prominent. A
 larger simulation would reduce the Monte-Carlo variation, but for now
 lets settle with smoothing and focus on the ages with most events.
 #+BEGIN_SRC R :file inst/RR.png :results output graphics :exports both
-  ggplot(predict(sim2, sim1, group = "age", type = "cancerdeath.rate.ratio"),
+  ggplot(predict(sim2, sim1, group = "age", type = "pc.mortality.rr"),
          aes(x=age, y=rate.ratio, colour = scenario)) +
       geom_smooth(span=5) + xlim(60, 85) +
       ylab("Prostate cancer mortality rate ratio") + xlab("Age (years)")
