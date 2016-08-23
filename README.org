@@ -146,6 +146,7 @@ the following line can be used:
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/inc.png]]
 
 ** Groups in natural and clinical history
 The =predict= function returns various outcomes (rate, rate ratios
@@ -170,6 +171,7 @@ displayed with =ggplot=.
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/psa.png]]
 
 
 The outcomes can also be predicted by several subgroups at once. Plotted
@@ -212,6 +214,7 @@ scenario.
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/scen.png]]
 
 ** Rate ratios
 If you which to investigate e.g. the /prostate cancer mortality rate
@@ -232,6 +235,7 @@ lets settle with smoothing and focus on the ages with most events.
 #+END_SRC
 
 #+RESULTS:
+[[file:inst/RR.png]]
 
 # Local Variables:
 # org-confirm-babel-evaluate: nil
