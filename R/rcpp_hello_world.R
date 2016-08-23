@@ -649,27 +649,36 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
 ## allow for ceiling on groups to allow for other than yearly rates
 ## for the time
 predict.fhcrc <- function(object, scenarios=NULL,
-                          type= c("incidence", "psa", "biopsies",
-                                  "metastatic", "cancerdeath",
-                                  "alldeath"), group = "age", ...) {
+                          type = "incidence", group = "age", ...) {
     if(!inherits(object,"fhcrc")) stop("Expecting object to be an fhcrc object")
     if(!(is.null(scenarios) || all(sapply(scenarios,inherits,"fhcrc")) || inherits(object,"fhcrc")))
         stop("Expecting scenarios is NULL, a fhcrc object or a list of fhcrc objects")
-    type <- match.arg(type)
+
+    ## Stripping of potential rate ratio option before matching
+    abbr_type <- match.arg(sub(".?rr$|.?rate.?ratio$",
+                               "", type, ignore.case = TRUE),
+                           c("incidence", "psa", "biopsies",
+                             "metastatic", "cancerdeath", "alldeath",
+                             "prevalence"))
+
+    ## Allowing for several groups
     group <- match.arg(group,
                        c("state", "grade", "dx", "psa", "age", "year"),
                        several.ok = TRUE)
-    event_types <- switch(type,
-                          incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
-                          psa="toScreen",
-                          biopsies=c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
-                          metastatic="toMetastatic",
-                          cancerdeath="toCancerDeath",
-                          alldeath=c("toCancerDeath", "toOtherDeath"))
+
+    event_types <- switch(abbr_type,
+                          incidence = c("toClinicalDiagnosis", "toScreenDiagnosis"),
+                          psa = "toScreen",
+                          biopsies = c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
+                          metastatic = "toMetastatic",
+                          cancerdeath = "toCancerDeath",
+                          alldeath = c("toCancerDeath", "toOtherDeath"))
+
+    ## Fixes colnames after group operation
+    name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
 
     ## Calculates rates of specific events by specified groups
     calc_rate <- function(object, event_types, group){
-        name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
         pt <- with(object$summary$pt,
                    name_grp(grp_apply(pt,
                                       lapply(as.list(group), function(x) eval(parse(text = x))),
@@ -677,7 +686,8 @@ predict.fhcrc <- function(object, scenarios=NULL,
         ## temp fix: no events causes angst
         ## todo: if subset has no dim replace with zeros
         if(!any(object$summary$event$event %in% event_types)) {
-            stop(paste("The event(s)", paste(event_types, collapse = ", "), "was not found in the", object$screen, "scenario"))
+            stop(paste("The event(s)", paste(event_types, collapse = ", "),
+                       "was not found in the", object$screen, "scenario"))
         }
         events <- with(subset(object$summary$events, event %in% event_types),
                        name_grp(grp_apply(n,
@@ -692,19 +702,53 @@ predict.fhcrc <- function(object, scenarios=NULL,
             rm(Freq.x,Freq.y)})
     }
 
-    ## Calculate rate for fhcrc objects in a list and place object
-    ## rates as rows and append scenario name as column
-    predict_scenarios <- function(scenarios, event_types, group) {
-        do.call(rbind, lapply(scenarios,
-        {function(object, event_types, group)
-            cbind(calc_rate(object, event_types, group), scenario = object$screen)}, event_types, group))
+    ## Calculate prevalences by specified groups
+    calc_prev <- function(object, group){
+        within(with(object$summary$prev,
+                    name_grp(
+                        grp_apply(count,
+                                  lapply(as.list(group),
+                                         function(x) eval(parse(text = x))), sum))),{
+                                             if("age" %in% group) age <- as.numeric(levels(age))[age] #important factor conversion
+                                             if("year" %in% group) year <- as.numeric(levels(year))[year] #important factor conversion
+                                             prevalence <- Freq/object$n
+                                             rm("Freq")
+                                         })
     }
 
-    ## Add reference object to scenario list for plain rates, make
-    ## sure object and scenarios are lists and remove duplicates
-    all_unique_scenarios <- unique(c(list(object),
-                                     if(inherits(scenarios, "fhcrc")) list(scenarios) else scenarios))
-    predict_scenarios(all_unique_scenarios, event_types, group)
+    ## Calculates the outcome in the passed function for all
+    ## simulation objects in the 'scenarios' list. Then the object
+    ## outcome (e.g. rates or prev) are for the scenarios are added as
+    ## rows and the scenario name as a column.
+    predict_scenarios <- function(scenarios, calc_outcome, ...) {
+        do.call(rbind, lapply(scenarios,
+        {function(object, ...)
+            cbind(calc_outcome(object, ...), scenario = object$screen)}, ...))
+    }
+
+    ## Input checks allow for scenarios to be a single fhcrc object or
+    ## list of fhcrc objects. Now make sure scenarios is a list.
+    if(inherits(scenarios, "fhcrc")) {scenarios <- list(scenarios)}
+
+    ## Rate-ratio if type ends with rate.ratio or RR
+    if(grepl(".?rate.?ratio$|.?rr$", type, ignore.case = TRUE)){
+        scenario_rates <- predict_scenarios(unique(scenarios), calc_rate, event_types, group)
+        reference_rate <- predict_scenarios(list(object), calc_rate, event_types, group)
+        within(merge(scenario_rates, reference_rate, by = group),{
+            scenario <- scenario.x
+            rate.ratio <- rate.x/rate.y
+            rate.ratio[!is.finite(rate.ratio)] <- NaN
+            rm(list=ls(pattern=".x$|.y$"))})
+
+        ## Prevalence if type ends with rate.ratio or RR
+    } else if(grepl(".?prev$|.?prevalence$", type, ignore.case = TRUE)){
+        predict_scenarios(unique(c(list(object),scenarios)), calc_prev, group)
+
+        ## Defauls to plain rates. If reference object exist add it to
+        ## scenario list and remove duplicates.
+    }else{
+        predict_scenarios(unique(c(list(object),scenarios)), calc_rate, event_types, group)
+    }
 }
 
 plot.fhcrc <- function(x,
