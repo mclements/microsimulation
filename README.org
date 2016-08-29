@@ -208,7 +208,7 @@ scenario.
 
 
 #+BEGIN_SRC R :file inst/scen.png :results output graphics :exports both
-  ggplot(predict(sim1, sim2, group= "age", type = "incidence"),
+  ggplot(predict(sim1, sim2, group= "age", type = "incidence.rate"),
             aes(x=age, y=rate, colour = scenario)) + geom_line() + xlim(50, 85) +
       ylab("Incidence rate") + xlab("Age (years)")
 #+END_SRC
