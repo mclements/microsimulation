@@ -648,11 +648,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       scheduleUtilityChange(now(), "Opportunistic PSA");
     }
     compliance = formal_compliance ?
-
-      tableFormalBiopsyCompliance(bounds<double>(psa,4.0,10.0),
-				  bounds<double>(age,55,75)) :
-      tableOpportunisticBiopsyCompliance(bounds<double>(psa,4.0,10.0),
-					 bounds<double>(age,55,75));
+      tableFormalBiopsyCompliance(bounds<double>(psa,3.0,10.0),
+				  bounds<double>(age,40,80)) :
+      tableOpportunisticBiopsyCompliance(bounds<double>(psa,3.0,10.0),
+					 bounds<double>(age,40,80));
     // bool positive_test =
     //   (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
     //   ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
