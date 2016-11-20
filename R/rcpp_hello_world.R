@@ -188,10 +188,10 @@ FhcrcParameters <- list(
     sebeta2=c(0.0913,0.3968, 0.0), # base::grade
     rev_mubeta2=c(0.051, 0.129, 0.1678), # ext::grade
     rev_sebeta2=c(0.064, 0.087, 0.3968), # ext::grade
-    alpha7=0.01321145,
-    beta7=0.01577244,
-    alpha8=-4.60488625,
-    beta8=0.08851268,
+    alpha7=0.01241490,
+    beta7=0.01543417,
+    alpha8=-4.60517081,
+    beta8=0.08770374,
     ## mubeta2.scale=1.0, # cf. 2.1
     ## beta.rho=0.62,
     c_txlt_interaction = 1.0,
@@ -250,14 +250,14 @@ FhcrcParameters <- list(
         0.430279, 0.463636, 0.491275, 0.549738, 0.354545, 0.553846, 0.461538,
         0.782609),
     hr_locoregional=transform(expand.grid(age=c(50,60,70),ext_grade=0:2,psa10=0:1),
-                              hr=c(0.6100735, 0.9266221, 2.3446089,
-                                   3.7805773, 2.8470618, 3.9450387,
-                                   1.2121090, 0.9973166, 1.4073336,
-                                   0.8580346, 0.9372795, 1.3730212,
-                                   5.8262248, 3.0816591, 2.6666802,
-                                   0.7861847, 0.8186891, 0.7761993)),
+                              hr=c(0.4852788, 0.7309101, 1.5703646,
+                                   3.1780491, 2.2476271, 3.1391895,
+                                   1.2743633, 0.9972281, 1.2596770,
+                                   1.0367029, 0.9528743, 1.3431982,
+                                   7.3491808, 3.4922388, 2.8214167,
+                                   0.7880672, 0.7624732, 0.7827559)),
     hr_metastatic=data.frame(age=c(50, 60, 70),
-                             hr=c(0.8436837, 0.9629306, 0.8117210)),
+                             hr=c(0.8325735, 0.9403021, 0.7998358)),
     cost_parameters = c("Invitation" = 50,
                         "Formal PSA" = 130,
                         "Formal panel" = 730,
@@ -313,10 +313,12 @@ FhcrcParameters <- list(
 IHE <- list(prtx=data.frame(Age=50.0,DxY=1973.0,G=1:2,CM=0.6,RP=0.26,RT=0.14)) ## assumed constant across ages and periods
 ParameterNV <- FhcrcParameters[sapply(FhcrcParameters,class)=="numeric" & sapply(FhcrcParameters,length)==1]
 ## ParameterIV <- FhcrcParameters[sapply(FhcrcParameters,class)=="integer" & sapply(FhcrcParameters,length)==1]
-swedenOpportunisticBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
-                                compliance=c(0.7, 0.75, 0.6, 0.7, 0.4, 0.5))
-swedenFormalBiopsyCompliance <- cbind(expand.grid(psa=c(4,10),age=c(50,60,70)),
-                                compliance=0.9)
+swedenOpportunisticBiopsyCompliance <- data.frame(
+    psa = c(3, 5, 10, 3, 5, 10, 3, 5, 10, 3, 5, 10, 3, 5, 10),
+    age = c(40, 40, 40, 50, 50, 50, 60, 60, 60, 70, 70, 70, 80, 80, 80),
+    compliance = c(0.3764045, 0.5680751, 0.7727273, 0.3110770, 0.5726548, 0.7537372, 0.2385155, 0.4814588, 0.6929770, 0.1754264, 0.3685056, 0.5602030, 0.1629213, 0.2697368, 0.5010052))
+swedenFormalBiopsyCompliance <- cbind(expand.grid(psa=c(3,5,10),age=seq(40,80,10)),
+                                compliance=0.858)
 stockholmTreatment <-
     data.frame(DxY=2008,
                Age=c(50,50,50,55,55,55,60,60,60,65,65,65,70,70,70,75,75,75,80,80,80,85,85,85),
@@ -647,27 +649,37 @@ grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
 ## allow for ceiling on groups to allow for other than yearly rates
 ## for the time
 predict.fhcrc <- function(object, scenarios=NULL,
-                          type= c("incidence", "psa", "biopsies",
-                                  "metastatic", "cancerdeath",
-                                  "alldeath"), group = "age", ...) {
+                          type = "incidence.rate", group = "age", ...) {
     if(!inherits(object,"fhcrc")) stop("Expecting object to be an fhcrc object")
     if(!(is.null(scenarios) || all(sapply(scenarios,inherits,"fhcrc")) || inherits(object,"fhcrc")))
         stop("Expecting scenarios is NULL, a fhcrc object or a list of fhcrc objects")
-    type <- match.arg(type)
+
+    ## Stripping of potential rate ratio option before matching
+    abbr_type <- match.arg(sub(".?rr$|.?rate.?ratio$",
+                               "", type, ignore.case = TRUE),
+                           c("incidence.rate", "testing.rate",
+                             "biopsy.rate", "metastasis.rate",
+                             "pc.mortality.rate",
+                             "allcause.mortality.rate", "prevalence"))
+
+    ## Allowing for several groups
     group <- match.arg(group,
                        c("state", "grade", "dx", "psa", "age", "year"),
                        several.ok = TRUE)
-    event_types <- switch(type,
-                          incidence=c("toClinicalDiagnosis", "toScreenDiagnosis"),
-                          psa="toScreen",
-                          biopsies=c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
-                          metastatic="toMetastatic",
-                          cancerdeath="toCancerDeath",
-                          alldeath=c("toCancerDeath", "toOtherDeath"))
+
+    event_types <- switch(abbr_type,
+                          incidence.rate = c("toClinicalDiagnosis", "toScreenDiagnosis"),
+                          testing.rate = "toScreen",
+                          biopsy.rate = c("toClinicalDiagnosticBiopsy", "toScreenInitiatedBiopsy"),
+                          metastasis.rate = "toMetastatic",
+                          pc.mortality.rate = "toCancerDeath",
+                          allcause.mortality.rate = c("toCancerDeath", "toOtherDeath"))
+
+    ## Fixes colnames after group operation
+    name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
 
     ## Calculates rates of specific events by specified groups
     calc_rate <- function(object, event_types, group){
-        name_grp <- function(x) {names(x)[grep("^Var[0-9]+$", names(x))] <- group; x}
         pt <- with(object$summary$pt,
                    name_grp(grp_apply(pt,
                                       lapply(as.list(group), function(x) eval(parse(text = x))),
@@ -675,7 +687,8 @@ predict.fhcrc <- function(object, scenarios=NULL,
         ## temp fix: no events causes angst
         ## todo: if subset has no dim replace with zeros
         if(!any(object$summary$event$event %in% event_types)) {
-            stop(paste("The event(s)", paste(event_types, collapse = ", "), "was not found in the", object$screen, "scenario"))
+            stop(paste("The event(s)", paste(event_types, collapse = ", "),
+                       "was not found in the", object$screen, "scenario"))
         }
         events <- with(subset(object$summary$events, event %in% event_types),
                        name_grp(grp_apply(n,
@@ -690,34 +703,71 @@ predict.fhcrc <- function(object, scenarios=NULL,
             rm(Freq.x,Freq.y)})
     }
 
-    ## Calculate rate for fhcrc objects in a list and place object
-    ## rates as rows and append scenario name as column
-    predict_scenarios <- function(scenarios, event_types, group) {
-        do.call(rbind, lapply(scenarios,
-        {function(object, event_types, group)
-            cbind(calc_rate(object, event_types, group), scenario = object$screen)}, event_types, group))
+    ## Calculate prevalences by specified groups
+    calc_prev <- function(object, group){
+        within(with(object$summary$prev,
+                    name_grp(
+                        grp_apply(count,
+                                  lapply(as.list(group),
+                                         function(x) eval(parse(text = x))), sum))),{
+                                             if("age" %in% group) age <- as.numeric(levels(age))[age] #important factor conversion
+                                             if("year" %in% group) year <- as.numeric(levels(year))[year] #important factor conversion
+                                             prevalence <- Freq/object$n
+                                             rm("Freq")
+                                         })
     }
 
-    ## Add reference object to scenario list for plain rates, make
-    ## sure object and scenarios are lists and remove duplicates
-    all_unique_scenarios <- unique(c(list(object),
-                                     if(inherits(scenarios, "fhcrc")) list(scenarios) else scenarios))
-    predict_scenarios(all_unique_scenarios, event_types, group)
+    ## Calculates the outcome in the passed function for all
+    ## simulation objects in the 'scenarios' list. Then the object
+    ## outcome (e.g. rates or prev) are for the scenarios are added as
+    ## rows and the scenario name as a column.
+    predict_scenarios <- function(scenarios, calc_outcome, ...) {
+        do.call(rbind, lapply(scenarios,
+        {function(object, ...)
+            cbind(calc_outcome(object, ...), scenario = object$screen)}, ...))
+    }
+
+    ## Input checks allow for scenarios to be a single fhcrc object or
+    ## list of fhcrc objects. Now make sure scenarios is a list.
+    if(inherits(scenarios, "fhcrc")) {scenarios <- list(scenarios)}
+
+    ## Rate-ratio if type ends with rate.ratio or RR
+    if(grepl(".?rate.?ratio$|.?rr$", type, ignore.case = TRUE)){
+        scenario_rates <- predict_scenarios(unique(scenarios), calc_rate, event_types, group)
+        reference_rate <- predict_scenarios(list(object), calc_rate, event_types, group)
+        within(merge(scenario_rates, reference_rate, by = group),{
+            scenario <- scenario.x
+            rate.ratio <- rate.x/rate.y
+            rate.ratio[!is.finite(rate.ratio)] <- NaN
+            rm(list=ls(pattern=".x$|.y$"))})
+
+        ## Prevalence if type ends with rate.ratio or RR
+    } else if(grepl(".?prev$|.?prevalence$", type, ignore.case = TRUE)){
+        predict_scenarios(unique(c(list(object),scenarios)), calc_prev, group)
+
+        ## Defauls to plain rates. If reference object exist add it to
+        ## scenario list and remove duplicates.
+    }else{
+        predict_scenarios(unique(c(list(object),scenarios)), calc_rate, event_types, group)
+    }
 }
 
-plot.fhcrc <- function(x,
-                       type=c("psa", "biopsies", "incidence", "metastatic", "cancerdeath", "alldeath"),
-                       plot.type="l", add=FALSE, xlab="Age (years)", ylab=NULL, ...) {
+plot.fhcrc <- function(x, type=c("incidence.rate", "testing.rate",
+                                 "biopsy.rate", "metastasis.rate",
+                                 "pc.mortality.rate",
+                                 "allcause.mortality.rate"),
+                       plot.type="l", add=FALSE, xlab="Age (years)",
+                       ylab=NULL, ...) {
     type <- match.arg(type)
     if (is.null(ylab)) {ylab <- switch(type,
-                                       psa="PSA rates per 1000",
-                                       biopsies="Biopsies per 1000",
-                                       incidence="Prostate cancer incidence rates per 100,000",
-                                       metastatic="Metastatic onset per 100,000",
-                                       cancerdeath="Cancer mortality rates per 100,000",
-                                       alldeath="All cause mortality rates per 100,000")}
+                                       incidence.rate="Prostate cancer incidence rates per 100,000",
+                                       testing.rate="PSA rates per 1000",
+                                       biopsy.rate="Biopsies per 1000",
+                                       metastasis.rate="Metastatic onset per 100,000",
+                                       pc.mortality.rate="Cancer mortality rates per 100,000",
+                                       allcause.mortality.rate="All cause mortality rates per 100,000")}
     rates <- predict(object = x, type = type)
-    rates$rate = rates$rate*switch(type, psa=1000,biopsies=1000,incidence=1e5, metastatic=1e5,cancerdeath=1e5,alldeath=1e5)
+    rates$rate = rates$rate*switch(type, testing.rate=1000, biopsy.rate=1000, incidence.rate=1e5, metastasis.rate=1e5,pc.mortality.rate=1e5,allcause.mortality.rate=1e5)
     if (!add) plot(rate~age, data=rates, type=plot.type, xlab=xlab, ylab=ylab, ...) else lines(rate~age, data=rates,  ...)
 }
 lines.fhcrc <- function(x,...) {
