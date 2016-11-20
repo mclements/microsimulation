@@ -92,12 +92,13 @@ namespace fhcrc_example {
 
   bool debug = false;
 
-  typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
-  typedef Table<boost::tuple<double,int,int>,double> TableLocoHR; // Age, G, PSA10+
+  typedef std::pair<double,double> Double;
+  typedef Table<double,double,int,double> TablePrtx; // Age, DxY, G
+  typedef Table<double,int,int,double> TableLocoHR; // Age, G, PSA10+
   typedef Table<double,double> TableMetastaticHR; // Age
-  typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
-  typedef Table<pair<double,double>,double> TableBiopsyCompliance;
-  typedef Table<pair<double,double>,double> TableDDD; // as per TableBiopsyCompliance
+  typedef Table<int,double,double,int,double> TablePradt;
+  typedef Table<double,double,double> TableBiopsyCompliance;
+  typedef Table<double,double,double> TableDDD; // as per TableBiopsyCompliance
   typedef map<int,NumericInterpolate> H_dist_t;
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
   TableLocoHR hr_locoregional;
@@ -219,23 +220,26 @@ namespace fhcrc_example {
   }
 
   treatment_t FhcrcPerson::calculate_treatment(double u, double age, double year) {
-    TablePrtx::key_type key;
-    if (bparameter["stockholmTreatment"])
-       key =
-	 TablePrtx::key_type(bounds<double>(age,50.0,85.0),
-			     bounds<double>(year,2008.0,2012.0),
-			     int(ext_grade));
-    else // original FHCRC table prtx
-      key =
-	TablePrtx::key_type(bounds<double>(age,50.0,79.0),
-			    bounds<double>(year,1973.0,2004.0),
-			    int(grade));
-      double pCM = prtxCM(key);
-      double pRP = prtxRP(key);
-      treatment_t tx = (u<pCM) ? CM :
-	           (u<pCM+pRP) ? RP : RT;
-      if (debug) Rprintf("id=%i, Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%i, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",id,age,year,state,grade,(int)tx,u,pCM,pRP);
-      return tx;
+    double pCM, pRP;
+    if (bparameter["stockholmTreatment"]) {
+       pCM = prtxCM(bounds<double>(age,50.0,85.0),
+		    bounds<double>(year,2008.0,2012.0),
+		    int(ext_grade));
+       pRP = prtxRP(bounds<double>(age,50.0,85.0),
+		    bounds<double>(year,2008.0,2012.0),
+		    int(ext_grade));
+    } else { // original FHCRC table prtx
+       pCM = prtxCM(bounds<double>(age,50.0,79.0),
+		    bounds<double>(year,1973.0,2004.0),
+		    int(grade));
+       pRP = prtxRP(bounds<double>(age,50.0,79.0),
+		    bounds<double>(year,1973.0,2004.0),
+		    int(grade));
+    }
+    treatment_t tx = (u<pCM) ? CM :
+      (u<pCM+pRP) ? RP : RT;
+    if (debug) Rprintf("id=%i, Age=%3.0f, DxY=%4.0f, stage=%i, grade=%i, tx=%i, u=%8.6f, pCM=%8.6f, pRP=%8.6f\n",id,age,year,state,grade,(int)tx,u,pCM,pRP);
+    return tx;
   }
 
   /** @brief calculate survival taking account of screening and treatment.
@@ -258,7 +262,7 @@ namespace fhcrc_example {
     bool localised = (age_diag < age_m);
     double mort_hr;
     if (localised)
-      mort_hr = hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, psamean(age_diag)>10 ? 1 : 0));
+      mort_hr = hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext_grade, psamean(age_diag)>10 ? 1 : 0);
     else
       mort_hr = hr_metastatic(age_diag);
     return mort_hr;
@@ -286,10 +290,9 @@ namespace fhcrc_example {
   bool FhcrcPerson::onset() { return now() <= this->t0+35.0; }
 
   void FhcrcPerson::opportunistic_rescreening(double psa) {
-    TableDDD::key_type key = TableDDD::key_type(bounds<double>(now(),30.0,90.0),psa);
-    double prescreened = 1.0 - rescreen_cure(key);
-    double shape = rescreen_shape(key);
-    double scale = rescreen_scale(key);
+    double prescreened = 1.0 - rescreen_cure(bounds<double>(now(),30.0,90.0),psa);
+    double shape = rescreen_shape(bounds<double>(now(),30.0,90.0),psa);
+    double scale = rescreen_scale(bounds<double>(now(),30.0,90.0),psa);
     double u = R::runif(0.0,1.0);
     double t = now() + R::rweibull(shape,scale);
     if (u<prescreened) {
@@ -326,7 +329,6 @@ namespace fhcrc_example {
       Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
   }
 
-  typedef std::pair<double,double> Double;
   Double rbinorm(Double mean, Double sd, double rho) {
     double z1 = R::rnorm(0.0,1.0);
     double z2 = R::rnorm(0.0,1.0);
@@ -646,10 +648,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       scheduleUtilityChange(now(), "Opportunistic PSA");
     }
     compliance = formal_compliance ?
-      tableFormalBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
-						bounds<double>(age,55,75))) :
-      tableOpportunisticBiopsyCompliance(pair<double,double>(bounds<double>(psa,4.0,10.0),
-						bounds<double>(age,55,75)));
+      tableFormalBiopsyCompliance(bounds<double>(psa,4.0,10.0),
+				  bounds<double>(age,55,75)) :
+      tableOpportunisticBiopsyCompliance(bounds<double>(psa,4.0,10.0),
+					 bounds<double>(age,55,75));
     // bool positive_test =
     //   (!panel && msg->kind == toScreen && psa >= parameter["psaThreshold"]) ? true :
     //   ( panel && msg->kind == toScreen && biomarker >= parameter["BPThreshold"]) ? true :
@@ -697,16 +699,21 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 	case mixed_screening:
 	case stockholm3_goteborg:
 	case goteborg:
-	  if (screen != mixed_screening || organised) {
+	  {
+	    bool mixed_opportunistic = false;
 	    if (now() >= parameter["start_screening"] && now()<parameter["stop_screening"]) {
 	      if (psa<1.0 && now()+4.0<=parameter["stop_screening"])
 		scheduleAt(now() + 4.0, toScreen);
 	      else if (psa>=1.0 && now()+2.0<=parameter["stop_screening"])
 		scheduleAt(now() + 2.0, toScreen);
 	      else if (screen == mixed_screening) {
-		organised = false;
-		opportunistic_rescreening(psa); // start opportunistic rescreening
+		opportunistic_rescreening(psa); // older men should start opportunistic rescreening
+		mixed_opportunistic = true;
 	      }
+	      // else do nothing
+	    }
+	    else if (screen == mixed_screening && !mixed_opportunistic) {
+	      opportunistic_rescreening(psa); // start opportunistic rescreening
 	    }
 	  }
 	  break;
@@ -809,10 +816,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       if (tx == RT) scheduleAt(now(), toRT);
       // check for ADT
       double pADT =
-	pradt(TablePradt::key_type(tx,
-				   bounds<double>(now(),50,79),
-				   bounds<double>(year,1973,2004),
-				   grade));
+	pradt(tx,
+	      bounds<double>(now(),50,79),
+	      bounds<double>(year,1973,2004),
+	      grade);
       if (u_adt < pADT)  {
 	adt = true;
 	scheduleAt(now(), toADT);
@@ -1007,9 +1014,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   NumericVector
     sd_times = df_survival_dist["Time"],
     sd_survivals = df_survival_dist["Survival"];
-  typedef pair<double,double> dpair;
   for (int i=0; i<sd_grades.size(); ++i)
-    H_dist[sd_grades[i]].push_back(dpair(sd_times[i],-log(sd_survivals[i])));
+    H_dist[sd_grades[i]].push_back(Double(sd_times[i],-log(sd_survivals[i])));
   for (H_dist_t::iterator it_sd = H_dist.begin(); it_sd != H_dist.end(); it_sd++)
     it_sd->second.prepare();
   // now we can use: H_dist[grade].invert(-log(u))
@@ -1024,7 +1030,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   for (int i=0; i<sl_grades.size(); ++i) {
     H_local_age_set.insert(sl_ages[i]);
     H_local[H_local_t::key_type(sl_ages[i],sl_grades[i])].push_back
-      (dpair(sl_times[i],-log(sl_survivals[i])));
+      (Double(sl_times[i],-log(sl_survivals[i])));
   }
   // prepare the map values for lookup
   for (H_local_t::iterator it_sl = H_local.begin();
@@ -1038,20 +1044,20 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
     Rprintf("SurvTime: %f\n",H_local[H_local_t::key_type(*H_local_age_set.lower_bound(65.0),0)].invert(-log(0.5)));
     Rprintf("SurvTime: %f\n",exp(-H_dist[0].approx(5.140980)));
     Rprintf("SurvTime: %f\n",H_dist[0].invert(-log(0.5)));
-    // Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(pair<double,double>(bounds<double>(1.0,4.0,10.0), bounds<double>(100.0,55,75))));
+    // Rprintf("Biopsy compliance: %f\n",tableBiopsyCompliance(bounds<double>(1.0,4.0,10.0), bounds<double>(100.0,55,75)));
     Rprintf("Interp for grade 6/7 (expecting approx 0.3): %f\n",interp_prob_grade7.approx(0.143));
-    Rprintf("prtxCM(80,2008,1) [expecting 0.970711]: %f\n",prtxCM(TablePrtx::key_type(80.0,2008.0,1)));
+    Rprintf("prtxCM(80,2008,1) [expecting 0.970711]: %f\n",prtxCM(80.0,2008.0,1));
     {
       double age_diag=51.0;
       ext::grade_t ext_grade = ext::Gleason_ge_8;
       // FhrcPerson person = FhcrcPerson(0,1960);
-      // Rprintf("hr_localregional(50,0,)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, person.psamean(age_diag)>10 ? 1 : 0)));
-      Rprintf("hr_localregional(50,8+,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, 0)));
-      Rprintf("hr_localregional(50,8+,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext_grade, 1)));
-      Rprintf("hr_localregional(50,7,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 0)));
-      Rprintf("hr_localregional(50,7,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 1)));
-      Rprintf("hr_localregional(50,<=6,0)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 0)));
-      Rprintf("hr_localregional(50,<=6,1)=%g\n",hr_locoregional(TableLocoHR::key_type(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 1)));
+      // Rprintf("hr_localregional(50,0,)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext_grade, person.psamean(age_diag)>10 ? 1 : 0));
+      Rprintf("hr_localregional(50,8+,0)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext_grade, 0));
+      Rprintf("hr_localregional(50,8+,1)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext_grade, 1));
+      Rprintf("hr_localregional(50,7,0)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 0));
+      Rprintf("hr_localregional(50,7,1)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_7, 1));
+      Rprintf("hr_localregional(50,<=6,0)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 0));
+      Rprintf("hr_localregional(50,<=6,1)=%g\n",hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext::Gleason_le_6, 1));
       Rprintf("screeningCompliance=%g\n",as<double>(parameter["screeningCompliance"]));
     }
   }
