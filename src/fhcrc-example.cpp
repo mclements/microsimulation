@@ -39,6 +39,7 @@ namespace fhcrc_example {
   }
   namespace ext {
     enum grade_t {Gleason_le_6,Gleason_7,Gleason_ge_8,Healthy};
+    enum state_t {Healthy_state,T1_T2,T3plus,Metastatic};
   }
 
   enum state_t {Healthy,Localised,Metastatic}; // stage?
@@ -46,7 +47,7 @@ namespace fhcrc_example {
   enum diagnosis_t {NotDiagnosed,ClinicalDiagnosis,ScreenDiagnosis};
 
   enum event_t {toLocalised,toMetastatic,toClinicalDiagnosis,toCancerDeath,toOtherDeath,toScreen,toBiopsyFollowUpScreen,
-		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toBaselineUtility, toSTHLM3, toOpportunistic };
+		toScreenInitiatedBiopsy,toClinicalDiagnosticBiopsy,toScreenDiagnosis,toOrganised,toTreatment,toCM,toRP,toRT,toADT,toUtilityChange, toBaselineUtility, toSTHLM3, toOpportunistic, toT3plus };
 
   enum screen_t {noScreening, randomScreen50to70, twoYearlyScreen50to70, fourYearlyScreen50to70,
 		 screen50, screen60, screen70, screenUptake, stockholm3_goteborg, stockholm3_risk_stratified,
@@ -148,6 +149,7 @@ namespace fhcrc_example {
     double beta0, beta1, beta2;
     double t0, y0, tm, tc, tmc, aoc;
     state_t state;
+    ext::state_t ext_state;
     diagnosis_t dx;
     base::grade_t future_grade, grade;
     ext::grade_t future_ext_grade, ext_grade;
@@ -165,6 +167,7 @@ namespace fhcrc_example {
     treatment_t calculate_treatment(double u, double age, double year);
     double calculate_mortality_hr(double age_diag);
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
+    double calculate_T3plus();
     void opportunistic_rescreening(double psa);
     void opportunistic_uptake();
     void init();
@@ -261,8 +264,10 @@ namespace fhcrc_example {
     double age_m = tm + 35.0;   // age at onset of metastatic cancer
     bool localised = (age_diag < age_m);
     double mort_hr;
-    if (localised)
+    if (localised) {
       mort_hr = hr_locoregional(age_diag<50.0 ? 50.0 : age_diag, ext_grade, psamean(age_diag)>10 ? 1 : 0);
+      if (ext_state == ext::T3plus) mort_hr*=double(parameter["RR_T3plus"]);
+    }
     else
       mort_hr = hr_metastatic(age_diag);
     return mort_hr;
@@ -329,6 +334,16 @@ namespace fhcrc_example {
       Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
   }
 
+  double FhcrcPerson::calculate_T3plus() {
+    double U = R::runif(0.0, 1.0);
+    double beta0star = this->beta0 + this->beta1*t0;
+    double beta2star = this->beta1 + this->beta2;
+    double a = double(parameter["gamma_m_diff"])/beta2star*exp(beta0star);
+    double b = beta2star;
+    double v = this->tm - this->t0;
+    return this->t0 + 35.0 + log(log(U*exp(a*exp(b*v))+(1-U)*exp(a))/a)/b;
+  }
+
   Double rbinorm(Double mean, Double sd, double rho) {
     double z1 = R::rnorm(0.0,1.0);
     double z2 = R::rnorm(0.0,1.0);
@@ -366,6 +381,7 @@ void FhcrcPerson::init() {
 
   // change state variables
   state = Healthy;
+  ext_state = ext::Healthy_state;
   grade = base::Healthy;
   ext_grade = ext::Healthy;
   dx = NotDiagnosed;
@@ -593,15 +609,20 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     break;
 
   case toLocalised:
-    state = Localised;
+    state = Localised; ext_state = ext::T1_T2;
     ext_grade = future_ext_grade;
     grade = future_grade;
     scheduleAt(tc+35.0,toClinicalDiagnosis);
     scheduleAt(tm+35.0,toMetastatic);
+    scheduleAt(calculate_T3plus(),toT3plus);
     break;
 
+  case toT3plus:
+    ext_state = ext::T3plus;
+    break;
+    
   case toMetastatic:
-    state = Metastatic;
+    state = Metastatic; ext_state = ext::Metastatic;
     RemoveKind(toClinicalDiagnosis);
     scheduleAt(tmc+35.0,toClinicalDiagnosis);
     break;
@@ -760,6 +781,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toClinicalDiagnosis:
     dx = ClinicalDiagnosis;
     RemoveKind(toMetastatic); // competing events
+    RemoveKind(toT3plus); // competing events
     RemoveKind(toScreen);
     scheduleAt(now(), toClinicalDiagnosticBiopsy); // assumes only one biopsy per clinical diagnosis
     scheduleAt(now(), toTreatment);
@@ -768,6 +790,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toScreenDiagnosis:
     dx = ScreenDiagnosis;
     RemoveKind(toMetastatic); // competing events
+    RemoveKind(toT3plus); // competing events
     RemoveKind(toClinicalDiagnosis);
     RemoveKind(toScreen);
     scheduleAt(now(), toTreatment);
@@ -885,6 +908,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       diagnoses.record("psa",psa);
       diagnoses.record("ext_grade",ext_grade);
       diagnoses.record("state",state);
+      diagnoses.record("ext_state",ext_state);
       diagnoses.record("organised",organised); // only meaningful for mixed_screening, keep this?
       diagnoses.record("dx",dx);
       diagnoses.record("tx",tx);

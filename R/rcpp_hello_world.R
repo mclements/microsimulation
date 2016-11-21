@@ -192,6 +192,8 @@ FhcrcParameters <- list(
     beta7=0.01543417,
     alpha8=-4.60517081,
     beta8=0.08770374,
+    gamma_m_diff=0.0001,
+    RR_T3plus=2.0,
     ## mubeta2.scale=1.0, # cf. 2.1
     ## beta.rho=0.62,
     c_txlt_interaction = 1.0,
@@ -385,6 +387,7 @@ screenT <- c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "four
              "screen60", "screen70", "screenUptake", "stockholm3_goteborg",
              "stockholm3_risk_stratified", "goteborg", "risk_stratified", "mixed_screening","regular_screen","single_screen")
 stateT <- c("Healthy","Localised","Metastatic")
+ext_stateT <- c("Healthy","T1_T2","T3plus","Metastatic")
 gradeT <- c("Gleason_le_6","Gleason_7","Gleason_ge_8","Healthy")
 eventT <- c("toLocalised","toMetastatic","toClinicalDiagnosis",
             "toCancerDeath","toOtherDeath","toScreen","toBiopsyFollowUpScreen",
@@ -556,11 +559,12 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT
   enum(diagnoses$state) <- stateT
+  enum(diagnoses$ext_state) <- ext_stateT
   enum(diagnoses$ext_grade) <- gradeT
   enum(diagnoses$dx) <- diagnosisT
   enum(diagnoses$tx) <- treatmentT
   enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
-               psaT = psaT)
+               psaT = psaT, ext_stateT = ext_stateT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,
               parameters=parameters, summary=summary,
               healthsector.costs=healthsector.costs, societal.costs=societal.costs,
