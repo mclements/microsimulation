@@ -65,6 +65,21 @@ ICER(model0,model2)
 ICER(model0,model4)
 ICER(model2,model4)
 
+## ext_state
+refresh
+require(microsimulation)
+report <- function(obj) {
+    rowpct <- function(m) t(apply(m,1,function(row) row/sum(row)))
+    print(xtabs(~I(floor(age/5)*5)+ext_state, data=test$diagnoses))
+    print(rowpct(xtabs(~I(floor(age/5)*5)+ext_state, data=test$diagnoses)))
+    rowpct(xtabs(~I(floor(age/5)*5)+ext_state, data=test$diagnoses, subset=ext_state %in% c('T1_T2','T3plus')))
+}
+test <- callFhcrc(1e5,includeDiagnoses=TRUE,mc.cores=2)
+report(test)
+test2 <- callFhcrc(1e5,screen="screenUptake",includeDiagnoses=TRUE,mc.cores=2)
+report(test2)
+test3 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",includeDiagnoses=TRUE,mc.cores=2)
+report(test3)
 
 
 #### Calibrate for survival

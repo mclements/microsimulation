@@ -781,7 +781,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toClinicalDiagnosis:
     dx = ClinicalDiagnosis;
     RemoveKind(toMetastatic); // competing events
-    RemoveKind(toT3plus); // competing events
+    RemoveKind(toT3plus);
     RemoveKind(toScreen);
     scheduleAt(now(), toClinicalDiagnosticBiopsy); // assumes only one biopsy per clinical diagnosis
     scheduleAt(now(), toTreatment);
@@ -790,7 +790,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toScreenDiagnosis:
     dx = ScreenDiagnosis;
     RemoveKind(toMetastatic); // competing events
-    RemoveKind(toT3plus); // competing events
+    RemoveKind(toT3plus);
     RemoveKind(toClinicalDiagnosis);
     RemoveKind(toScreen);
     scheduleAt(now(), toTreatment);
@@ -862,8 +862,10 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       			 calculate_mortality_hr(age_c));
       if (debug) Rprintf("hr for lead time=%f\n", calculate_mortality_hr(age_c));
       cured = (R::runif(0.0,1.0) < pcure);
-      if (cured) RemoveKind(toMetastatic);
-      else {
+      if (cured) {
+	RemoveKind(toMetastatic);
+	RemoveKind(toT3plus);
+      } else {
       double u_surv = R::runif(0.0,1.0);
       age_cancer_death = calculate_survival(u_surv,age_c,age_c,calculate_treatment(u_tx,age_c,year+lead_time));
       }
