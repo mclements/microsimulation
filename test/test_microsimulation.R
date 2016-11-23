@@ -70,16 +70,22 @@ refresh
 require(microsimulation)
 report <- function(obj) {
     rowpct <- function(m) t(apply(m,1,function(row) row/sum(row)))
-    print(xtabs(~I(floor(age/5)*5)+ext_state, data=test$diagnoses))
-    print(rowpct(xtabs(~I(floor(age/5)*5)+ext_state, data=test$diagnoses)))
-    rowpct(xtabs(~I(floor(age/5)*5)+ext_state, data=test$diagnoses, subset=ext_state %in% c('T1_T2','T3plus')))
+    print(xtabs(~I(floor(age/5)*5)+ext_state, data=obj$diagnoses))
+    print(rowpct(xtabs(~I(floor(age/5)*5)+ext_state, data=obj$diagnoses)))
+    rowpct(xtabs(~I(floor(age/5)*5)+ext_state, data=obj$diagnoses, subset=ext_state %in% c('T1_T2','T3plus')))
 }
 test <- callFhcrc(1e5,includeDiagnoses=TRUE,mc.cores=2)
 report(test)
-test2 <- callFhcrc(1e5,screen="screenUptake",includeDiagnoses=TRUE,mc.cores=2)
-report(test2)
+test2 <- callFhcrc(1e6,screen="screenUptake",includeDiagnoses=TRUE,mc.cores=2, parms=list(gamma_m_diff=-0.001))
+test2a <- test2
+test2a$diagnoses <- subset(test2$diagnoses,year>=2000)
+(report2 <- report(test2a))
 test3 <- callFhcrc(1e5,screen="twoYearlyScreen50to70",includeDiagnoses=TRUE,mc.cores=2)
 report(test3)
+s0 <- data.frame(age=c(40,45,50,55,60,65,70,75,80,85,90), n_M0=c(16,99,576,1231,2223,3170,1713,870,474,195,48), 
+pT1_T2=c(0.9375,0.949495,0.939236,0.918765,0.891138,0.901262,0.841214,0.791954,0.71308,0.651282,0.416667))
+plot(as.numeric(rownames(report2)),report2[,2], type="l")
+with(s0, lines(age,pT1_T2,lty=2))
 
 
 #### Calibrate for survival
