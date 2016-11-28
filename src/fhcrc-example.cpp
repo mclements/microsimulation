@@ -277,10 +277,10 @@ namespace fhcrc_example {
     double age_d = -1.0;        // age at death (output)
     double age_m = tm + 35.0;   // age at onset of metastatic cancer
     bool localised = (age_diag < age_m);
-    double txhaz = (localised && (tx == RP || tx == RT)) ? 0.62 : 1.0;
+    double txhaz = (localised && (tx == RP || tx == RT)) ? 0.62 : 1.0; // hazard ratio from SPCG-4
     // calibration HR(age_diag,PSA,ext_grade) for loco-regional or HR(age_diag) for metastatic cancer
     double lead_time = age_c - age_diag;
-    double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time);
+    double txbenefit = exp(log(txhaz)+log(double(parameter["c_txlt_interaction"]))*lead_time); // treatment lead-time interaction
     double mort_hr = calculate_mortality_hr(age_diag);
     double ustar = pow(u,1/(parameter["c_baseline_specific"]*mort_hr*txbenefit*parameter["sxbenefit"]));
     if (localised)
@@ -620,7 +620,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
   case toT3plus:
     ext_state = ext::T3plus;
     break;
-    
+
   case toMetastatic:
     state = Metastatic; ext_state = ext::Metastatic;
     RemoveKind(toClinicalDiagnosis);
