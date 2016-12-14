@@ -473,11 +473,11 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
                         list(nLifeHistories=as.integer(nLifeHistories),
                              screen=as.integer(screenIndex)))
   parameter <- FhcrcParameters
-    for (name in names(updateParameters)) {
-        if(!(name %in% names(parameter))
-           warning("Name in parms argument not in FhcrcParameters: ",name,".")
+  for (name in names(updateParameters)){
+      if(!(name %in% names(parameter)))
+          warning("Name in parms argument not in FhcrcParameters: ",name,".")
       parameter[[name]] <- updateParameters[[name]]
-      }
+  }
   pind <- sapply(parameter,class)=="numeric" & sapply(parameter,length)==1
   bInd <- sapply(parameter,class)=="logical" & sapply(parameter,length)==1
   if (parameter$stockholmTreatment)
