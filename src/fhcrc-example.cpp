@@ -64,12 +64,12 @@ namespace fhcrc_example {
 
   namespace FullState {
     typedef boost::tuple<short,short,short,bool,double> Type;
-    enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
-    // string names[5] = {"state","ext_grade","dx","psa_ge_3","cohort"};
+    enum Fields {ext_state, ext_grade, dx, psa_ge_3, cohort};
+    // string names[5] = {"ext_state","ext_grade","dx","psa_ge_3","cohort"};
   }
   namespace LifeHistory {
     typedef boost::tuple<int, short, short, int, short, double, double, double, double, double> Type;
-    enum Fields {id, state, ext_grade, dx, event, begin, end, year, psa, utility};
+    enum Fields {id, ext_state, ext_grade, dx, event, begin, end, year, psa, utility};
   }
 
   RcppExport SEXP rllogis_(SEXP shape, SEXP scale) {
@@ -579,11 +579,11 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
 
   // record information
   if (parameter["full_report"] == 1.0)
-    report.add(FullState::Type(state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility());
+    report.add(FullState::Type(ext_state, ext_grade, dx, psa>=3.0, cohort), msg->kind, previousEventTime, age, utility());
   shortReport.add(1, msg->kind, previousEventTime, age, utility());
 
   if (id<nLifeHistories) { // only record up to the first n individuals
-    lifeHistories.push_back(LifeHistory::Type(id, state, ext_grade, dx, msg->kind, previousEventTime, age, year, psa, utility()));
+    lifeHistories.push_back(LifeHistory::Type(id, ext_state, ext_grade, dx, msg->kind, previousEventTime, age, year, psa, utility()));
   }
 
   // handle messages by kind
@@ -909,7 +909,6 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
       diagnoses.record("year",year);
       diagnoses.record("psa",psa);
       diagnoses.record("ext_grade",ext_grade);
-      diagnoses.record("state",state);
       diagnoses.record("ext_state",ext_state);
       diagnoses.record("organised",organised); // only meaningful for mixed_screening, keep this?
       diagnoses.record("dx",dx);

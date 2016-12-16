@@ -514,13 +514,16 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   ##   out$year <- out$cohort + out$age
   ##   out
   ## }
+  ext_state2state <- function(obj) # collapses T-stages to localised
+      `levels<-`(factor(obj),list(Healthy="Healthy",Localised=list("T1_T2","T3plus"),Metastatic="Metastatic"))
   cbindList <- function(obj) # recursive
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
   rbindList <- function(obj) # recursive
       if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
   reader <- function(obj) {
     obj <- cbindList(obj)
-    out <- cbind(data.frame(state=enum(obj[[1]],stateT),
+    out <- cbind(data.frame(state=ext_state2state(enum(obj[[1]],ext_stateT)),
+                            ext_state=enum(obj[[1]],ext_stateT),
                             grade=enum(obj[[2]],gradeT),
                             dx=enum(obj[[3]],diagnosisT),
                             psa=enum(obj[[4]],psaT),
@@ -536,7 +539,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
                         function(i) do.call("rbind",
                                             lapply(out, function(obj) reader(obj$summary[[i]]))))
       names(summary) <- names(out[[1]]$summary)
-      states <- c("state","grade","dx","psa","cohort")
+      states <- c("state","ext_state","grade","dx","psa","cohort")
       names(summary$prev) <- c(states,"age","count")
       names(summary$pt) <- c(states,"age","pt")
       names(summary$ut) <- c(states,"age","ut")
@@ -557,17 +560,19 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   names(societal.costs) <- c("type","item","age","costs")
   societal.costs$type <- ifelse(societal.costs$type, "Productivity loss", "Health sector cost") # societal perspective
   healthsector.costs <- societal.costs[societal.costs["type"] == "Health sector cost", c("item", "age", "costs")] # healthcare perspective
-  names(lifeHistories) <- c("id", "state", "ext_grade", "dx", "event", "begin", "end", "year", "psa", "utility")
-  enum(lifeHistories$state) <- stateT
+  names(lifeHistories) <- c("id", "ext_state", "ext_grade", "dx", "event", "begin", "end", "year", "psa", "utility")
+  enum(lifeHistories$ext_state) <- ext_stateT
+  lifeHistories$state <- ext_state2state(lifeHistories$ext_state)
+  lifeHistories <- lifeHistories[c(names(lifeHistories)[1], "state", names(lifeHistories)[-1])] # shift col order
   enum(lifeHistories$dx) <- diagnosisT
   enum(lifeHistories$event) <- eventT
-  enum(diagnoses$state) <- stateT
   enum(diagnoses$ext_state) <- ext_stateT
+  diagnoses$state <- ext_state2state(diagnoses$ext_state)
   enum(diagnoses$ext_grade) <- gradeT
   enum(diagnoses$dx) <- diagnosisT
   enum(diagnoses$tx) <- treatmentT
-  enum <- list(stateT = stateT, eventT = eventT, screenT = screenT, diagnosisT = diagnosisT,
-               psaT = psaT, ext_stateT = ext_stateT)
+  enum <- list(stateT = stateT, ext_stateT = ext_stateT, eventT = eventT, screenT = screenT,
+              diagnosisT = diagnosisT, psaT = psaT)
   out <- list(n=n,screen=screen,enum=enum,lifeHistories=lifeHistories,
               parameters=parameters, summary=summary,
               healthsector.costs=healthsector.costs, societal.costs=societal.costs,
@@ -671,7 +676,7 @@ predict.fhcrc <- function(object, scenarios=NULL,
 
     ## Allowing for several groups
     group <- match.arg(group,
-                       c("state", "grade", "dx", "psa", "age", "year"),
+                       c("state", "ext_state", "grade", "dx", "psa", "age", "year"),
                        several.ok = TRUE)
 
     event_types <- switch(abbr_type,
