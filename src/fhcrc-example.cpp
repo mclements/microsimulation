@@ -81,16 +81,22 @@ namespace fhcrc_example {
     return wrap(R::rllogis_trunc(as<double>(shape),as<double>(scale),as<double>(left)));
   }
 
-  EventReport<FullState::Type,short,double> report;
-  EventReport<int,short,double> shortReport;
-  // typedef boost::tuple<int,string,double> CostKey; // (cost_type,cost_name,cohort)
-  typedef std::pair<int,string> CostKey; // (cost_type,cost_name)
-  CostReport<CostKey> costs;
-  vector<LifeHistory::Type> lifeHistories;
-  SimpleReport<double> outParameters;
-  SimpleReport<double> psarecord, falsePositives;
-  SimpleReport<double> diagnoses;
-
+  //class Output {
+  //public:
+    EventReport<FullState::Type,short,double> report;
+    EventReport<int,short,double> shortReport;
+    // typedef boost::tuple<int,string,double> CostKey; // (cost_type,cost_name,cohort)
+    typedef std::pair<int,string> CostKey; // (cost_type,cost_name)
+    CostReport<CostKey> costs;
+    vector<LifeHistory::Type> lifeHistories;
+    SimpleReport<double> outParameters;
+    SimpleReport<double> psarecord, falsePositives;
+    SimpleReport<double> diagnoses;
+  //};
+  // Output out; // in callFhcrc
+  // &out in the Person object
+  // out->report etc
+  
   bool debug = false;
 
   typedef std::pair<double,double> Double;
@@ -102,6 +108,8 @@ namespace fhcrc_example {
   typedef Table<double,double,double> TableDDD; // as per TableBiopsyCompliance
   typedef map<int,NumericInterpolate> H_dist_t;
   typedef map<pair<double,int>,NumericInterpolate> H_local_t;
+  // class Inputs {
+  // public:
   TableLocoHR hr_locoregional;
   TableMetastaticHR hr_metastatic;
   TablePrtx prtxCM, prtxRP;
@@ -115,7 +123,7 @@ namespace fhcrc_example {
 
   Rng * rngNh, * rngOther, * rngScreen, * rngTreatment;
   Rpexp rmu0;
-
+  
   NumericVector parameter;
   LogicalVector bparameter;
 
@@ -125,6 +133,10 @@ namespace fhcrc_example {
   int screen, nLifeHistories;
   bool includePSArecords, panel, includeDiagnoses;
   Table<double,double> production;
+  // };
+  // Input in; // callFhcrc
+  // Input* in; // Person
+  // in->hr_locoregional(...);
 
   class cMessageUtilityChange : public cMessage {
   public:

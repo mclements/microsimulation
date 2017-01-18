@@ -146,7 +146,7 @@ namespace Rcpp {
 #include <Rdefines.h>
 #include <R_ext/Random.h>
 
-#include <siena/ssim.h>
+#include "siena/ssim.h"
 #include "RngStream.h"
 #include "rcpp_table.h"
 
@@ -383,7 +383,7 @@ class Rng : public RngStream {
   result_type min() { return 0.0; }
   result_type max() { return 1.0; }
   Rng() : RngStream() { id = ++counter_id; }
-  ~Rng();
+  virtual ~Rng();
   void seed(const double seed[6]) {
     SetSeed(seed);
   }

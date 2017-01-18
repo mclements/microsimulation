@@ -1054,6 +1054,43 @@ all(testC == runif(2))
 .Random.seed <- parallel::nextRNGStream(newSeed)
 all(testD == runif(2))
 
+## Simulated likelihood
+simulate <- function(i,mu=0,ntarget=100,sdsim=1,common.seed=12345,nsim=1000) {
+    set.seed(i)
+    y <- rnorm(ntarget,mu)
+    sim <- stats::rnorm
+    objective <- function(theta,common=TRUE) {
+        if (common) 
+            set.seed(common.seed)
+        ## sum((y-mean(sim(nsim,theta,sdsim)))^2)
+        (mean(y)-mean(sim(nsim,theta,sdsim)))^2
+    }
+    c(ymean=mean(y),
+      standard=optimize(objective,lower=-10,upper=10, common=FALSE)$minimum,
+      common=optimize(objective,lower=-10,upper=10, common=TRUE)$minimum)
+}
+set.seed(12345)
+par(mfrow=c(2,2))
+sims <- t(sapply(1:100,simulate,ntarget=100,nsim=100))
+matplot(sims[,1],sims[,2:3], type="p",pch=1:2, xlab="Target sample mean",ylab="Mean from simulated least squares",
+        main="ntarget=100, nsim=100")
+abline(0,1)
+legend("topleft",bty="n",legend=c("No common random numbers","Common random numbers"),pch=1:2,col=1:2)
+sims <- t(sapply(1:100,simulate,ntarget=100,nsim=1000))
+matplot(sims[,1],sims[,2:3], type="p",pch=1:2, xlab="Target sample mean",ylab="Mean from simulated least squares",
+        main="ntarget=100, nsim=1000")
+abline(0,1)
+sims <- t(sapply(1:100,simulate,ntarget=1000,nsim=100))
+matplot(sims[,1],sims[,2:3], type="p",pch=1:2, xlab="Target sample mean",ylab="Mean from simulated least squares",
+        main="ntarget=1000, nsim=100")
+abline(0,1)
+sims <- t(sapply(1:100,simulate,ntarget=1000,nsim=1000))
+matplot(sims[,1],sims[,2:3], type="p",pch=1:2, xlab="Target sample mean",ylab="Mean from simulated least squares",
+        main="ntarget=1000, nsim=1000")
+abline(0,1)
+
+
+
 ## More unit tests required
 
 system.time(callFhcrc(1e5))
