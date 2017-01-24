@@ -9,5 +9,6 @@ Description: Microsimulation using discrete event simulation in R and C++. This 
 License: GPL (>= 3)
 Depends: Rcpp (>= 0.10.2), methods
 Imports: parallel, grDevices
+Suggests: testthat
 LinkingTo: Rcpp, BH
 LazyData: true
