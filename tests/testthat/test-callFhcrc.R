@@ -26,26 +26,47 @@ test_returned_object_structure <- function(obj = obj) {
     })
 }
 
-test_scenario <- function(screen){
-    test_that(paste("Check microsimulation scenario:", screen), {
+test_speed <- function(time_str){
+    test_that("Check that the execution speed was not doubled", {
+        ## As adviced we skip timing check on CRAN:
+        ## http://r-pkgs.had.co.nz/tests.html
+        ## To run locally: Sys.setenv(NOT_CRAN='true')
+        skip_on_cran()
 
-        ## N.b. double negation expect_failure() expect_error() <=> expect no error
-        expect_failure(expect_error(sim <- callFhcrc(screen = screen)))
-        ## Nested check of return object for each scenario
-        test_returned_object_structure(sim)
-
+        ## Cut-of value arbitarily set to double the execution speed,
+        ## 0.011s, measured 2017-01-26. Note that this could fail on
+        ## really slow systems.
+        expect_true(as.double(unlist(
+            strsplit(time_str[2], "[[:space:]]"))[9]) < 2 * 0.011)
     })
 }
 
-scenarios <-  c("noScreening", "randomScreen50to70", "twoYearlyScreen50to70", "fourYearlyScreen50to70", "screen50", "screen60", "screen70", "screenUptake", "stockholm3_goteborg", "stockholm3_risk_stratified", "goteborg", "risk_stratified", "mixed_screening", "regular_screen", "single_screen")
+test_scenario <- function(screen){
+    test_that(paste("Check microsimulation scenario:", screen), {
+
+        ## Make sure no errors are returned. N.b. double negation
+        ## expect_failure() expect_error() <=> expect no error
+        expect_failure(expect_error(time_str <- capture.output(
+                                        sim <- callFhcrc(screen = screen))))
+
+        ## Nested check of return object for each scenario
+        test_returned_object_structure(sim)
+
+        ## Nested check of execution time
+        test_speed(time_str)
+    })
+}
+
+scenarios <-  c("noScreening", "randomScreen50to70",
+               "twoYearlyScreen50to70", "fourYearlyScreen50to70",
+               "screen50", "screen60", "screen70", "screenUptake",
+               "stockholm3_goteborg", "stockholm3_risk_stratified",
+               "goteborg", "risk_stratified", "mixed_screening",
+               "regular_screen", "single_screen")
 
 lapply(scenarios, function(x) test_scenario(screen = x))
 
 
-test_that("Check that input on the R side variables are equal on the C++ side", {
-    ## TBA
-})
-
-## WIP
-## expect_output(print(sim),
-##               "FHCRC prostate cancer model with 10 individual(s) under scenario 'noScreening'.")
+## test_that("Check that input on the R side variables are equal on the C++ side", {
+##     ## TBA
+## })
