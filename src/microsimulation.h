@@ -53,7 +53,7 @@ namespace boost {
 	  static void apply(size_t& seed, Tuple const& tuple)
 	  {
 	    HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
-	    boost::hash_combine(seed, tuple.get<Index>());
+	    boost::hash_combine(seed, get<Index>(tuple));
 	  }
 	};
       template <class Tuple>
@@ -61,7 +61,7 @@ namespace boost {
       {
 	static void apply(size_t& seed, Tuple const& tuple)
 	{
-	  boost::hash_combine(seed, tuple.get<0>());
+	  boost::hash_combine(seed, get<0>(tuple));
 	}
       };
     } // namespace detail
