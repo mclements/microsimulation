@@ -53,7 +53,7 @@ namespace boost {
 	  static void apply(size_t& seed, Tuple const& tuple)
 	  {
 	    HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
-	    boost::hash_combine(seed, tuple.get<Index>());
+	    boost::hash_combine(seed, get<Index>(tuple));
 	  }
 	};
       template <class Tuple>
@@ -61,7 +61,7 @@ namespace boost {
       {
 	static void apply(size_t& seed, Tuple const& tuple)
 	{
-	  boost::hash_combine(seed, tuple.get<0>());
+	  boost::hash_combine(seed, get<0>(tuple));
 	}
       };
     } // namespace detail
@@ -567,6 +567,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef std::set<Time, std::greater<Time> > Partition;
  typedef std::pair<State,Time> Pair;
  typedef CostReport<State,Time,Cost> This;
+ typedef boost::unordered_map<pair<State,Time>, Cost > Table;
  CostReport(Cost discountRate = 0) : discountRate(discountRate) { }
  Cost discountedCost(Time a, Cost cost) {
    if (discountRate == 0) return cost;
@@ -585,7 +586,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _partition.clear();
  }
  void append(This & new_report) { // assuming that discountRate and _partition are the same for both reports
-   typename This::iterator it;
+   typename Table::iterator it;
    for(it = new_report._table.begin(); it != new_report._table.end(); ++it)
      _table[it->first] += it->second;
  }
@@ -599,7 +600,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  }
  Cost discountRate;
  Partition _partition;
- boost::unordered_map<pair<State,Time>, Cost > _table;
+ Table _table;
  };
 
  /**
