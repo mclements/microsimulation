@@ -403,7 +403,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
                       panel=FALSE,
                       includePSArecords=FALSE, includeDiagnoses=FALSE,
                       flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
-                      parms = NULL, mc.cores=1, ...) {
+                      parms = NULL, mc.cores = 1, print.timing = TRUE,...) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
   ## yes, we use the user-defined RNG
@@ -415,6 +415,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   stopifnot(is.na(n) || is.integer(as.integer(n)))
   stopifnot(is.integer(as.integer(nLifeHistories)))
   screenIndex <- which(screen == screenT) - 1
+  timingfunction <- if (print.timing) function(x) print(system.time(x)) else function(x) x
   ## NB: sample() calls the random number generator (!)
   if (is.vector(pop)) {
       flatPop <- TRUE
@@ -486,7 +487,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   if (panel && parameter["rTPF"]>1) stop("Panel: rTPF>1 (not currently implemented)")
   if (panel && parameter["rFPF"]>1) stop("Panel: rFPF>1 (not currently implemented)")
   ## now run the chunks separately
-  print(system.time(out <- parallel::mclapply(1:mc.cores,
+  timingfunction(out <- parallel::mclapply(1:mc.cores,
                 function(i) {
                   chunk <- chunks[[i]]
                   set.user.Random.seed(initialSeeds[[i]])
@@ -503,7 +504,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
                             includePSArecords=includePSArecords,
                             includeDiagnoses=includeDiagnoses),
                         PACKAGE="microsimulation")
-                }, mc.cores = mc.cores)))
+                }, mc.cores = mc.cores))
   ## Apologies: we now need to massage the chunks from C++
   ## reader <- function(obj) {
   ##   out <- cbind(data.frame(state=enum(obj$state[[1]],stateT),
