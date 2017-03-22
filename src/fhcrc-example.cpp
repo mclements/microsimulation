@@ -420,8 +420,13 @@ void FhcrcPerson::init() {
   y0 = psamean(t0+35); // depends on: t0, beta0, beta1, beta2
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = psamean(tm+35);
-  tc = (log((beta1+beta2)*R::rexp(1.0)/parameter["gc"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
-  tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+  if (future_grade==base::Gleason_le_7) { // Annals
+    tc = (log((beta1+beta2)*R::rexp(1.0)/parameter["gc"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
+    tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+  } else {
+    tc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["grade.clinical.rate.high"]) + y0) - beta0 + beta2*t0) / (beta1+beta2);
+    tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+  }
   aoc = rmu0.rand(R::runif(0.0,1.0));
   if (!bparameter["revised_natural_history"]){
     future_ext_grade= (future_grade==base::Gleason_le_7) ?

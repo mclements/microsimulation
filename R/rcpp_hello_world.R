@@ -175,6 +175,11 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
 FhcrcParameters <- list(
     revised_natural_history=TRUE,
     ## panel=FALSE,
+    grade.onset.rate=0.0004629910,
+    grade.metastasis.rate=0.0005032055,
+    grade.clinical.rate.baseline=0.0028984595,
+    grade.clinical.rate.distant=34.9847840200,
+    grade.clinical.rate.high=0.3042454700,
     tau2 = 0.0829, # log PSA measurement variance  - normal
     g0=0.0005, # onset parameter
     gm=0.0004, # metastatic parameter
