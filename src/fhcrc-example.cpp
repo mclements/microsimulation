@@ -96,7 +96,7 @@ namespace fhcrc_example {
   // Output out; // in callFhcrc
   // &out in the Person object
   // out->report etc
-  
+
   bool debug = false;
 
   typedef std::pair<double,double> Double;
@@ -123,7 +123,7 @@ namespace fhcrc_example {
 
   Rng * rngNh, * rngOther, * rngScreen, * rngTreatment;
   Rpexp rmu0;
-  
+
   NumericVector parameter;
   LogicalVector bparameter;
 
@@ -159,7 +159,7 @@ namespace fhcrc_example {
   {
   public:
     double beta0, beta1, beta2;
-    double t0, y0, tm, tc, tmc, aoc;
+    double t0, y0, t3p, tm, tc, tmc, aoc;
     state_t state;
     ext::state_t ext_state;
     diagnosis_t dx;
@@ -179,7 +179,6 @@ namespace fhcrc_example {
     treatment_t calculate_treatment(double u, double age, double year);
     double calculate_mortality_hr(double age_diag);
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
-    double calculate_T3plus();
     void opportunistic_rescreening(double psa);
     void opportunistic_uptake();
     void init();
@@ -346,16 +345,6 @@ namespace fhcrc_example {
       Rprintf("(cohort=%f,pscreening=%f,uscreening=%f,first_screen=%f)\n",cohort,pscreening,uscreening,first_screen);
   }
 
-  double FhcrcPerson::calculate_T3plus() {
-    double U = R::runif(0.0, 1.0);
-    double beta0star = this->beta0 + this->beta1*t0;
-    double beta2star = this->beta1 + this->beta2;
-    double a = double(parameter["gamma_m_diff"])/beta2star*exp(beta0star);
-    double b = beta2star;
-    double v = this->tm - this->t0;
-    return this->t0 + 35.0 + log(log(U*exp(a*exp(b*v))+(1-U)*exp(a))/a)/b;
-  }
-
   Double rbinorm(Double mean, Double sd, double rho) {
     double z1 = R::rnorm(0.0,1.0);
     double z2 = R::rnorm(0.0,1.0);
@@ -418,6 +407,7 @@ void FhcrcPerson::init() {
   beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
 
   y0 = psamean(t0+35); // depends on: t0, beta0, beta1, beta2
+  t3p = (log((beta1+beta2)*R::rexp(1.0)/parameter["g3p"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
   ym = psamean(tm+35);
   if (future_grade==base::Gleason_le_7) { // Annals
@@ -631,7 +621,7 @@ void FhcrcPerson::handleMessage(const cMessage* msg) {
     grade = future_grade;
     scheduleAt(tc+35.0,toClinicalDiagnosis);
     scheduleAt(tm+35.0,toMetastatic);
-    scheduleAt(calculate_T3plus(),toT3plus);
+    scheduleAt(t3p+35.0,toT3plus);
     break;
 
   case toT3plus:

@@ -182,6 +182,7 @@ FhcrcParameters <- list(
     grade.clinical.rate.high=0.3042454700,
     tau2 = 0.0829, # log PSA measurement variance  - normal
     g0=0.0005, # onset parameter
+    g3p=0.0004, # T3+ parameter
     gm=0.0004, # metastatic parameter
     gc=0.0015, # clinical diagnosis parameter
     thetac=19.1334, # clinical diagnosis parameter after metastatic
