@@ -179,6 +179,7 @@ namespace fhcrc_example {
     treatment_t calculate_treatment(double u, double age, double year);
     double calculate_mortality_hr(double age_diag);
     double calculate_survival(double u, double age_diag, double age_c, treatment_t tx);
+    double calculate_transition_time(double u, double t_enter, double gamma);
     void opportunistic_rescreening(double psa);
     void opportunistic_uptake();
     void init();
@@ -305,6 +306,14 @@ namespace fhcrc_example {
 
   bool FhcrcPerson::onset() { return now() <= this->t0+35.0; }
 
+  /** @brief Calculate transition times for h(t) = y(t)*gamma = exp(beta0+beta1*t+beta2*(t-t0))*gamma
+      This is equivalent to solving H(t) = gamma/(beta1+beta2)*(y(t)-y(s)) = -log(U) for entry time s.
+  **/
+  double FhcrcPerson::calculate_transition_time(double u, double t_enter, double gamma) {
+    double y_enter = psamean(35.0 + t_enter);
+    return (log(-log(u)*(beta1+beta2)/gamma + y_enter) - beta0 + beta2*t0) / (beta1+beta2);
+  }
+  
   void FhcrcPerson::opportunistic_rescreening(double psa) {
     double prescreened = 1.0 - rescreen_cure(bounds<double>(now(),30.0,90.0),psa);
     double shape = rescreen_shape(bounds<double>(now(),30.0,90.0),psa);
@@ -407,15 +416,15 @@ void FhcrcPerson::init() {
   beta1 = R::rnormPos(parameter["mubeta1"],parameter["sebeta1"]);
 
   y0 = psamean(t0+35); // depends on: t0, beta0, beta1, beta2
-  t3p = (log((beta1+beta2)*R::rexp(1.0)/parameter["g3p"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
-  tm = (log((beta1+beta2)*R::rexp(1.0)/parameter["gm"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
+  t3p = calculate_transition_time(R::runif(0.0,1.0), t0, parameter["g3p"]);
+  tm = calculate_transition_time(R::runif(0.0,1.0), t3p, parameter["gm"]);
   ym = psamean(tm+35);
   if (future_grade==base::Gleason_le_7) { // Annals
-    tc = (log((beta1+beta2)*R::rexp(1.0)/parameter["gc"] + y0) - beta0 + beta2*t0) / (beta1+beta2);
-    tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+    tc = calculate_transition_time(R::runif(0.0,1.0), t0, parameter["gc"]);
+    tmc = calculate_transition_time(R::runif(0.0,1.0), tm, parameter["gc"]*parameter["thetac"]);
   } else {
-    tc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["grade.clinical.rate.high"]) + y0) - beta0 + beta2*t0) / (beta1+beta2);
-    tmc = (log((beta1+beta2)*R::rexp(1.0)/(parameter["gc"]*parameter["thetac"]) + ym) - beta0 + beta2*t0) / (beta1+beta2);
+    tc = calculate_transition_time(R::runif(0.0,1.0), t0, parameter["gc"]*parameter["grade.clinical.rate.high"]);
+    tmc = calculate_transition_time(R::runif(0.0,1.0), tm, parameter["gc"]*parameter["thetac"]);
   }
   aoc = rmu0.rand(R::runif(0.0,1.0));
   if (!bparameter["revised_natural_history"]){
