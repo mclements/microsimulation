@@ -424,7 +424,7 @@ void FhcrcPerson::init() {
     tmc = calculate_transition_time(R::runif(0.0,1.0), tm, parameter["gc"]*parameter["thetac"]);
   } else {
     tc = calculate_transition_time(R::runif(0.0,1.0), t0, parameter["gc"]*parameter["grade.clinical.rate.high"]);
-    tmc = calculate_transition_time(R::runif(0.0,1.0), tm, parameter["gc"]*parameter["thetac"]);
+    tmc = calculate_transition_time(R::runif(0.0,1.0), tm, parameter["gc"]*parameter["thetac"]*parameter["grade.clinical.rate.high"]);
   }
   aoc = rmu0.rand(R::runif(0.0,1.0));
   if (!bparameter["revised_natural_history"]){
