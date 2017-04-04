@@ -554,13 +554,12 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
       summary <- lapply(summary,function(obj) within(obj,year <- cohort+age))
       enum(summary$events$event) <- eventT
 }
-  ## map2df <- function(obj) "names<-"(data.frame(obj[-1]),obj[[1]])
-  map2df <- function(obj) as.data.frame(do.call("cbind",obj))
-  lifeHistories <- do.call("rbind",lapply(out,function(obj) map2df(obj$lifeHistories)))
+
+  lifeHistories <- do.call("rbind",lapply(out,function(obj) data.frame(obj$lifeHistories)))
   psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
   diagnoses <- do.call("rbind",lapply(out,function(obj) data.frame(obj$diagnoses)))
   falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
-  parameters <- do.call("rbind",lapply(out,function(obj) map2df(obj$parameters)))
+  parameters <- do.call("rbind",lapply(out,function(obj) data.frame(obj$parameters)))
 
   ## Identifying elements without name which also need to be rbind:ed
   societal.costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs))) #split in sociatal and healthcare perspective
