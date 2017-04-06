@@ -586,7 +586,7 @@ public:
      *  @see SimErrorHandler
      **/
     static void		set_error_handler(SimErrorHandler *) throw();
-    static void remove_event(EventPredicate pred) throw();
+    static void ignore_event(EventPredicate pred) throw();
 };
   void Rprint_actions();
 

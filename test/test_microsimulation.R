@@ -2,6 +2,24 @@
 ## require(microsimulation)
 ## microsimulation:::.testPackage()
 
+## 9013 bug
+require(microsimulation)
+debug(callFhcrc)
+out=callFhcrc(1e5,nLifeHistories=1e5,screen="screenUptake",mc.cores=4)
+
+tmp <- out[[1]]$parameters
+sapply(tmp,length)
+with(c(tmp,list(i=9013+1)), data.frame(id=id[i],age_d=age_d[i],aoc=aoc[i],pca_death=pca_death[i]))
+
+subset(lifeHistories, id==0)
+
+with(lapply(tmp,function(var) var[9013+1]), tmc+35)
+names(lifeHistories) <- c("id", "ext_state", "ext_grade", "dx", "event", "begin", "end", "year", "psa", "utility")
+options(width=150)
+subset(lifeHistories, id==9013)
+`names<-`(0:(length(eventT)-1),eventT)
+
+
 ## unit tests
 refresh
 require(microsimulation)

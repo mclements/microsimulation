@@ -46,7 +46,8 @@ static SimErrorHandler *	error_handler = 0;
 enum ActionType { 
     A_Event, 
     A_Init, 
-    A_Stop 
+    A_Stop,
+    A_Ignore
 };
     
 struct Action {
@@ -82,7 +83,7 @@ static PsTable processes;
   void Rprint_actions() {
     Rprintf("\n[");
     for (a_table_t::iterator it = actions.begin(); it != actions.end(); it++)
-      Rprintf("(time=%f,%s), ",it->time, it->type, it->event->str().c_str());
+      Rprintf("(time=%f,%s), ",it->time, it->event->str().c_str());
     Rprintf("]\n");
   }
 
@@ -129,30 +130,20 @@ void Sim::clear() throw() {
 
 typedef a_table_t::iterator ForwardIterator;
 
-void Sim::remove_event(EventPredicate pred) throw() {
-  ForwardIterator first = actions.begin();
-  ForwardIterator last = actions.end();
-  ForwardIterator result = first;
-  while (first != last) {
-    if ((*first).type != A_Event) {
-      *result = *first;
-      ++result;
-    } else {
-      const Event * e = (*first).event;
+void Sim::ignore_event(EventPredicate pred) throw() {
+  for (ForwardIterator it = actions.begin(); it != actions.end(); it++) {
+    if ((*it).type == A_Event) {
+      const Event * e = (*it).event;
       if (e != 0) { 
-	if(!pred(e)) {
-	  *result = *first;
-	  ++result;
-	} else {
-	  delete(e);
+	if(pred(e)) {
+	  (*it).type = A_Ignore;
 	}
       }
     }
-    ++first;
   }
-  actions.erase(result, actions.end());
 }
 
+  
 //
 // this is the simulator main loop.
 //
@@ -179,48 +170,54 @@ void Sim::run_simulation() {
 	// assert(current_time <= (*a).first);
 	//
 	Action action = actions.pop_first();
-	current_time = action.time;
-	if (stop_time != INIT_TIME && current_time > stop_time)
+	if (action.type == A_Ignore) {
+	  if (action.event != 0)
+	    if (--(action.event->refcount) == 0) 
+	      delete(action.event);
+	}
+	else {
+	  current_time = action.time;
+	  if (stop_time != INIT_TIME && current_time > stop_time)
 	    break;
-	current_process = action.pid;
-	//
-	// right now I don't check if current_process is indeed a
-	// valid process.  Keep in mind that this is the heart of the
-	// simulator main loop, therefore efficiency is crucial.
-	// Perhaps I should check.  This is somehow a design choice.
-	//
-	PDescr & pd = processes[current_process];
+	  current_process = action.pid;
+	  //
+	  // right now I don't check if current_process is indeed a
+	  // valid process.  Keep in mind that this is the heart of the
+	  // simulator main loop, therefore efficiency is crucial.
+	  // Perhaps I should check.  This is somehow a design choice.
+	  //
+	  PDescr & pd = processes[current_process];
 
-	if (pd.terminated) {
+	  if (pd.terminated) {
 	    if (error_handler) 
-		error_handler->handle_terminated(current_process, 
-						 action.event);
-	} else if (current_time < pd.available_at) {
+	      error_handler->handle_terminated(current_process, 
+					       action.event);
+	  } else if (current_time < pd.available_at) {
 	    if (error_handler) 
-		error_handler->handle_busy(current_process, action.event);
-	} else {
+	      error_handler->handle_busy(current_process, action.event);
+	  } else {
 	    switch (action.type) {
 	    case A_Event:
-		pd.process->process_event(action.event);
-		break;
+	      pd.process->process_event(action.event);
+	      break;
 	    case A_Init: 
-		pd.process->init(); 
-		break;
+	      pd.process->init(); 
+	      break;
 	    case A_Stop: 
-		pd.process->stop();
-		//
-		// here we must use processes[current_process] instead
-		// of pd since pd.process->stop() might have added or
-		// removed processes, and therefore resized the
-		// processes vector, rendering pd invalid
-		//
-		processes[current_process].terminated = true;
-		break;
+	      pd.process->stop();
+	      //
+	      // here we must use processes[current_process] instead
+	      // of pd since pd.process->stop() might have added or
+	      // removed processes, and therefore resized the
+	      // processes vector, rendering pd invalid
+	      //
+	      processes[current_process].terminated = true;
+	      break;
 	    default:
-		//
-		// add paranoia checks/logging here?
-		//
-		break;
+	      //
+	      // add paranoia checks/logging here?
+	      //
+	      break;
 	    }
 	    // here we must use processes[current_process] instead of
 	    // pd.  Same reason as above. the "processes" vector might
@@ -228,11 +225,12 @@ void Sim::run_simulation() {
 	    // pd may no longer be considered a valid reference.
 	    //
 	    processes[current_process].available_at = current_time;
-	}
+	  }
 
-	if (action.event != 0)
+	  if (action.event != 0)
 	    if (--(action.event->refcount) == 0) 
-		delete(action.event);
+	      delete(action.event);
+	}
     }
     lock = false;
     running = false;
