@@ -136,7 +136,7 @@ namespace {
     void init();
     virtual void handleMessage(const cMessage* msg);
     void removeEvents() {
-      Sim::remove_event(boost::bind(cMessageHPVPred,_1,hpv));
+      Sim::ignore_event(boost::bind(cMessageHPVPred,_1,hpv));
     }
   };
 
@@ -164,7 +164,7 @@ namespace {
     void removeHPVevents() {
       // for (infections_t::iterator it = infections.begin(); it!=infections.end(); ++it)
       // 	(*it)->removeEvents();
-      Sim::remove_event(cMessageAnyHPVPred);
+      Sim::ignore_event(cMessageAnyHPVPred);
     }
     // void add_costs(string item);
     // void scheduleUtilityChange(double at, std::string category, bool transient = true, 
