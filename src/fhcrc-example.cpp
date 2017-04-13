@@ -92,6 +92,7 @@ namespace fhcrc_example {
     SimpleReport<double> outParameters;
     SimpleReport<double> psarecord, falsePositives;
     SimpleReport<double> diagnoses;
+    Means tmc_minus_t0;
   };
   // SimOutput * out; // in callFhcrc
   // &out in the Person object
@@ -132,6 +133,13 @@ namespace fhcrc_example {
     int screen, nLifeHistories;
     bool includePSArecords, panel, includeDiagnoses, debug;
     Table<double,double> production;
+
+    ~SimInput() {
+      if (rngNh != NULL) delete rngNh;
+      if (rngOther != NULL) delete rngOther;
+      if (rngScreen != NULL) delete rngScreen;
+      if (rngTreatment != NULL) delete rngTreatment;
+    }
   };
   // SimInput in; // callFhcrc
   // SimInput* in; // Person
