@@ -527,6 +527,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
   rbindList <- function(obj) # recursive
       if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
+  rbindExtract <- function(obj,name) 
+      do.call("rbind",lapply(obj, function(obji) data.frame(obji[[name]])))
   reader <- function(obj) {
     obj <- cbindList(obj)
     out <- cbind(data.frame(state=ext_state2state(enum(obj[[1]],ext_stateT)),
@@ -555,11 +557,17 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
       enum(summary$events$event) <- eventT
 }
 
-  lifeHistories <- do.call("rbind",lapply(out,function(obj) data.frame(obj$lifeHistories)))
-  psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
-  diagnoses <- do.call("rbind",lapply(out,function(obj) data.frame(obj$diagnoses)))
-  falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
-  parameters <- do.call("rbind",lapply(out,function(obj) data.frame(obj$parameters)))
+  ## lifeHistories <- do.call("rbind",lapply(out,function(obj) data.frame(obj$lifeHistories)))
+  ## psarecord <- do.call("rbind",lapply(out,function(obj) data.frame(obj$psarecord)))
+  ## diagnoses <- do.call("rbind",lapply(out,function(obj) data.frame(obj$diagnoses)))
+  ## falsePositives <- do.call("rbind",lapply(out,function(obj) data.frame(obj$falsePositives)))
+  ## parameters <- do.call("rbind",lapply(out,function(obj) data.frame(obj$parameters)))
+  lifeHistories <- rbindExtract(out,"lifeHistories")
+  psarecord <- rbindExtract(out,"psarecord")
+  diagnoses <- rbindExtract(out,"diagnoses")
+  falsePositives <- rbindExtract(out,"falsePositives")
+  parameters <- rbindExtract(out,"parameters")
+  tmc_minus_t0 <- sapply(rbindExtract(out,"tmc_minus_t0"), sum)
 
   ## Identifying elements without name which also need to be rbind:ed
   societal.costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs))) #split in sociatal and healthcare perspective
@@ -585,7 +593,8 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
               healthsector.costs=healthsector.costs, societal.costs=societal.costs,
               psarecord=psarecord, diagnoses=diagnoses,
               cohort=data.frame(table(cohort)),simulation.parameters=parameter,
-              falsePositives=falsePositives)
+              falsePositives=falsePositives,
+              tmc_minus_t0=tmc_minus_t0)
   class(out) <- "fhcrc"
   out
 }

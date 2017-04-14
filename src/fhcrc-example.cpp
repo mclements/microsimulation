@@ -435,6 +435,7 @@ void FhcrcPerson::init() {
     tc = calculate_transition_time(R::runif(0.0,1.0), t0, in->parameter["gc"]*in->parameter["grade.clinical.rate.high"]);
     tmc = calculate_transition_time(R::runif(0.0,1.0), tm, in->parameter["gc"]*in->parameter["thetac"]*in->parameter["grade.clinical.rate.high"]);
   }
+  out->tmc_minus_t0 += (tmc - t0);
   aoc = in->rmu0.rand(R::runif(0.0,1.0));
   if (!in->bparameter["revised_natural_history"]){
     future_ext_grade= (future_grade==base::Gleason_le_7) ?
@@ -1167,7 +1168,8 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
 		      _("parameters") = out.outParameters.wrap(),   // SimpleReport<double>
 		      _("psarecord")=out.psarecord.wrap(),          // SimpleReport<double>
 		      _("falsePositives")=out.falsePositives.wrap(),// SimpleReport<double>
-		      _("diagnoses")=out.diagnoses.wrap()           // SimpleReport<double>
+		      _("diagnoses")=out.diagnoses.wrap(),          // SimpleReport<double>
+		      _("tmc_minus_t0")=out.tmc_minus_t0.wrap()     // Means
 		      );
 }
 

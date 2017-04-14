@@ -307,6 +307,11 @@ public:
     _sumsq += (long double)value * (long double)value;
     return this;
   }
+  SEXP wrap() {
+    return Rcpp::DataFrame::create(_("n")=_n,
+				    _("sum")=_sum,
+				    _("sumsq")=_sumsq);
+  }
   //friend std::ostream& operator<<(std::ostream& os, Means& m);
 private:
   int _n;
