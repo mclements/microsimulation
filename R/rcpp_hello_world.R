@@ -527,7 +527,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
   rbindList <- function(obj) # recursive
       if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
-  rbindExtract <- function(obj,name) 
+  rbindExtract <- function(obj,name)
       do.call("rbind",lapply(obj, function(obji) data.frame(obji[[name]])))
   reader <- function(obj) {
     obj <- cbindList(obj)
@@ -567,7 +567,11 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   diagnoses <- rbindExtract(out,"diagnoses")
   falsePositives <- rbindExtract(out,"falsePositives")
   parameters <- rbindExtract(out,"parameters")
-  tmc_minus_t0 <- sapply(rbindExtract(out,"tmc_minus_t0"), sum)
+
+  appendMeans <- function(x) c(x,
+                              mean.sum = x[["sum"]] / x[["n"]],
+                              mean.sumsq = x[["sumsq"]] / x[["n"]])
+  natural.history.summary <- data.frame(tmc_minus_t0 = appendMeans(sapply(rbindExtract(out,"tmc_minus_t0"), sum)))
 
   ## Identifying elements without name which also need to be rbind:ed
   societal.costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs))) #split in sociatal and healthcare perspective
@@ -594,7 +598,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
               psarecord=psarecord, diagnoses=diagnoses,
               cohort=data.frame(table(cohort)),simulation.parameters=parameter,
               falsePositives=falsePositives,
-              tmc_minus_t0=tmc_minus_t0)
+              natural.history.summary=natural.history.summary)
   class(out) <- "fhcrc"
   out
 }
