@@ -120,13 +120,13 @@ namespace fhcrc_example {
     H_dist_t H_dist;
     H_local_t H_local;
     set<double,greater<double> > H_local_age_set;
-    
+
     Rng * rngNh, * rngOther, * rngScreen, * rngTreatment;
     Rpexp rmu0;
-    
+
     NumericVector parameter;
     LogicalVector bparameter;
-    
+
     // read in the parameters
     NumericVector cost_parameters, utility_estimates, utility_duration, lost_production_proportions;
     NumericVector mubeta2, sebeta2; // otherParameters["mubeta2"] rather than as<NumericVector>(otherParameters["mubeta2"])
@@ -322,7 +322,7 @@ namespace fhcrc_example {
     double y_enter = psamean(35.0 + t_enter);
     return (log(-log(u)*(beta1+beta2)/gamma + y_enter) - beta0 + beta2*t0) / (beta1+beta2);
   }
-  
+
   void FhcrcPerson::opportunistic_rescreening(double psa) {
     double prescreened = 1.0 - in->rescreen_cure(bounds<double>(now(),30.0,90.0),psa);
     double shape = in->rescreen_shape(bounds<double>(now(),30.0,90.0),psa);
@@ -412,12 +412,17 @@ void FhcrcPerson::init() {
     beta2 = R::rnormPos(in->mubeta2[future_grade],in->sebeta2[future_grade]);
   }
   else {
+    // multinomial logistic regression
     double u = R::runif(0.0,1.0);
-    if (u < exp(in->parameter["alpha8"] + in->parameter["beta8"] * t0))
-      future_ext_grade = ext::Gleason_ge_8;
-    else if (u > 1 - (in->parameter["alpha7"] + in->parameter["beta7"] * t0))
-      future_ext_grade = ext::Gleason_7;
-    else future_ext_grade = ext::Gleason_le_6;
+    double denom = 1.0 +
+      exp(in->parameter["alpha7"] + in->parameter["beta7"] * t0) +
+      exp(in->parameter["alpha8"] + in->parameter["beta8"] * t0);
+    double p6 = 1.0/denom;
+    double p7 = exp(in->parameter["alpha7"] + in->parameter["beta7"] * t0) / denom;
+    double p8 = exp(in->parameter["alpha8"] + in->parameter["beta8"] * t0) / denom;
+    if (u < p6) future_ext_grade = ext::Gleason_le_6;
+    else if (u < p6+p7) future_ext_grade = ext::Gleason_7;
+    else future_ext_grade = ext::Gleason_ge_8;
     future_grade = future_ext_grade == ext::Gleason_ge_8 ? base::Gleason_ge_8 : base::Gleason_le_7;
     beta2 = R::rnormPos(in->mubeta2[future_ext_grade],in->sebeta2[future_ext_grade]);
   }
@@ -1007,7 +1012,7 @@ RcppExport SEXP callFhcrc(SEXP parmsIn) {
   // declarations
   SimInput in;
   SimOutput out;
-  
+
   in.rngNh = new Rng();
   in.rngOther = new Rng();
   in.rngScreen = new Rng();
