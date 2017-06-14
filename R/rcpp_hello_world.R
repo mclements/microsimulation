@@ -1,13 +1,13 @@
 LdFlags <- function()
     cat(system.file("lib/libmicrosimulation.a",  package="microsimulation", mustWork=TRUE))
 
-.microsimulation.init <- function () {
-  .Call("r_create_current_stream",PACKAGE="microsimulation")
+microsimulation.init <- function(PACKAGE="microsimulation") {
+  .Call("r_create_current_stream",PACKAGE=PACKAGE)
   return(1)
 }
 
-.microsimulation.exit <- function () {
-  .Call("r_remove_current_stream",PACKAGE="microsimulation")
+microsimulation.exit <- function(PACKAGE="microsimulation") {
+  .Call("r_remove_current_stream",PACKAGE=PACKAGE)
   return(1)
 }
 ## http://r.789695.n4.nabble.com/How-to-construct-a-valid-seed-for-l-Ecuyer-s-method-with-given-Random-seed-td4656340.html
@@ -23,23 +23,23 @@ rnormPos <- function(n,mean=0,sd=1,lbound=0) {
     x
 }
 
-set.user.Random.seed <- function (seed) {
+set.user.Random.seed <- function (seed,PACKAGE="microsimulation") {
   seed <- as.double(unsigned(seed))
   if (length(seed) == 1) seed <- rep(seed,6)
   if (length(seed) == 7) seed <- seed[-1]
-  .C("r_set_user_random_seed",seed = seed,PACKAGE="microsimulation")
+  .C("r_set_user_random_seed",seed = seed,PACKAGE=PACKAGE)
   return(invisible(seed))
 }
 
-next.user.Random.substream <- function () {
-  .C("r_next_rng_substream",PACKAGE="microsimulation")
+next.user.Random.substream <- function(PACKAGE="microsimulation") {
+  .C("r_next_rng_substream", PACKAGE=PACKAGE)
   return(invisible(TRUE))
 }
 
-user.Random.seed <- function() {
+user.Random.seed <- function(PACKAGE="microsimulation") {
   c(407L,
     as.integer(signed(.C("r_get_user_random_seed", seed=as.double(rep(1,6)),
-                         PACKAGE="microsimulation")$seed)))
+                         PACKAGE=PACKAGE)$seed)))
 }
 
 enum <- function(obj, labels, start=0) {

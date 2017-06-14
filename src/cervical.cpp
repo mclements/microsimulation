@@ -465,7 +465,7 @@ RcppExport SEXP callCervical(SEXP parmsIn) {
   // main loop
   for (int i = 0; i < in.parameter["n"]; ++i) { 
     // define infections
-    int id = i+in.parameter["firstID"];
+    int id = i+as<int>(in.parameter["firstID"]);
     lr_hpv = HPV_infection(LR_HPV);
     hpv_16 = HPV_infection(HPV_16);
     hpv_18 = HPV_infection(HPV_18);
