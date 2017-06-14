@@ -46,8 +46,8 @@
 
 #include <boost/random/detail/disable_warnings.hpp>
 
-#include "RngStream.h"
-#include "RngStream.cpp"
+#include <RngStream.h>
+#include <RngStream.cpp>
 
 namespace boost {
   namespace random {

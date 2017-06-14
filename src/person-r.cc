@@ -26,7 +26,7 @@
  * age-specific reporting of state probabilities
 */
 
-#include "microsimulation.h"
+#include <microsimulation.h>
 
 namespace {
 

@@ -25,7 +25,7 @@
 #include <vector>
 
 #include <siena/ssim.h>
-#include "heap.h"
+#include <heap.h>
 #include <R.h>
 
 namespace ssim {

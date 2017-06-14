@@ -3,7 +3,7 @@
 //#include <stdlib.h>
 //#include <string.h>
 
-#include "microsimulation.h"
+#include <microsimulation.h>
 
 namespace ssim {
 
