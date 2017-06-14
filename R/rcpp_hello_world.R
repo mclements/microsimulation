@@ -194,8 +194,8 @@ FhcrcParameters <- list(
     sebeta2=c(0.0913,0.3968, 0.0), # base::grade: variance of beta2
     rev_mubeta2=c(0.051, 0.129, 0.1678), # ext::grade: same as above for extended gleason grade (6-, 7, 8+)
     rev_sebeta2=c(0.064, 0.087, 0.3968), # ext::grade
-    alpha7=0.01241490, # proportion gleason 7 at age 35
-    beta7=0.01543417, # linear slope for the proportion of gleason 7 with age
+    alpha7=log(0.01241490), # log of the proportion gleason 7 at age 35
+    beta7=log(0.01543417), # slope of log proportion of gleason 7
     alpha8=-4.60517081, # log of the proportion of gleason 8+ at age 35
     beta8=0.08770374, # slope of log proportion of gleason 8+
     gamma_m_diff=0.0001, # rate difference between T1-T2 and T3+ stage, used to parameterise for T-stage dist.
@@ -527,7 +527,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
     if (is.list(obj)) do.call("cbind",lapply(obj,cbindList)) else data.frame(obj)
   rbindList <- function(obj) # recursive
       if (is.list(obj)) do.call("rbind",lapply(obj,rbindList)) else data.frame(obj)
-  rbindExtract <- function(obj,name) 
+  rbindExtract <- function(obj,name)
       do.call("rbind",lapply(obj, function(obji) data.frame(obji[[name]])))
   reader <- function(obj) {
     obj <- cbindList(obj)
@@ -567,7 +567,11 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
   diagnoses <- rbindExtract(out,"diagnoses")
   falsePositives <- rbindExtract(out,"falsePositives")
   parameters <- rbindExtract(out,"parameters")
-  tmc_minus_t0 <- sapply(rbindExtract(out,"tmc_minus_t0"), sum)
+
+  appendMeans <- function(x) c(x,
+                              mean.sum = x[["sum"]] / x[["n"]],
+                              mean.sumsq = x[["sumsq"]] / x[["n"]])
+  natural.history.summary <- data.frame(tmc_minus_t0 = appendMeans(sapply(rbindExtract(out,"tmc_minus_t0"), sum)))
 
   ## Identifying elements without name which also need to be rbind:ed
   societal.costs <- do.call("rbind",lapply(out,function(obj) data.frame(obj$costs))) #split in sociatal and healthcare perspective
@@ -594,7 +598,7 @@ callFhcrc <- function(n=10,screen=screenT,nLifeHistories=10,
               psarecord=psarecord, diagnoses=diagnoses,
               cohort=data.frame(table(cohort)),simulation.parameters=parameter,
               falsePositives=falsePositives,
-              tmc_minus_t0=tmc_minus_t0)
+              natural.history.summary=natural.history.summary)
   class(out) <- "fhcrc"
   out
 }
