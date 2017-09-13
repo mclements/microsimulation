@@ -172,16 +172,6 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
 ICER <- function(object1, object2, ...)
     UseMethod("ICER")
 
-## fast operations by group using base-R
-## http://stackoverflow.com/questions/3685492/r-speeding-up-group-by-operations
-grp_apply = function(XS, INDEX, FUN, ..., simplify=T) {
-  FUN = match.fun(FUN)
-  if (!is.list(XS))
-    XS = list(XS)
-  as.data.frame(as.table(tapply(1:length(XS[[1L]]), INDEX, function(s, ...)
-    do.call(FUN, c(lapply(XS, `[`, s), list(...))), ..., simplify=simplify)))
-}
-
 ## utility - not exported
 assignList <- function(lst,...)
   for(i in 1:length(lst))
