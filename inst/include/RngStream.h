@@ -55,7 +55,21 @@ void IncreasedPrecis (bool incp);
 bool SetSeed (const double seed[6]);
 
 
+void GenAdvanceState (int32_t e, int32_t c,
+		      const double A1[3][3], const double A2[3][3],
+		      const double InvA1[3][3], const double InvA2[3][3]);
+
+
 void AdvanceState (int32_t e, int32_t c);
+
+
+void AdvanceSubstream (int32_t e, int32_t c);
+
+
+void AdvanceStream (int32_t e, int32_t c);
+
+
+void CalcMatrix (int32_t e, int32_t c, double C1[3][3], double C2[3][3]);
 
 
 void GetState (double seed[6]) const;

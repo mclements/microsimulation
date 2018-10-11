@@ -91,8 +91,31 @@ const double A2p127[3][3] = {
        {    2824425944.0,   32183930.0, 2093834863.0 }
        };
 
+const double InvA1p76[3][3] = {
+{   2585822061.0,   2346541846.0,    600781890.0},
+{     42385315.0,   4257896290.0,   2346541846.0},
+{   1248824805.0,   2390631828.0,   4257896290.0}
+};
 
+const double InvA2p76[3][3] = {
+{    855407695.0,   4134906251.0,    112088500.0},
+{   2897599610.0,    855407695.0,   1987588141.0},
+{    854109890.0,   2897599610.0,   1099731892.0}
+};
 
+const double InvA1p127[3][3] = {
+{   1737602145.0,   4223429791.0,   3623540388.0},
+{    296220492.0,   2329649265.0,   4223429791.0},
+{   2348335727.0,   4013827785.0,   2329649265.0}
+};
+
+const double InvA2p127[3][3] = {
+{   3244453311.0,    924928292.0,     95182267.0},
+{   3169310862.0,   3244453311.0,   3740757140.0},
+{   2096686917.0,   3169310862.0,   2895877872.0}
+};
+
+  
 //-------------------------------------------------------------------------
 // Return (a*s + c) MOD m; a, s, c and m must be < 2^35
 //
@@ -392,21 +415,23 @@ bool RngStream::SetSeed (const double seed[6])
 // if e = 0, let n = c.
 // Jump n steps forward if n > 0, backwards if n < 0.
 //
-void RngStream::AdvanceState (int32_t e, int32_t c)
+void RngStream::GenAdvanceState (int32_t e, int32_t c,
+				 const double A1[3][3], const double A2[3][3],
+				 const double InvA1[3][3], const double InvA2[3][3])
 {
     double B1[3][3], C1[3][3], B2[3][3], C2[3][3];
 
     if (e > 0) {
-        MatTwoPowModM (A1p0, B1, m1, e);
-        MatTwoPowModM (A2p0, B2, m2, e);
+        MatTwoPowModM (A1, B1, m1, e);
+        MatTwoPowModM (A2, B2, m2, e);
     } else if (e < 0) {
         MatTwoPowModM (InvA1, B1, m1, -e);
         MatTwoPowModM (InvA2, B2, m2, -e);
     }
 
     if (c >= 0) {
-        MatPowModM (A1p0, C1, m1, c);
-        MatPowModM (A2p0, C2, m2, c);
+        MatPowModM (A1, C1, m1, c);
+        MatPowModM (A2, C2, m2, c);
     } else {
         MatPowModM (InvA1, C1, m1, -c);
         MatPowModM (InvA2, C2, m2, -c);
@@ -421,6 +446,47 @@ void RngStream::AdvanceState (int32_t e, int32_t c)
     MatVecModM (C2, &Cg[3], &Cg[3], m2);
 }
 
+
+void RngStream::AdvanceState (int32_t e, int32_t c) {
+  GenAdvanceState(e, c, A1p0, A2p0, InvA1, InvA2);
+}
+
+void RngStream::AdvanceSubstream (int32_t e, int32_t c) {
+  GenAdvanceState(e, c, A1p76, A2p76, InvA1p76, InvA2p76);
+}
+
+void RngStream::AdvanceStream (int32_t e, int32_t c) {
+  GenAdvanceState(e, c, A1p127, A2p127, InvA1p127, InvA2p127);
+}
+
+
+void RngStream::CalcMatrix (int32_t e, int32_t c, double C1[3][3], double C2[3][3])
+{
+  double B1[3][3], B2[3][3];
+
+    if (e > 0) {
+        MatTwoPowModM (A1p0, B1, m1, e);
+        MatTwoPowModM (A2p0, B2, m2, e);
+    }
+    else if (e < 0) {
+        MatTwoPowModM (InvA1, B1, m1, -e);
+        MatTwoPowModM (InvA2, B2, m2, -e);
+    }
+
+    if (c >= 0) {
+        MatPowModM (A1p0, C1, m1, c);
+        MatPowModM (A2p0, C2, m2, c);
+    }
+    else {
+        MatPowModM (InvA1, C1, m1, -c);
+        MatPowModM (InvA2, C2, m2, -c);
+    }
+
+    if (e) {
+        MatMatModM (B1, C1, C1, m1);
+        MatMatModM (B2, C2, C2, m2);
+    }
+}
 
 //-------------------------------------------------------------------------
 void RngStream::GetState (double seed[6]) const
