@@ -453,10 +453,14 @@ void RngStream::AdvanceState (int32_t e, int32_t c) {
 
 void RngStream::AdvanceSubstream (int32_t e, int32_t c) {
   GenAdvanceState(e, c, A1p76, A2p76, InvA1p76, InvA2p76);
+   for (int i = 0; i < 6; ++i)
+       Bg[i] = Cg[i];
 }
 
 void RngStream::AdvanceStream (int32_t e, int32_t c) {
   GenAdvanceState(e, c, A1p127, A2p127, InvA1p127, InvA2p127);
+   for (int i = 0; i < 6; ++i)
+       Ig[i] = Bg[i] = Cg[i];
 }
 
 

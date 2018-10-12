@@ -433,6 +433,11 @@ extern "C" { // functions that will be called from R
   void r_next_rng_substream();
 
   /**
+      @brief A utility function to advance the random sub-stream n steps for a specified seed.
+  */
+  void r_rng_advance_substream(double * seed, int * n);
+
+  /**
       @brief Simple test of the random streams (with a stupid name)
   */
   void test_rstream2(double * x);

@@ -66,6 +66,18 @@ namespace ssim {
       default_stream->ResetNextSubstream();
     }
 
+    void r_rng_advance_substream(double * inoutseed, int * n) {
+      RngStream r;
+      double seed[6];
+      for (int i=0; i<6; i++)
+	seed[i]=inoutseed[i];
+      r.SetSeed(seed);
+      r.AdvanceSubstream(0, *n);
+      r.GetState(seed);
+      for (int i=0; i<6; i++)
+	inoutseed[i]= seed[i];
+    }
+
     double *user_unif_rand ()
     {
       if (!current_stream) {

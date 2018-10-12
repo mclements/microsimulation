@@ -31,6 +31,13 @@ set.user.Random.seed <- function (seed,PACKAGE="microsimulation") {
   return(invisible(seed))
 }
 
+advance.substream <- function (seed,n,PACKAGE="microsimulation") {
+  seed <- as.double(unsigned(seed))
+  if (length(seed) == 1) seed <- rep(seed,6)
+  if (length(seed) == 7) seed <- seed[-1]
+  .C("r_rng_advance_substream", seed = seed, n = as.integer(n), PACKAGE=PACKAGE)$seed
+}
+
 next.user.Random.substream <- function(PACKAGE="microsimulation") {
   .C("r_next_rng_substream", PACKAGE=PACKAGE)
   return(invisible(TRUE))
