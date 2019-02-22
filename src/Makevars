@@ -4,10 +4,7 @@ PKG_CFLAGS = -I.
 
 SOURCES = $(wildcard *.c */*.c */*/*.c)
 
-## Examples of other possible object files
-## OBJECTS = microsimulation.o cervical.o person-r.o calibperson-r.o simple-example.o simple-example2.o illness-death.o ssim.o RngStream.o $(SOURCES:.c=.o)
-
-OBJECTS = microsimulation.o ssim.o RngStream.o $(SOURCES:.c=.o)
+OBJECTS = microsimulation.o cervical.o person-r.o calibperson-r.o simple-example.o simple-example2.o illness-death.o ssim.o RngStream.o $(SOURCES:.c=.o)
 
 all: $(SHLIB) staticLibrary
 
