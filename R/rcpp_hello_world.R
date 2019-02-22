@@ -64,6 +64,7 @@ RNGstate <- function() {
                         inherits = FALSE))
     get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
   else NULL
+  oldkind <- RNGkind()
   reset <- function() {
     if (!is.null(oldseed))
       assign(".Random.seed", oldseed, envir = .GlobalEnv)
@@ -71,6 +72,7 @@ RNGstate <- function() {
         ## clean up if we created a .Random.seed
         if (exists(".Random.seed" ,envir = .GlobalEnv, inherits = FALSE))
             rm(.Random.seed, envir = .GlobalEnv, inherits = FALSE)
+            do.call(RNGkind, as.list(oldkind))
     }
   }
   list(oldseed = oldseed, reset = reset)
