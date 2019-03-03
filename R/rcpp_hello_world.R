@@ -32,10 +32,10 @@ set.user.Random.seed <- function (seed,PACKAGE="microsimulation") {
 }
 
 advance.substream <- function (seed,n,PACKAGE="microsimulation") {
-  seed <- as.double(unsigned(seed))
-  if (length(seed) == 1) seed <- rep(seed,6)
-  if (length(seed) == 7) seed <- seed[-1]
-  .C("r_rng_advance_substream", seed = seed, n = as.integer(n), PACKAGE=PACKAGE)$seed
+    stopifnot(is.integer(seed) && length(seed) == 7 && seed[1]==407L)
+    dseed <- as.double(unsigned(seed))[-1]
+    newseed <- .C("r_rng_advance_substream", seed = dseed, n = as.integer(n), PACKAGE=PACKAGE)$seed
+    c(407L,as.integer(signed(newseed)))
 }
 
 next.user.Random.substream <- function(PACKAGE="microsimulation") {
