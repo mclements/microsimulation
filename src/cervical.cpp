@@ -179,7 +179,7 @@ namespace {
   }
 
   double HPV_infection::event_time(state_t from, state_t to) {
-    return in->H[H_key(hpv,Normal,HPV)].invert(-log(R::runif(0.0,1.0)),now());
+    return in->H[H_key(hpv,from,to)].invert(-log(R::runif(0.0,1.0)),now());
   }
 
   void HPV_infection::init() {
