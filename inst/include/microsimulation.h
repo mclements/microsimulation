@@ -487,7 +487,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef boost::unordered_map<pair<State,Time>, Utility > UtilityMap;
  typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
  typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventsMap;
- EventReport(Utility discountRate = 0.0, bool outputUtilities = true) : discountRate(discountRate), outputUtilities(outputUtilities) { }
+ typedef vector<Utility> IndividualUtilities;
+ EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1) : discountRate(discountRate), outputUtilities(outputUtilities) {
+   _vector.resize(size);
+ }
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
@@ -497,6 +500,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _events.clear();
    _prev.clear();
    _partition.clear();
+   _vector.clear();
  }
  Utility discountedUtilities(Time a, Time b, Utility utility = 1.0) {
    if (discountRate == 0.0) return utility * (b-a);
@@ -510,7 +514,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
      return 0.0;
    }
  }
- void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1) {
+ void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1, int index = 0) {
    Iterator lo, hi, it, last;
    lo = _partition.lower_bound(lhs);
    hi = _partition.lower_bound(rhs);
@@ -521,14 +525,20 @@ inline double discountedInterval(double start, double end, double discountRate) 
       if (lhs<=(*it) && (*it)<rhs) // cadlag
     	++_prev[Pair(state,*it)];
       if (it == last) {
-	if (outputUtilities)
-	  _ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
+	if (outputUtilities) {
+	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
+	  _ut[Pair(state,*it)] += u;
+	  _vector[index] += u;
+	}
 	_pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
       }
       else {
 	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
-	if (outputUtilities)
-	  _ut[Pair(state,*it)] += discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	if (outputUtilities) {
+	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	  _ut[Pair(state,*it)] += u;
+	  _vector[index] += u;
+	}
 	_pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
       }
    }
@@ -544,6 +554,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    append_map<EventsMap>(_events,er._events);
    append_map<PtMap>(_pt,er._pt);
    append_map<UtilityMap>(_ut,er._ut);
+   _vector.insert(_vector.end(), er._vector.begin(), er._vector.end());
  }
  SEXP wrap() {
    using namespace Rcpp;
@@ -558,6 +569,9 @@ inline double discountedInterval(double start, double end, double discountRate) 
 			 _("events") = wrap_map(_events,"event","age","number"),
 			 _("prev") = wrap_map(_prev,"age","number"));
  }
+ SEXP wrap_indiv() {
+   return Rcpp::wrap(_vector);
+ }
  Utility discountRate;
  bool outputUtilities;
  Partition _partition;
@@ -565,6 +579,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  UtilityMap _ut;
  PtMap _pt;
  EventsMap _events;
+ IndividualUtilities _vector;
  };
 
 
@@ -578,7 +593,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef std::pair<State,Time> Pair;
  typedef CostReport<State,Time,Cost> This;
  typedef boost::unordered_map<pair<State,Time>, Cost > Table;
- CostReport(Cost discountRate = 0) : discountRate(discountRate) { }
+ typedef std::vector<Cost> IndividualCosts;
+ CostReport(Cost discountRate = 0, int size = 1) : discountRate(discountRate) {
+   _vector.resize(size);
+ }
  Cost discountedCost(Time a, Cost cost) {
    if (discountRate == 0) return cost;
    else if (discountRate>0)
@@ -594,23 +612,33 @@ inline double discountedInterval(double start, double end, double discountRate) 
  void clear() {
    _table.clear();
    _partition.clear();
+   _vector.clear();
  }
  void append(This & new_report) { // assuming that discountRate and _partition are the same for both reports
    typename Table::iterator it;
-   for(it = new_report._table.begin(); it != new_report._table.end(); ++it)
+   _vector.insert(_vector.start(), new_report._vector.begin(), new_report._vector.end());
+   for(it = new_report._table.begin(); it != new_report._table.end(); ++it) {
      _table[it->first] += it->second;
+   }
  }
- void add(const State state, const Time time, const Cost cost) {
+ void add(const State state, const Time time, const Cost cost, const int index = 0) {
    Time time_lhs = * _partition.lower_bound(time);
-   _table[Pair(state,time_lhs)] += discountedCost(time,cost);
+   Cost c = discountedCost(time,cost);
+   _table[Pair(state,time_lhs)] += c;
+   _vector[index] += c;
  }
  SEXP wrap() {
    using namespace Rcpp;
    return wrap_map(_table,"age","cost");
  }
+ SEXP wrap_indiv() {
+   using namespace Rcpp;
+   return Rcpp::wrap(_vector);
+ }
  Cost discountRate;
  Partition _partition;
  Table _table;
+ IndividualCosts _vector;
  };
 
  /**
