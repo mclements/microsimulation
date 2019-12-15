@@ -491,6 +491,9 @@ inline double discountedInterval(double start, double end, double discountRate) 
  EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1) : discountRate(discountRate), outputUtilities(outputUtilities) {
    _vector.resize(size);
  }
+ void resize(int size) {
+   _vector.resize(size);
+ }
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
@@ -613,6 +616,9 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _table.clear();
    _partition.clear();
    _vector.clear();
+ }
+ void resize(int size) {
+   _vector.resize(size);
  }
  void append(This & new_report) { // assuming that discountRate and _partition are the same for both reports
    typename Table::iterator it;
