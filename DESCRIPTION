@@ -1,7 +1,7 @@
 Package: microsimulation
 Type: Package
 Title: Microsimulation in R and C++
-Version: 1.2
+Version: 1.2.0
 Date: 2020-01-16
 Author: Mark Clements, Alexandra Jauhiainen, Andreas Karlsson.
 Maintainer: Mark Clements <mark.clements@ki.se>
