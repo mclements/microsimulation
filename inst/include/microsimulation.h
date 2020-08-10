@@ -19,8 +19,7 @@
  * @section DESCRIPTION
 
  cMessage and cProcess classes, providing some compatability between
- SSIM and the OMNET++ API. This is specialised for use as an R package
- (#includes and REprintf).
+ SSIM and the OMNET++ API. This is specialised for use as an R package.
 
  It also provides several utility classes: Means for statistical
  collection and Rpexp for piecewise constant exponential random number
