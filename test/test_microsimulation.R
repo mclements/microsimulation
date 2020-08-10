@@ -2,10 +2,6 @@
 ## require(microsimulation)
 ## microsimulation:::.testPackage()
 
-## test simple
-library(microsimulation)
-microsimulation:::callSimplePerson()
-
 ## test inline facilities
 library(Rcpp)
 library(microsimulation)
@@ -24,7 +20,7 @@ sourceCpp(code="
     SimplePerson() : id(-1) {};
     void init();
     virtual void handleMessage(const ssim::cMessage* msg);
-    void reporting(string name, double value);
+    void reporting(std::string name, double value);
   };
   /**
       Initialise a simulation run for an individual
@@ -65,7 +61,7 @@ sourceCpp(code="
     if (id % 10000 == 0) Rcpp::checkUserInterrupt();
   } // handleMessage()
   //[[Rcpp::export]]
-  Rcpp::List callSimplePerson(int n = 10) {
+  Rcpp::DataFrame callSimplePerson(int n = 10) {
     SimplePerson person;
     Rcpp::RNGScope scope;
     for (int i = 0; i < n; i++) {
@@ -73,9 +69,14 @@ sourceCpp(code="
       ssim::Sim::run_simulation();
       ssim::Sim::clear();
     }
-    return Rcpp::wrap(person.report);
+    return Rcpp::wrap<Rcpp::DataFrame>(person.report);
   }")
-as.data.frame(callSimplePerson())
+set.seed(12345)
+callSimplePerson()
+set.seed(12345)
+microsimulation:::callSimplePerson()
+
+
 
 ## 9013 bug
 require(microsimulation)
