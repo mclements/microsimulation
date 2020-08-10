@@ -491,7 +491,7 @@ RcppExport SEXP callCervical(SEXP parmsIn) {
     in.rngOther->nextSubstream();
     in.rngScreen->nextSubstream();
     in.rngTreatment->nextSubstream();
-    R_CheckUserInterrupt();  /* be polite -- did the user hit ctrl-C? */
+    if (i % 10000 == 0) Rcpp::checkUserInterrupt(); /* be polite -- did the user hit ctrl-C? */
   }
 
   // output
