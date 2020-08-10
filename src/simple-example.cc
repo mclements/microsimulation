@@ -2,97 +2,84 @@
 
 namespace {
 
-using namespace std;
-using namespace ssim;
+  enum state_t {Healthy,Cancer,Death};
 
-enum state_t {Healthy,Cancer,Death};
+  enum event_t {toOtherDeath, toCancer, toCancerDeath};
 
-enum event_t {toOtherDeath, toCancer, toCancerDeath,toCheck};
+  typedef std::map<std::string, std::vector<double> > Report;
 
-class SimplePerson : public cProcess 
-{
-public:
-  state_t state;
-  int id;
-  SimplePerson(const int i = 0) : id(i) {};
-  void init();
-  virtual void handleMessage(const cMessage* msg);
-};
+  class SimplePerson : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    Report report;
+    SimplePerson() : id(-1) {};
+    void init();
+    virtual void handleMessage(const ssim::cMessage* msg);
+    void reporting(string name, double value);
+  };
 
-map<string, vector<double> > report;
-
-/** 
-    Initialise a simulation run for an individual
- */
-void SimplePerson::init() {
-  state = Healthy;
-  double tm = R::rweibull(8.0,85.0); 
-  scheduleAt(tm,toCheck);
-  scheduleAt(tm,toOtherDeath);
-  scheduleAt(R::rweibull(3.0,90.0),toCancer);
-}
-
-void Reporting(string name,double value)  {
-  report[name].push_back(value);
-}
-
-/** 
-    Handle receiving self-messages
- */
-void SimplePerson::handleMessage(const cMessage* msg) {
-
-  Reporting("id",id);
-  Reporting("startTime",previousEventTime);
-  Reporting("endtime", now());
-  Reporting("state", state);
-  Reporting("event", msg->kind);
-
-  switch(msg->kind) {
-
-  case toOtherDeath: 
-  case toCancerDeath: 
-    Sim::stop_simulation();
-    break;
-    
-  case toCancer:
-    state = Cancer;
-    if (R::runif(0.0,1.0) < 0.5)
-      scheduleAt(now() + R::rweibull(2.0,10.0), toCancerDeath);
-    break;
-
-  case toCheck:
-    break;
-  
-  default:
-    REprintf("No valid kind of event\n");
-    break;
-    
-  } // switch
-
-} // handleMessage()
-
-RcppExport SEXP vofv() {
-  using namespace Rcpp;
-  vector< vector< short > > in, out;
-  in.push_back(vector<short>(2,1));
-  in.push_back(vector<short>(2,3));
-  return Rcpp::List::create(transpose(in));
-}
-
-
-RcppExport SEXP callSimplePerson(SEXP parms) {
-  SimplePerson person;
-  Rcpp::RNGScope scope;
-  Rcpp::List parmsl(parms);
-  int n = Rcpp::as<int>(parmsl["n"]);
-  report.clear();
-  for (int i = 0; i < n; i++) {
-    person = SimplePerson(i);
-    Sim::create_process(&person);
-    Sim::run_simulation();
-    Sim::clear();
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SimplePerson::init() {
+    id++;
+    state = Healthy;
+    double tm = R::rweibull(8.0,85.0);
+    scheduleAt(tm,toOtherDeath);
+    scheduleAt(R::rweibull(3.0,90.0),toCancer);
   }
-  return Rcpp::wrap(report);
-} 
+
+  void SimplePerson::reporting(std::string name, double value)  {
+    report[name].push_back(value);
+  }
+
+  /**
+      Handle receiving self-messages
+  */
+  void SimplePerson::handleMessage(const ssim::cMessage* msg) {
+
+    reporting("id", double(id));
+    reporting("startTime", previousEventTime);
+    reporting("endtime", ssim::now());
+    reporting("state", double(state));
+    reporting("event", double(msg->kind));
+
+    switch(msg->kind) {
+
+    case toOtherDeath:
+    case toCancerDeath:
+      ssim::Sim::stop_simulation();
+      break;
+    
+    case toCancer:
+      state = Cancer;
+      if (R::runif(0.0,1.0) < 0.5)
+	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
+      break;
+
+    default:
+      REprintf("No valid kind of event\n");
+      break;
+    
+    } // switch
+
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt();
+
+  } // handleMessage()
+
+  RcppExport SEXP callSimplePerson(SEXP parms) {
+    SimplePerson person;
+    Rcpp::RNGScope scope;
+    Rcpp::List parmsl(parms);
+    int n = Rcpp::as<int>(parmsl["n"]);
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+    return Rcpp::wrap(person.report);
+  }
  
 } // anonymous namespace

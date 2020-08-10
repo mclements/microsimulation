@@ -123,7 +123,7 @@ callSimplePerson <- function(n=10) {
   RNGkind("Mersenne-Twister")
   set.seed(12345)
   stateT <- c("Healthy","Cancer","Death")
-  eventT <- c("toOtherDeath", "toCancer", "toCancerDeath", "toCheck")
+  eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
   out <- .Call("callSimplePerson",
                parms=list(n=as.integer(n)),
                PACKAGE="microsimulation")
