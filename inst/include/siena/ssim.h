@@ -138,8 +138,9 @@ class Process {
      *  when the process is created within the simulation through
      *  Sim::create_process.  This initialization is guaranteed to be
      *  executed before any event is signaled to the process.
+     *  BREAKING CHANGE: this method was called init().
      **/
-    virtual void	init(void) {};
+    virtual void	initialize(void) {};
 
     /** @brief action executed in response to an event signaled to
      *  this process.
@@ -332,14 +333,14 @@ public:
     /** @brief creates a new process
      *
      *  Creates a new process with the given Process object.  This
-     *  method schedules the execution of the \link Process::init()
-     *  init\endlink method for the given object.
+     *  method schedules the execution of the \link Process::initialize()
+     *  initialize\endlink method for the given object.
      *
      *  This method can be used safely within the simulation as well
      *  as outside the simulation.
      *
      *  @returns the process id of the new simulation process.
-     *  @see Process::init()
+     *  @see Process::initialize()
      **/
     static ProcessId	create_process(Process *) throw();
 

@@ -147,7 +147,7 @@ public:
     static const Event * wait_for_event(Time timeout = INIT_TIME);
 
 private:
-    virtual void init(void);
+    virtual void initialize(void);
     virtual void process_event(const Event * msg);
     virtual void stop(void);
 

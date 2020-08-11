@@ -131,7 +131,7 @@ void TProcess::starter(int) {
 }
 #endif
 
-void TProcess::init() {
+void TProcess::initialize() {
     //
     // this method creates the "execution context" for the thread that
     // executes this TProcess.  We can use two types of
@@ -139,13 +139,14 @@ void TProcess::init() {
     // functions makecontext(), getcontext(), and swapcontext().  The
     // second implementation is based on a combination of POSIX
     // functions.
+    // Breaking Change: this method was called init().
     //
 #if TPROCESS_IMPL==1
     // this method uses makecontext and swapcontext and is pretty
     // straightforward.
     //
     if (getcontext(&running_ctx)) {	// first we create a running context
-	perror("TProcess::init: getcontext failed for running_ctx");
+	perror("TProcess::initialize: getcontext failed for running_ctx");
 	return;
     }
     running_ctx.uc_link = NULL;
@@ -156,7 +157,7 @@ void TProcess::init() {
     makecontext(&running_ctx, TProcess::starter, 0);
 
     if (swapcontext(&resume_ctx, &running_ctx) < 0) {
-	perror("TProcess::init: swapcontext failed");
+	perror("TProcess::initialize: swapcontext failed");
 	return;
     } 
 #else

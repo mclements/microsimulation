@@ -201,7 +201,7 @@ void Sim::run_simulation() {
 	      pd.process->process_event(action.event);
 	      break;
 	    case A_Init: 
-	      pd.process->init(); 
+	      pd.process->initialize();
 	      break;
 	    case A_Stop: 
 	      pd.process->stop();

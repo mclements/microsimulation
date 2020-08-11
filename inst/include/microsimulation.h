@@ -231,7 +231,7 @@ inline bool cMessagePred(const ssim::Event* e, boost::function<bool(const cMessa
  */
 class cProcess : public ssim::Process {
 public:
- cProcess() : previousEventTime(0.0) { }
+  cProcess(Time startTime = Time(0.0)) : startTime(startTime), previousEventTime(startTime) { }
   virtual void handleMessage(const cMessage * msg) = 0;
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
@@ -254,8 +254,9 @@ public:
   virtual void scheduleAt(Time t, short k) {
     scheduleAt(t, new cMessage(k,""));
   }
-
-  Time previousEventTime;
+  virtual void init() = 0;
+  void initialize() { init(); previousEventTime = startTime; }
+  Time startTime, previousEventTime;
 };
 
 /**
