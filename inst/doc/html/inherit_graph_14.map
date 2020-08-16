@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classssim_1_1_process.html" title="Virtual class (interface) representing processes running within the simulator. " alt="" coords="5,31,112,57"/>
+<area shape="rect" id="node2" href="$classssim_1_1c_process.html" title="cProcess class for OMNET++ API compatibility. This provides a default for Process::process_event() th..." alt="" coords="180,5,293,32"/>
+<area shape="rect" id="node4" href="$classssim_1_1_process_with_p_id.html" title="utility Process class providing a utility interface with the simulator. " alt="" coords="160,56,313,83"/>
+<area shape="rect" id="node3" href="$classillness_death_1_1_simple_person.html" title="illnessDeath::SimplePerson" alt="" coords="361,5,544,32"/>
+</map>
