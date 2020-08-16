@@ -1,6 +1,505 @@
 ## try(detach("package:microsimulation", unload=TRUE))
-## require(microsimulation)
+## library(microsimulation)
 ## microsimulation:::.testPackage()
+
+## A continuous-time re-implementation of the Sick-Sicker example from Krijkamp et al (2018)
+library(expm)
+library(Rcpp) # sourceCpp
+library(microsimulation) # Rcpp::depends
+## RNGkind("user")
+## set.user.Random.seed(12345)
+## Utility conversion functions
+r2p <- function(r) (1-exp(-sum(r)))*r/sum(r)
+p2r <- function(p) -log(1-sum(p))*p/sum(p)
+## Transition probabilities (per cycle) and rates (old code)
+p.HD<- 0.005 # probability to die when healthy
+p.HS1 <- 0.15 # probability to become sick when healthy
+p.S1H <- 0.5 # probability to become healthy when sick
+p.S1S2<- 0.105 # probability to become sicker when sick
+rr.S1<- 3 # rate ratio of death when sick vs healthy
+rr.S2<- 10 # rate ratio of death when sicker vs healthy
+r.HD<- -log(1-p.HD) # rate of death when healthy
+r.S1D <- rr.S1 * r.HD # rate of death when sick
+r.S2D <- rr.S2 * r.HD # rate of death when sicker
+p.S1D <- 1-exp(-r.S1D) # probability to die when sick
+p.S2D <- 1-exp(-r.S2D) # probability to die when sicker
+## Cost and utility inputs
+c_H<- 2000    # cost of remaining one cycle healthy
+c_S1 <- 4000  # cost of remaining one cycle sick
+c_S2 <- 15000 # cost of remaining one cycle sicker
+c_Trt<- 12000 # (additional) cost of treatment (per cycle)
+u_H<- 1       # utility when healthy
+u_S1 <- 0.75  # utility when sick
+u_S2 <- 0.5   # utility when sicker
+u_Trt<- 0.95  # utility when sick (comments say "sicker", while the code clearly indicates "sick") and being treated
+## Approach 1: matrix log - which requires a fix for p.HS2
+## p.HS2 should be non-zero. Calibrate so that the direct transition rate is zero:
+objective <- function(scale) {
+    p.HS2 <- scale*p.HS1*p.S1S2 # mid-point approximation
+    P <- matrix(c(1-p.HD-p.HS1-p.HS2,p.HS1,p.HS2,p.HD,
+                  p.S1H,1-p.S1H-p.S1S2-p.S1D,p.S1S2,p.S1D,
+                  0,0,1-p.S2D,p.S2D,
+                  0,0,0,1), 4, byrow=TRUE)
+    expm::logm(P)[1,3]
+}
+scale <- uniroot(objective, c(0.5, 1.5), tol=1e-10)$root # scale=1.005126
+p.HS2 <- scale*p.HS1*p.S1S2
+P <- matrix(c(1-p.HD-p.HS1-p.HS2,p.HS1,p.HS2,p.HD,
+              p.S1H,1-p.S1H-p.S1S2-p.S1D,p.S1S2,p.S1D,
+              0,0,1-p.S2D,p.S2D,
+              0,0,0,1), 4, byrow=TRUE)
+## all(abs(rowSums(P)-1)<10*.Machine$double.eps) # check
+Q <- expm::logm(P) # matrix logarithm
+## all(abs(rowSums(Q))<10*.Machine$double.eps) # check
+## now calculate the rates that match these probabilities
+r_HS1 <- Q[1,2]; r_HD <- Q[1,4]
+r_S1H <- Q[2,1]; r_S1S2 <- Q[2,3]; r_S1D <- Q[2,4]
+r_S2D <- Q[3,4]
+## r_S1D/r_HD # cf 3
+## r_S2D/r_HD # cf 10
+discountRate <- 0.0
+partitionBy <- 10.0
+Trt <- FALSE
+makeList <- function(names) function() "names<-"(lapply(names, get), names)
+makeParam <- makeList(c("r_HD","r_HS1","r_S1H","r_S1S2","r_S1D","r_S2D",
+                    "c_H","c_S1","c_S2","c_Trt",
+                    "u_H","u_S1","u_S2","u_Trt",
+                    "discountRate", "partitionBy", "Trt"))
+param <- makeParam()
+## Approach 2: Calculate rates from individual probabilities
+r_HD <- p2r(p.HD)
+r_HS1 <- p2r(p.HS1)
+r_S1H <- p2r(p.S1H)
+r_S1S2 <- p2r(p.S1S2)
+r_S1D <- p2r(p.S1D)
+r_S2D <- p2r(p.S2D)
+## r_S1D/r_HD # 3
+## r_S2D/r_HD # 10
+param <- makeParam()
+summary.SickSicker <- function(object)
+    with(object, list(LE = sum(pt$pt)/sim1$param$n,
+                      QALE = sum(ut$utility)/sim1$param$n,
+                      Ecosts = sum(costs$cost)/sim1$param$n))
+## print.SickSicker <- summary.SickSicker
+ICER.SickSicker <- function(object1, object2) {
+    s1 <- summary(object1)
+    s2 <- summary(object2)
+    dQALE = s2$QALE - s1$QALE
+    dCosts = s2$Ecosts - s1$Ecosts
+    list(dQALE=dQALE, dCosts=dCosts, ICER=dCosts/dQALE)
+}
+
+##
+sourceCpp(code="
+  //[[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  enum state_t {Healthy, Sick, Sicker, Dead};
+  enum event_t {toS1, toS2, toH, toD, toEOF};
+  typedef ssim::SummaryReport<short,short> Report;
+  // random exponential using rate (cf. mean) parameterisation
+  template<class T> double rexp(T rate) { return R::rexp(1.0/as<double>(rate)); }
+  /**
+      Define a class for the process
+  */
+  class SickSicker : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    Rcpp::List param;
+    Report *report;
+    SickSicker(Rcpp::List param, Report *report) : id(-1), param(param), report(report) {
+    }
+    void init(); // to be specified
+    void handleMessage(const ssim::cMessage* msg); // to be specified
+  };
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SickSicker::init() {
+    id++;
+    state = Healthy;
+    scheduleAt(::rexp(param[\"r_HS1\"]),toS1);
+    scheduleAt(::rexp(param[\"r_HD\"]),toD);
+    scheduleAt(30.0,toEOF); // end of follow-up
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void SickSicker::handleMessage(const ssim::cMessage* msg) {
+    report->add(state, msg->kind, this->previousEventTime, ssim::now());
+    switch(msg->kind) {
+    case toH:
+      state = Healthy;
+      report->setUtility(param[\"u_H\"]);
+      report->setCost(param[\"c_H\"]);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_HS1\"]), toH);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_HD\"]), toD);
+      break;
+    case toS1:
+      state = Sick;
+      report->setUtility(param[\"Trt\"] ? param[\"u_Trt\"] : param[\"u_S1\"]);
+      report->setCost(param[\"c_S1\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S1H\"]), toH);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S1S2\"]), toS2);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S1D\"]), toD);
+      break;
+    case toS2:
+      state = Sicker;
+      report->setUtility(param[\"u_S2\"]);
+      report->setCost(param[\"c_S2\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S2D\"]), toD);
+      break;
+    case toD:
+    case toEOF:
+      ssim::Sim::stop_simulation();
+      break;
+    default:
+      REprintf(\"Invalid kind of event: %i.\\n\", msg->kind);
+      break;
+    }
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt(); /* be polite */
+  }
+  /**
+      Exported function: Run the simulation n times and return a report
+  */
+  //[[Rcpp::export]]
+  Rcpp::List callSim(int n, Rcpp::List param, bool indiv = false) {
+    Report report;
+    report.clear();
+    report.setPartition(0.0,30.0,param[\"partitionBy\"]);
+    report.setDiscountRate(param[\"discountRate\"]);
+    report.resize(n);
+    SickSicker person(param,&report);
+    // report.process = &person;
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+    Rcpp::List lst = report.asList();
+    param[\"n\"] = n;
+    lst.push_back(param,\"param\");
+    // if (indiv) lst.push_back(report.wrap_indiv(),\"indiv\");
+    return Rcpp::wrap(lst);
+  }")
+sim1 <- callSim(1e4,within(param, {Trt = FALSE}))
+
+
+##
+sourceCpp(code="
+  //[[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  enum state_t {Healthy, Sick, Sicker, Dead};
+  enum event_t {toS1, toS2, toH, toD, toEOF};
+  // random exponential using rate (cf. mean) parameterisation
+  template<class T> double rexp(T rate) { return R::rexp(1.0/as<double>(rate)); }
+  /**
+      Define a class for the process
+  */
+  class SickSicker : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    Rcpp::List param;
+    typedef ssim::SummaryReport<short,short> Report;
+    Report report;
+    SickSicker(Rcpp::List param) : id(-1), param(param), report(this) {
+      report.clear();
+      report.setPartition(0.0,30.0,param[\"partitionBy\"]);
+      report.setDiscountRate(param[\"discountRate\"]);
+    }
+    void init(); // to be specified
+    void handleMessage(const ssim::cMessage* msg); // to be specified
+    // ~SickSicker() { report = Report(NULL); param = Rcpp::List::create(); }
+  };
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SickSicker::init() {
+    id++;
+    state = Healthy;
+    report.setUtility(param[\"u_H\"]);
+    report.setCost(param[\"c_H\"]);
+    scheduleAt(::rexp(param[\"r_HS1\"]),toS1);
+    scheduleAt(::rexp(param[\"r_HD\"]),toD);
+    scheduleAt(30.0,toEOF); // end of follow-up
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void SickSicker::handleMessage(const ssim::cMessage* msg) {
+    report.add(state, msg->kind, id);
+    switch(msg->kind) {
+    case toH:
+      state = Healthy;
+      report.setUtility(param[\"u_H\"]);
+      report.setCost(param[\"c_H\"]);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_HS1\"]), toH);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_HD\"]), toD);
+      break;
+    case toS1:
+      state = Sick;
+      report.setUtility(param[\"Trt\"] ? param[\"u_Trt\"] : param[\"u_S1\"]);
+      report.setCost(param[\"c_S1\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S1H\"]), toH);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S1S2\"]), toS2);
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S1D\"]), toD);
+      break;
+    case toS2:
+      state = Sicker;
+      report.setUtility(param[\"u_S2\"]);
+      report.setCost(param[\"c_S2\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      scheduleAt(ssim::now() + ::rexp(param[\"r_S2D\"]), toD);
+      break;
+    case toD:
+    case toEOF:
+      ssim::Sim::stop_simulation();
+      break;
+    default:
+      REprintf(\"Invalid kind of event: %i.\\n\", msg->kind);
+      break;
+    }
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt(); /* be polite */
+  }
+  /**
+      Exported function: Run the simulation n times and return a report
+  */
+  //[[Rcpp::export]]
+  Rcpp::List callSim(int n, Rcpp::List param, bool indiv = false) {
+    // ssim::Rng rng;
+    // rng.set();
+    SickSicker person(param);
+    if (indiv) person.report.resize(n);
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+      // rng.nextSubstream();
+    }
+    Rcpp::List lst = person.report.asList();
+    param[\"n\"] = n;
+    lst.push_back(param,\"param\");
+    if (indiv) lst.push_back(person.report.wrap_indiv(),\"indiv\");
+    return Rcpp::wrap(lst);
+  }")
+## NOTE: the following function needs to be defined /after/ sourceCpp()
+simulations <- function(n, param, indiv=FALSE) {
+    object <- callSim(n, param, indiv)
+    stateT <- c("Healthy","Sick","Sicker","Dead")
+    eventT <- c("toS1", "toS2", "toH", "toD", "toEOF")
+    addStates <- function(data) transform(data, state=stateT[Key+1], Key=NULL)
+    object$ut <- addStates(object$ut)
+    object$costs <- addStates(object$costs)
+    object$pt <- addStates(object$pt)
+    object$events <- addStates(object$events)
+    object$events <- transform(object$events, event=eventT[event+1])
+    object$prev <- addStates(object$prev)
+    class(object) <- "SickSicker"
+    object
+}
+set.seed(12345)
+system.time(sim1 <- simulations(1e4,within(param, {Trt = FALSE})))
+
+set.seed(12345)
+system.time(sim2 <- simulations(1e4,within(param, {Trt = TRUE})))
+summary(sim1)
+summary(sim2)
+ICER(sim1,sim2)
+library(ggplot2)
+ggplot(sim1$prev, aes(x=age, y=number, col=state)) + geom_line()
+
+
+"  template<class T1, class T2>
+  class cProcessWithReport : public ssim::cProcess
+  {
+  public:
+    ssim::SummaryReport<T1,T2> report;
+    void add(T1 t1, T2 t2, int id = 0) { report.add(t1,t2,id); }
+    void setUtility(double utility) { report.setUtility(utility); }
+    void setCost(double cost) { report.setCost(cost); }
+    cProcessWithReport() : report(this) {
+      report.clear();
+    }
+  };"
+
+
+## Simple example including a report
+library(Rcpp)
+library(microsimulation)
+sourceCpp(code="
+  //[[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  enum state_t {Healthy,Cancer,Death};
+  enum event_t {toOtherDeath, toCancer, toCancerDeath, toCancerManagement};
+  /**
+      Define a class for the process (or classes for multiple processes)
+  */
+  class SimplePerson : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    double utility;
+    Rcpp::List param;
+    ssim::SummaryReport<short,short> report;
+    SimplePerson(Rcpp::List param) : param(param) {
+      id = -1;
+      report.clear();
+      report.setPartition(0.0,100.0,param[\"partitionBy\"]);
+      report.setDiscountRate(param[\"discountRate\"]);
+    }
+    void init();
+    virtual void handleMessage(const ssim::cMessage* msg);
+  };
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SimplePerson::init() {
+    id++;
+    state = Healthy;
+    utility = 1.0;
+    scheduleAt(R::rweibull(param[\"odShape\"],85.0),toOtherDeath);
+    scheduleAt(R::rweibull(3.0,90.0),toCancer);
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void SimplePerson::handleMessage(const ssim::cMessage* msg) {
+    report.add(state, msg->kind, this->previousEventTime, ssim::now(), utility);
+    switch(msg->kind) {
+    case toOtherDeath:
+    case toCancerDeath:
+      ssim::Sim::stop_simulation();
+      break;
+    case toCancer:
+      state = Cancer;
+      utility = 0.8;
+      report.addPointCost(state, ssim::now(), 15000.0);
+      scheduleAt(ssim::now() + 2.0, toCancerManagement);
+      if (R::runif(0.0,1.0) < 0.5)
+	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
+      break;
+    case toCancerManagement:
+      report.addPointCost(state, ssim::now(), 1000.0);
+      scheduleAt(ssim::now() + 2.0, toCancerManagement);
+      break;
+    default:
+      REprintf(\"Invalid kind of event: %i.\\n\", msg->kind);
+      break;
+    }
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt();
+  }
+  /**
+      Exported function: Run the simulation n times and return a report
+  */
+  //[[Rcpp::export]]
+  Rcpp::List simulations(int n = 1e4, double discountRate = 0.03, double odShape=8.0,
+                         double partitionBy = 50.0) {
+    using namespace Rcpp;
+    List param = List::create(_(\"odShape\")=odShape,
+                              _(\"discountRate\")=discountRate,
+                              _(\"partitionBy\")=partitionBy,
+                              _(\"n\")=n);
+    SimplePerson person(param);
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+    List lst = person.report.asList();
+    lst.push_back(param,\"param\");
+    lst.push_back(sum(as<NumericVector>(as<DataFrame>(lst[\"ut\"])[\"utility\"]))/double(param[\"n\"]), \"QALE\");
+    lst.push_back(sum(as<NumericVector>(as<DataFrame>(lst[\"pt\"])[\"pt\"]))/double(param[\"n\"]), \"LE\");
+    lst.push_back(sum(as<NumericVector>(as<DataFrame>(lst[\"costs\"])[\"cost\"]))/double(param[\"n\"]), \"Ecosts\");
+    return wrap(lst);
+  }")
+set.seed(12345)
+sim1 <- simulations(1e4,partitionBy=20)
+sim1
+##
+within(sim1, { LE <- sum(pt$pt)/param$n
+    QALE <- sum(ut$utility)/param$n
+    Ecosts=sum(costs$cost)/param$n }) # summaries
+transform(merge(sim1$events, sim1$pt, all.y=TRUE),
+          rate=number/pt) # event rates
+
+
+
+
+## test inline facilities
+library(Rcpp)
+library(microsimulation)
+sourceCpp(code="
+  //[[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  bool DEBUG=false;
+  enum state_t {Healthy,Cancer,Death};
+  enum event_t {toOtherDeath, toCancer, toCancerDeath};
+  typedef ssim::EventReport<std::pair<int,int>,short,double> Report;
+  Report report;
+  class SimplePerson : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    SimplePerson() : id(-1) {};
+    void init();
+    virtual void handleMessage(const ssim::cMessage* msg);
+  };
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SimplePerson::init() {
+    id++;
+    state = Healthy;
+    double tm = R::rweibull(8.0,85.0);
+    scheduleAt(tm,toOtherDeath);
+    scheduleAt(R::rweibull(3.0,90.0),toCancer);
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void SimplePerson::handleMessage(const ssim::cMessage* msg) {
+    if (DEBUG) Rprintf(\"id=%i, state=%i, event=%i, previousEventTme=%f, now=%f\\n\", id, state, msg->kind, previousEventTime, ssim::now());
+    report.add(std::make_pair<int,int>(1,state), msg->kind, this->previousEventTime, ssim::now());
+    switch(msg->kind) {
+    case toOtherDeath:
+    case toCancerDeath:
+      ssim::Sim::stop_simulation();
+      break;
+    case toCancer:
+      state = Cancer;
+      if (R::runif(0.0,1.0) < 0.5)
+	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
+      break;
+    default:
+      REprintf(\"No valid kind of event\\n\");
+      break;
+    } // switch
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt();
+  } // handleMessage()
+  //[[Rcpp::export]]
+  Rcpp::List simulations(int n = 10) {
+    SimplePerson person;
+    Rcpp::RNGScope scope;
+    report.clear();
+    report.setPartition(0.0,100.0,50.0);
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+    return report.wrap();
+  }")
+set.seed(12345)
+sim1 <- simulations(1000)
+sim1
+f <- function(data) data[order(data$age),]
+f(sim1$prev)
+f(sim1$pt)
+
 
 ## test inline facilities
 library(Rcpp)
