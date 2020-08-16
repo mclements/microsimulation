@@ -595,6 +595,186 @@ inline double discountedInterval(double start, double end, double discountRate) 
  IndividualUtilities _vector;
  };
 
+ /**
+   @brief SummaryReport class for collecting statistics on person-time, prevalence, events and costs.
+ */
+  template< class State, class Event = short, class Time = double, class Utility = double, class Cost = double>
+  class SummaryReport {
+  public:
+    typedef std::set<Time, std::greater<Time> > Partition; // NB: greater<Time> cf. lesser<Time>
+    typedef typename Partition::iterator Iterator;
+    typedef std::pair<State,Time> Pair;
+    typedef boost::unordered_map<pair<State,Time>, int > PrevMap;
+    typedef boost::unordered_map<pair<State,Time>, Utility > UtilityMap;
+    typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
+    typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventMap;
+    typedef boost::unordered_map<pair<State,Time>, Cost > CostMap;
+    typedef std::vector<Cost> IndividualCosts;
+    typedef std::vector<Utility> IndividualUtilities;
+    // SummaryReport(cProcess *process, Utility discountRate = 0.0, int size = 1) : process(process) {
+    SummaryReport(Utility discountRate = 0.0, int size = 1) {
+      _indivUtilities.resize(size);
+      _indivCosts.resize(size);
+      setDiscountRate(discountRate);
+      setUtility(1.0);
+      setCost(0.0);
+    }
+    void resize(int size) {
+      _indivUtilities.resize(size);
+      _indivCosts.resize(size);
+    }
+    void setDiscountRate(Utility discountRate) {
+      setUtilityDiscountRate(discountRate);
+      setCostDiscountRate(discountRate);
+    }
+    void setUtilityDiscountRate(Utility discountRate) {
+      this->utilityDiscountRate = discountRate;
+      utilityAlpha = log(1.0+utilityDiscountRate);
+    }
+    void setCostDiscountRate(Cost discountRate) {
+      this->costDiscountRate = discountRate;
+      costAlpha = log(1.0+costDiscountRate);
+    }
+    void setPartition(const vector<Time> v) {
+      copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
+    }
+    void setPartition(const Time start, const Time finish, const Time delta,
+		      const Time maxTime = Time(1.0e100)) {
+      _partition.clear();
+      for (Time t=start; t<=finish; t+=delta) _partition.insert(t);
+      _partition.insert(maxTime);
+    }
+    void setUtility(Utility _utility) {
+      this->utility = _utility;
+    }
+    void setCost(Cost _cost) {
+      this->cost = _cost;
+    }
+    void clear() {
+      _ut.clear();
+      _pt.clear();
+      _events.clear();
+      _prev.clear();
+      _partition.clear();
+      _costs.clear();
+      _indivUtilities.clear();
+      _indivCosts.clear();
+    }
+    // void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1.0, const Cost cost = 0.0, int index = 0) {
+    void add(const State state, const Event event, const Time lhs, const Time rhs, int index = 0) {
+      // Time lhs = process->previousEventTime;
+      // Time rhs = ssim::now();
+      Iterator lo, hi, it, last;
+      lo = _partition.lower_bound(lhs);
+      hi = _partition.lower_bound(rhs);
+      last = _partition.begin(); // because it is ordered by greater<Time>
+      ++_events[boost::make_tuple(state,event,*hi)];
+      bool iterating;
+      for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
+	if (lhs<=(*it) && (*it)<rhs) // cadlag
+	  ++_prev[Pair(state,*it)];
+	if (it == last) {
+	  Utility u = discountedUtilityInterval(std::max<Time>(lhs,*it), rhs, utility);
+	  _ut[Pair(state,*it)] += u;
+	  _indivUtilities[index] += u;
+	  Cost c = discountedCostInterval(std::max<Time>(lhs,*it), rhs, cost);
+	  _costs[Pair(state,*it)] += c;
+	  _indivCosts[index] += c;
+	  _pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
+	}
+	else {
+	  Time next_value = *(--it); it++; // decrement/increment for greater<Time>
+	  Utility u = discountedUtilityInterval(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	  _ut[Pair(state,*it)] += u;
+	  _indivUtilities[index] += u;
+	  Cost c = discountedCostInterval(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), cost);
+	  _costs[Pair(state,*it)] += c;
+	  _indivCosts[index] += c;
+	  _pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
+	}
+      }
+    }
+    // void addPointCost(const State state, const Time time, const Cost cost, const int index = 0) {
+    void addPointCost(const State state, const Cost cost, const int index = 0) {
+      Time time = ssim::now();
+      Time time_lhs = * _partition.lower_bound(time);
+      Cost c = discountedCost(time,cost);
+      _costs[Pair(state,time_lhs)] += c;
+      _indivCosts[index] += c;
+    }
+    void append(SummaryReport<State,Event,Time,Utility> & er) {
+      append_map<PrevMap>(_prev,er._prev);
+      append_map<EventMap>(_events,er._events);
+      append_map<PtMap>(_pt,er._pt);
+      append_map<UtilityMap>(_ut,er._ut);
+      append_map<CostMap>(_costs,er._costs);
+      _indivUtilities.insert(_indivUtilities.end(), er._indivUtilities.begin(), er._indivUtilities.end());
+      _indivCosts.insert(_indivCosts.end(), er._indivCosts.begin(), er._indivCosts.end());
+    }
+    Rcpp::List asList() {
+      using namespace Rcpp;
+      if (_events.size() == 0) return List::create();
+      else return List::create(_("pt") = wrap_map<State,Time,Time>(_pt,"Key","age","pt"),
+			       _("ut") = wrap_map<State,Time,Utility>(_ut,"Key","age","utility"),
+			       _("events") = wrap_map<State,Event,Time,int>(_events,"Key","event","age","number"),
+			       _("prev") = wrap_map<State,Time,int>(_prev,"Key","age","number"),
+			       _("costs") = wrap_map<State,Time,Cost>(_costs,"Key","age","cost"));
+    }
+    SEXP wrap_indiv() {
+      return Rcpp::DataFrame::create(_("utilities")=Rcpp::wrap(_indivUtilities),
+				     _("costs")=Rcpp::wrap(_indivCosts));
+    }
+    Utility discountedUtilityInterval(Time a, Time b, Utility utility) {
+      if (a == b || utility == 0.0) return 0.0;
+      else if (utilityDiscountRate == 0.0) return utility * (b-a);
+      else if (utilityDiscountRate>0.0) {
+	return utility/utilityAlpha*(exp(-a*utilityAlpha) - exp(-b*utilityAlpha));
+      }
+      else {
+	REprintf("utilityDiscountRate less than zero: %f.\n", utilityDiscountRate);
+	return 0.0;
+      }
+    }
+    Cost discountedCostInterval(Time a, Time b, Cost cost) {
+      if (a == b || cost == 0.0) return 0.0;
+      else if (costDiscountRate == 0.0) return cost * (b-a);
+      else if (costDiscountRate>0.0) {
+	return cost/costAlpha*(exp(-a*costAlpha) - exp(-b*costAlpha));
+      }
+      else {
+	REprintf("costDiscountRate less than zero: %f.\n", costDiscountRate);
+	return 0.0;
+      }
+    }
+    Cost discountedCost(Time a, Cost cost) {
+      if (cost == 0.0) return 0.0;
+      else if (costDiscountRate == 0.0) return cost;
+      else if (costDiscountRate>0)
+	return cost*exp(-a*costAlpha);
+      else {
+	REprintf("costDiscountRate less than zero: %f.\n", costDiscountRate);
+	return 0;
+      }
+    }
+    template<class T>
+    void append_map(T & base_map, T & new_map) {
+      typename T::iterator it;
+      for (it = new_map.begin(); it != new_map.end(); ++it)
+	base_map[it->first] += it->second;
+    }
+    Partition _partition;
+    PrevMap _prev;
+    UtilityMap _ut;
+    PtMap _pt;
+    EventMap _events;
+    CostMap _costs;
+    IndividualUtilities _indivUtilities;
+    IndividualCosts _indivCosts;
+    // cProcess *process;
+  private:
+    Utility utilityDiscountRate, utilityAlpha, utility;
+    Cost costDiscountRate, costAlpha, cost;
+  };
 
  /**
     @brief CostReport class for collecting statistics on costs.
