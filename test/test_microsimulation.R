@@ -6,8 +6,8 @@
 library(expm)
 library(Rcpp) # sourceCpp
 library(microsimulation) # Rcpp::depends
-## RNGkind("user")
-## set.user.Random.seed(12345)
+RNGkind("user")
+set.user.Random.seed(12345)
 ## Utility conversion functions
 r2p <- function(r) (1-exp(-sum(r)))*r/sum(r)
 p2r <- function(p) -log(1-sum(p))*p/sum(p)
@@ -77,8 +77,8 @@ r_S2D <- p2r(p.S2D)
 ## r_S2D/r_HD # 10
 param <- makeParam()
 summary.SickSicker <- function(object)
-    with(object, list(LE = sum(pt$pt)/sim1$param$n,
-                      QALE = sum(ut$utility)/sim1$param$n,
+    with(object, list(QALE = sum(ut$utility)/sim1$param$n,
+                      LE = sum(pt$pt)/sim1$param$n,
                       Ecosts = sum(costs$cost)/sim1$param$n))
 ## print.SickSicker <- summary.SickSicker
 ICER.SickSicker <- function(object1, object2) {
@@ -104,11 +104,11 @@ sourceCpp(code="
   class SickSicker : public ssim::cProcess
   {
   public:
-    int id;
+    int firstId, id;
     state_t state;
     Rcpp::List param;
     Report *report;
-    SickSicker(Rcpp::List param, Report *report) : id(-1), param(param), report(report) {
+    SickSicker(Rcpp::List param, Report *report, int firstId = 0) : firstId(firstId), id(firstId-1), param(param), report(report) {
     }
     void init(); // to be specified
     void handleMessage(const ssim::cMessage* msg); // to be specified
@@ -127,7 +127,7 @@ sourceCpp(code="
       Handle receiving self-messages
   */
   void SickSicker::handleMessage(const ssim::cMessage* msg) {
-    report->add(state, msg->kind, this->previousEventTime, ssim::now());
+    report->add(state, msg->kind, this->previousEventTime, ssim::now(), (param[\"indiv\"] ? id : 0)-firstId);
     switch(msg->kind) {
     case toH:
       state = Healthy;
@@ -165,123 +165,25 @@ sourceCpp(code="
   */
   //[[Rcpp::export]]
   Rcpp::List callSim(int n, Rcpp::List param, bool indiv = false) {
+    ssim::Rng rng;
+    rng.set();
     Report report;
     report.clear();
     report.setPartition(0.0,30.0,param[\"partitionBy\"]);
     report.setDiscountRate(param[\"discountRate\"]);
-    report.resize(n);
+    if (indiv) report.resize(n);
+    param[\"n\"] = n;
+    param[\"indiv\"] = indiv;
     SickSicker person(param,&report);
-    // report.process = &person;
     for (int i = 0; i < n; i++) {
       ssim::Sim::create_process(&person);
       ssim::Sim::run_simulation();
       ssim::Sim::clear();
+      rng.nextSubstream();
     }
     Rcpp::List lst = report.asList();
-    param[\"n\"] = n;
     lst.push_back(param,\"param\");
-    // if (indiv) lst.push_back(report.wrap_indiv(),\"indiv\");
-    return Rcpp::wrap(lst);
-  }")
-sim1 <- callSim(1e4,within(param, {Trt = FALSE}))
-
-
-##
-sourceCpp(code="
-  //[[Rcpp::depends(microsimulation)]]
-  #include <microsimulation.h>
-  enum state_t {Healthy, Sick, Sicker, Dead};
-  enum event_t {toS1, toS2, toH, toD, toEOF};
-  // random exponential using rate (cf. mean) parameterisation
-  template<class T> double rexp(T rate) { return R::rexp(1.0/as<double>(rate)); }
-  /**
-      Define a class for the process
-  */
-  class SickSicker : public ssim::cProcess
-  {
-  public:
-    int id;
-    state_t state;
-    Rcpp::List param;
-    typedef ssim::SummaryReport<short,short> Report;
-    Report report;
-    SickSicker(Rcpp::List param) : id(-1), param(param), report(this) {
-      report.clear();
-      report.setPartition(0.0,30.0,param[\"partitionBy\"]);
-      report.setDiscountRate(param[\"discountRate\"]);
-    }
-    void init(); // to be specified
-    void handleMessage(const ssim::cMessage* msg); // to be specified
-    // ~SickSicker() { report = Report(NULL); param = Rcpp::List::create(); }
-  };
-  /**
-      Initialise a simulation run for an individual
-  */
-  void SickSicker::init() {
-    id++;
-    state = Healthy;
-    report.setUtility(param[\"u_H\"]);
-    report.setCost(param[\"c_H\"]);
-    scheduleAt(::rexp(param[\"r_HS1\"]),toS1);
-    scheduleAt(::rexp(param[\"r_HD\"]),toD);
-    scheduleAt(30.0,toEOF); // end of follow-up
-  }
-  /**
-      Handle receiving self-messages
-  */
-  void SickSicker::handleMessage(const ssim::cMessage* msg) {
-    report.add(state, msg->kind, id);
-    switch(msg->kind) {
-    case toH:
-      state = Healthy;
-      report.setUtility(param[\"u_H\"]);
-      report.setCost(param[\"c_H\"]);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_HS1\"]), toH);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_HD\"]), toD);
-      break;
-    case toS1:
-      state = Sick;
-      report.setUtility(param[\"Trt\"] ? param[\"u_Trt\"] : param[\"u_S1\"]);
-      report.setCost(param[\"c_S1\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S1H\"]), toH);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S1S2\"]), toS2);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S1D\"]), toD);
-      break;
-    case toS2:
-      state = Sicker;
-      report.setUtility(param[\"u_S2\"]);
-      report.setCost(param[\"c_S2\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S2D\"]), toD);
-      break;
-    case toD:
-    case toEOF:
-      ssim::Sim::stop_simulation();
-      break;
-    default:
-      REprintf(\"Invalid kind of event: %i.\\n\", msg->kind);
-      break;
-    }
-    if (id % 10000 == 0) Rcpp::checkUserInterrupt(); /* be polite */
-  }
-  /**
-      Exported function: Run the simulation n times and return a report
-  */
-  //[[Rcpp::export]]
-  Rcpp::List callSim(int n, Rcpp::List param, bool indiv = false) {
-    // ssim::Rng rng;
-    // rng.set();
-    SickSicker person(param);
-    if (indiv) person.report.resize(n);
-    for (int i = 0; i < n; i++) {
-      ssim::Sim::create_process(&person);
-      ssim::Sim::run_simulation();
-      ssim::Sim::clear();
-      // rng.nextSubstream();
-    }
-    Rcpp::List lst = person.report.asList();
-    param[\"n\"] = n;
-    lst.push_back(param,\"param\");
-    if (indiv) lst.push_back(person.report.wrap_indiv(),\"indiv\");
+    if (indiv) lst.push_back(report.wrap_indiv(),\"indiv\");
     return Rcpp::wrap(lst);
   }")
 ## NOTE: the following function needs to be defined /after/ sourceCpp()
@@ -299,30 +201,20 @@ simulations <- function(n, param, indiv=FALSE) {
     class(object) <- "SickSicker"
     object
 }
-set.seed(12345)
-system.time(sim1 <- simulations(1e4,within(param, {Trt = FALSE})))
-
-set.seed(12345)
-system.time(sim2 <- simulations(1e4,within(param, {Trt = TRUE})))
+## set.seed(12345)
+set.user.Random.seed(12345)
+system.time(sim1 <- simulations(1e4,within(param, {Trt = FALSE}),indiv=TRUE))
+## set.seed(12345)
+set.user.Random.seed(12345)
+system.time(sim2 <- simulations(1e4,within(param, {Trt = TRUE}),indiv=TRUE))
 summary(sim1)
 summary(sim2)
+head(sim1$indiv$utilities)
+head(sim2$indiv$utilities)
+
 ICER(sim1,sim2)
 library(ggplot2)
 ggplot(sim1$prev, aes(x=age, y=number, col=state)) + geom_line()
-
-
-"  template<class T1, class T2>
-  class cProcessWithReport : public ssim::cProcess
-  {
-  public:
-    ssim::SummaryReport<T1,T2> report;
-    void add(T1 t1, T2 t2, int id = 0) { report.add(t1,t2,id); }
-    void setUtility(double utility) { report.setUtility(utility); }
-    void setCost(double cost) { report.setCost(cost); }
-    cProcessWithReport() : report(this) {
-      report.clear();
-    }
-  };"
 
 
 ## Simple example including a report
