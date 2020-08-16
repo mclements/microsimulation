@@ -4,3 +4,9 @@
 ..Rcheck/*
 autom4te.cache/*
 src/tprocessconf.h
+.Rhistory
+*/.Rhistory
+.log
+.lst
+Makefile
+README.html
