@@ -622,6 +622,12 @@ inline double discountedInterval(double start, double end, double discountRate) 
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
  }
+ void setPartition(const Time start, const Time finish, const Time delta,
+		   const Time maxTime = Time(1.0e100)) {
+   _partition.clear();
+   for (Time t=start; t<=finish; t+=delta) _partition.insert(t);
+   _partition.insert(maxTime);
+ }
  void clear() {
    _table.clear();
    _partition.clear();
