@@ -465,8 +465,237 @@ sourceCpp(code="
 set.seed(12345)
 callSimplePerson()
 set.seed(12345)
-microsimulation:::callSimplePerson()
+microsimulation:::callSimplePerson() # ok
+microsimulation:::callSimplePerson2() # ok
 
+
+## test inline facilities
+library(Rcpp)
+library(microsimulation)
+sourceCpp(code="
+  //[[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  bool DEBUG=false;
+  template <class T1a, class T1b, class T1c, class T2>
+    DataFrame wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> ov,
+		  std::string key, std::string name1, std::string name2, std::string name3) {
+    std::map<boost::tuple<T1a,T1b,T1c>,T2> v(ov.begin(), ov.end());
+    typedef boost::tuple<T1a,T1b,T1c> Tuple;
+    int i;
+    int n = v.size();
+    vector<T1a> xa(n);
+    vector<T1b> xb(n);
+    vector<T1c> xc(n);
+    vector<T2> y(n);
+    // typename boost::unordered_map<Tuple,T2>::const_iterator it;
+    typename std::map<Tuple,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      xa[i] = get<0>((*it).first);
+      xb[i] = get<1>((*it).first);
+      xc[i] = get<2>((*it).first);
+      y[i] = (*it).second;
+    }
+    return Rcpp::DataFrame::create(_[key]=Rcpp::wrap(xa),
+      _[name1]=Rcpp::wrap(xb), _[name2]=Rcpp::wrap(xc), _[name3]=Rcpp::wrap(y));
+  }
+  template <class T1a, class T1b, class T2>
+    DataFrame wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> ov,
+		  std::string key, std::string name1, std::string name2) {
+    typedef std::pair<T1a,T1b> Pair;
+    std::map<Pair,T2> v(ov.begin(), ov.end());
+    int i;
+    int n = v.size();
+    vector<T1a> xa(n);
+    vector<T1b> xb(n);
+    vector<T2> y(n);
+    typename std::map<Pair,T2>::const_iterator it;
+    for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
+      xa[i] = (*it).first.first;
+      xb[i] = (*it).first.second;
+      y[i] = (*it).second;
+    }
+    return Rcpp::DataFrame::create(_[key]=Rcpp::wrap(xa),
+      _[name1]=Rcpp::wrap(xb), _[name2]=Rcpp::wrap(y));
+   }
+ template< class State, class Event, class Time = double, class Utility = double>
+   class EventReport {
+ public:
+ typedef std::set<Time, std::greater<Time> > Partition; // NB: greater<Time> cf. lesser<Time>
+ typedef typename Partition::iterator Iterator;
+ typedef std::pair<State,Time> Pair;
+ typedef boost::unordered_map<pair<State,Time>, int > PrevMap;
+ typedef boost::unordered_map<pair<State,Time>, Utility > UtilityMap;
+ typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
+ typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventsMap;
+ typedef vector<Utility> IndividualUtilities;
+ EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1) : discountRate(discountRate), outputUtilities(outputUtilities) {
+   _vector.resize(size);
+ }
+ void resize(int size) {
+   _vector.resize(size);
+ }
+ void setPartition(const vector<Time> v) {
+   copy(v.begin(), v.end()-1, inserter(_partition, _partition.begin()));
+  }
+ void setPartition(const Time start, const Time finish, const Time delta,
+                   const Time maxTime=Time(1.0e100)) {
+   _partition.clear();
+   for (Time t=start; t<=finish; t+=delta) _partition.insert(t);
+   _partition.insert(maxTime);
+  }
+ void clear() {
+   _ut.clear();
+   _pt.clear();
+   _events.clear();
+   _prev.clear();
+   _partition.clear();
+   _vector.clear();
+ }
+ Utility discountedUtilities(Time a, Time b, Utility utility = 1.0) {
+   if (discountRate == 0.0) return utility * (b-a);
+   else if (a==b) return 0.0;
+   else if (discountRate>0.0) {
+     double alpha = log(1.0+discountRate);
+     return utility/alpha*(exp(-a*alpha) - exp(-b*alpha));
+   }
+   else {
+     REprintf(\"discountRate less than zero.\");
+     return 0.0;
+   }
+ }
+ void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1, int index = 0) {
+   Iterator lo, hi, it, last;
+   lo = _partition.lower_bound(lhs);
+   hi = _partition.lower_bound(rhs);
+   last = _partition.begin(); // because it is ordered by greater<Time>
+   ++_events[boost::make_tuple(state,event,*hi)];
+   bool iterating;
+   for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
+      if (DEBUG) Rprintf(\"*it=%f, lhs=%f, rhs=%f, *last=%g\\n\",*it,lhs,rhs,*last);
+      if (lhs<=(*it) && (*it)<rhs) // cadlag
+    	++_prev[Pair(state,*it)];
+      if (it == last) {
+	if (outputUtilities) {
+	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
+	  _ut[Pair(state,*it)] += u;
+	  _vector[index] += u;
+	}
+	_pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
+      }
+      else {
+	Time next_value = *(--it); it++; // decrement/increment for greater<Time>
+	if (outputUtilities) {
+	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
+	  _ut[Pair(state,*it)] += u;
+	  _vector[index] += u;
+	}
+	_pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
+      }
+   }
+ }
+ template<class T>
+ void append_map(T & base_map, T & new_map) {
+   typename T::iterator it;
+   for (it = new_map.begin(); it != new_map.end(); ++it)
+     base_map[it->first] += it->second;
+ }
+ void append(EventReport<State,Event,Time,Utility> & er) {
+   append_map<PrevMap>(_prev,er._prev);
+   append_map<EventsMap>(_events,er._events);
+   append_map<PtMap>(_pt,er._pt);
+   append_map<UtilityMap>(_ut,er._ut);
+   _vector.insert(_vector.end(), er._vector.begin(), er._vector.end());
+ }
+ SEXP wrap() {
+   using namespace Rcpp;
+   if (_events.size() == 0) return List::create();
+     else if (outputUtilities)
+     return List::create(_(\"pt\") = ::wrap_map(_pt,\"key\",\"age\",\"pt\"),
+			 _(\"ut\") = ::wrap_map(_ut,\"key\",\"age\",\"utility\"),
+			 _(\"events\") = ::wrap_map(_events,\"key\",\"event\",\"age\",\"number\"),
+			 _(\"prev\") = ::wrap_map(_prev,\"key\",\"age\",\"number\"));
+   else
+     return List::create(_(\"pt\") = ::wrap_map(_pt,\"key\",\"age\",\"pt\"),
+			 _(\"events\") = ::wrap_map(_events,\"key\",\"event\",\"age\",\"number\"),
+			 _(\"prev\") = ::wrap_map(_prev,\"key\",\"age\",\"number\"));
+ }
+ SEXP wrap_indiv() {
+   return Rcpp::wrap(_vector);
+ }
+ Utility discountRate;
+ bool outputUtilities;
+ Partition _partition;
+ PrevMap _prev;
+ UtilityMap _ut;
+ PtMap _pt;
+ EventsMap _events;
+ IndividualUtilities _vector;
+ };
+  enum state_t {Healthy,Cancer,Death};
+  enum event_t {toOtherDeath, toCancer, toCancerDeath};
+  typedef EventReport<std::pair<int,int>,short> Report;
+  // typedef ssim::EventReport<int,short> Report;
+  Report report;
+  class SimplePerson : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    SimplePerson() : id(-1) {};
+    void init();
+    virtual void handleMessage(const ssim::cMessage* msg);
+  };
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SimplePerson::init() {
+    id++;
+    state = Healthy;
+    double tm = R::rweibull(8.0,85.0);
+    scheduleAt(tm,toOtherDeath);
+    scheduleAt(R::rweibull(3.0,90.0),toCancer);
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void SimplePerson::handleMessage(const ssim::cMessage* msg) {
+    if (DEBUG) Rprintf(\"id=%i, state=%i, event=%i, previousEventTme=%f, now=%f\\n\", id, state, msg->kind, previousEventTime, ssim::now());
+    report.add(std::make_pair<int,int>(1,state), msg->kind, this->previousEventTime, ssim::now());
+    switch(msg->kind) {
+    case toOtherDeath:
+    case toCancerDeath:
+      ssim::Sim::stop_simulation();
+      break;
+    case toCancer:
+      state = Cancer;
+      if (R::runif(0.0,1.0) < 0.5)
+	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
+      break;
+    default:
+      REprintf(\"No valid kind of event\\n\");
+      break;
+    } // switch
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt();
+  } // handleMessage()
+  //[[Rcpp::export]]
+  Rcpp::List simulations(int n = 10, std::string key = \"Key\") {
+    SimplePerson person;
+    Rcpp::RNGScope scope;
+    report.clear();
+    report.setPartition(0.0,100.0,50.0);
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+    return report.wrap();
+  }")
+set.seed(12345)
+sim1 <- simulations(1000)
+sim1
+f <- function(data) data[order(data$age),]
+f(sim1$prev)
+f(sim1$pt)
 
 
 ## 9013 bug
