@@ -611,10 +611,8 @@ inline double discountedInterval(double start, double end, double discountRate) 
     typedef boost::unordered_map<pair<State,Time>, Cost > CostMap;
     typedef std::vector<Cost> IndividualCosts;
     typedef std::vector<Utility> IndividualUtilities;
-    // SummaryReport(cProcess *process, Utility discountRate = 0.0, int size = 1) : process(process) {
-    SummaryReport(Utility discountRate = 0.0, int size = 1) {
-      _indivUtilities.resize(size);
-      _indivCosts.resize(size);
+    SummaryReport(int n = 1, bool indivp = true, Utility discountRate = 0.0) : n(n), indivp(indivp) {
+      resize(indivp ? n : 1);
       setDiscountRate(discountRate);
       setUtility(1.0);
       setCost(0.0);
@@ -660,10 +658,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
       _indivUtilities.clear();
       _indivCosts.clear();
     }
-    // void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1.0, const Cost cost = 0.0, int index = 0) {
     void add(const State state, const Event event, const Time lhs, const Time rhs, int index = 0) {
       // Time lhs = process->previousEventTime;
       // Time rhs = ssim::now();
+      if (!indivp) index = 0;
       Iterator lo, hi, it, last;
       lo = _partition.lower_bound(lhs);
       hi = _partition.lower_bound(rhs);
@@ -695,7 +693,8 @@ inline double discountedInterval(double start, double end, double discountRate) 
       }
     }
     // void addPointCost(const State state, const Time time, const Cost cost, const int index = 0) {
-    void addPointCost(const State state, const Cost cost, const int index = 0) {
+    void addPointCost(const State state, const Cost cost, int index = 0) {
+      if (!indivp) index = 0;
       Time time = ssim::now();
       Time time_lhs = * _partition.lower_bound(time);
       Cost c = discountedCost(time,cost);
@@ -714,15 +713,21 @@ inline double discountedInterval(double start, double end, double discountRate) 
     Rcpp::List asList() {
       using namespace Rcpp;
       if (_events.size() == 0) return List::create();
-      else return List::create(_("pt") = wrap_map<State,Time,Time>(_pt,"Key","age","pt"),
-			       _("ut") = wrap_map<State,Time,Utility>(_ut,"Key","age","utility"),
-			       _("events") = wrap_map<State,Event,Time,int>(_events,"Key","event","age","number"),
-			       _("prev") = wrap_map<State,Time,int>(_prev,"Key","age","number"),
-			       _("costs") = wrap_map<State,Time,Cost>(_costs,"Key","age","cost"));
-    }
-    SEXP wrap_indiv() {
-      return Rcpp::DataFrame::create(_("utilities")=Rcpp::wrap(_indivUtilities),
-				     _("costs")=Rcpp::wrap(_indivCosts));
+      Rcpp::DataFrame indiv =
+	Rcpp::DataFrame::create(_("utilities")=_indivUtilities,
+				_("costs")=_indivCosts);
+      Rcpp::List out = List::create(_("pt") = wrap_map<State,Time,Time>(_pt,"Key","age","pt"),
+				    _("ut") = wrap_map<State,Time,Utility>(_ut,"Key","age","utility"),
+				    _("events") = wrap_map<State,Event,Time,int>(_events,"Key","event","age","number"),
+				    _("prev") = wrap_map<State,Time,int>(_prev,"Key","age","number"),
+				    _("costs") = wrap_map<State,Time,Cost>(_costs,"Key","age","cost"),
+				    _("n")=n,
+				    _("indivp")=indivp,
+				    _("utilityDiscountRate")=utilityDiscountRate,
+				    _("costDiscountRate")=costDiscountRate,
+				    _("indiv")=indiv);
+      out.attr("class")="SummaryReport";
+      return out;
     }
     Utility discountedUtilityInterval(Time a, Time b, Utility utility) {
       if (a == b || utility == 0.0) return 0.0;
@@ -762,6 +767,8 @@ inline double discountedInterval(double start, double end, double discountRate) 
       for (it = new_map.begin(); it != new_map.end(); ++it)
 	base_map[it->first] += it->second;
     }
+    int n;
+    bool indivp;
     Partition _partition;
     PrevMap _prev;
     UtilityMap _ut;
@@ -771,7 +778,6 @@ inline double discountedInterval(double start, double end, double discountRate) 
     IndividualUtilities _indivUtilities;
     IndividualCosts _indivCosts;
     // cProcess *process;
-  private:
     Utility utilityDiscountRate, utilityAlpha, utility;
     Cost costDiscountRate, costAlpha, cost;
   };
