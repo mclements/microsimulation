@@ -312,9 +312,14 @@ public:
     return this;
   }
   SEXP wrap() {
-    return Rcpp::DataFrame::create(_("n")=_n,
-				    _("sum")=_sum,
-				    _("sumsq")=_sumsq);
+    return Rcpp::DataFrame::create(_("n")=n(),
+				   _("mean")=mean(),
+				   _("var")=var(),
+				   _("sd")=sd(),
+				   _("se")=sd()/sqrt(n()),
+				   _("sum")=sum(),
+				   _("sumsq")=_sumsq
+				   );
   }
   //friend std::ostream& operator<<(std::ostream& os, Means& m);
 private:
@@ -514,6 +519,11 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _prev.clear();
    _partition.clear();
    _vector.clear();
+   current = Utility(0);
+ }
+ void individualReset () {
+   mean_utilities += double(current);
+   current = Utility(0);
  }
  Utility discountedUtilities(Time a, Time b, Utility utility = 1.0) {
    if (discountRate == 0.0) return utility * (b-a);
@@ -542,6 +552,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
 	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
 	  _ut[Pair(state,*it)] += u;
 	  _vector[index] += u;
+	  current += u;
 	}
 	_pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
       }
@@ -551,6 +562,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
 	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
 	  _ut[Pair(state,*it)] += u;
 	  _vector[index] += u;
+	  current += u;
 	}
 	_pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
       }
@@ -585,7 +597,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
  SEXP wrap_indiv() {
    return Rcpp::wrap(_vector);
  }
- Utility discountRate;
+ SEXP wrap_means() {
+   return mean_utilities.wrap();
+ }
+ Utility discountRate, current;
  bool outputUtilities;
  Partition _partition;
  PrevMap _prev;
@@ -593,6 +608,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  PtMap _pt;
  EventsMap _events;
  IndividualUtilities _vector;
+ Means mean_utilities;
  };
 
  /**
@@ -796,6 +812,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
  CostReport(Cost discountRate = 0, int size = 1) : discountRate(discountRate) {
    _vector.resize(size);
  }
+ void individualReset () {
+   mean_costs += double(current);
+   current = Cost(0);
+ }
  Cost discountedCost(Time a, Cost cost) {
    if (discountRate == 0) return cost;
    else if (discountRate>0)
@@ -818,6 +838,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    _table.clear();
    _partition.clear();
    _vector.clear();
+   current = Cost(0);
  }
  void resize(int size) {
    _vector.resize(size);
@@ -834,6 +855,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    Cost c = discountedCost(time,cost);
    _table[Pair(state,time_lhs)] += c;
    _vector[index] += c;
+   current += c;
  }
  SEXP wrap() {
    return Rcpp::wrap_map(_table,"Key","age","cost");
@@ -841,10 +863,14 @@ inline double discountedInterval(double start, double end, double discountRate) 
  SEXP wrap_indiv() {
    return Rcpp::wrap(_vector);
  }
- Cost discountRate;
+ SEXP wrap_means() {
+   return mean_costs.wrap();
+ }
+ Cost discountRate, current;
  Partition _partition;
  Table _table;
  IndividualCosts _vector;
+ Means mean_costs;
  };
 
  /**
