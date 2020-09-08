@@ -16,6 +16,7 @@
 * News
 
 + The *microsimulation* package now allows for *in-line use* and provides a new *SummaryReport* class. See the in-line example below for a demonstration of both of these facilities.
++ The C++ application programming interface is now [[https://htmlpreview.github.io/?https://github.com/mclements/microsimulation/blob/master/inst/doc/html/index.html][described]] using Doxygen.
 
 * Background
 [[https://en.wikipedia.org/wiki/Microsimulation][Microsimulation]] is a form of individual-based stochastic
@@ -311,16 +312,18 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 #+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
 
   library(parallel)
-  mcsimulations <- function(n, param, seeds=1:mc.cores, mc.cores=getOption("mc.cores", 2L)) {
-      n.seg = diff(c((0:(mc.cores-1))*floor(n/mc.cores),n))
-      do.call(rbind, mclapply(1:mc.cores, function(i) {
-          set.seed(seeds[i])
-          simulations(n.seg[i],param)
-      },
-      mc.cores=mc.cores))
+  set.seed(12345)
+  mcsimulations <- function(n, simulations, ..., mc.cores = getOption("mc.cores", 2L)) {
+      n.seg <- diff(c((0:(mc.cores-1))*floor(n/mc.cores),n))
+      do.call(rbind, mclapply(n.seg, simulations, ..., mc.cores=mc.cores))
   }
-  ascii(system.time(sim1 <- mcsimulations(1e5,within(param, {Trt = FALSE}))),header=TRUE)
-  ascii(system.time(sim2 <- mcsimulations(1e5,within(param, {Trt = TRUE}))),FALSE,FALSE)
+  ascii(system.time(sim1 <- mcsimulations(1e5, simulations,
+                                          param=within(param, {Trt = FALSE}))),
+        header=TRUE)
+  set.seed(12345)
+  ascii(system.time(sim2 <- mcsimulations(1e5, simulations,
+                                          param=within(param, {Trt = TRUE}))),
+        FALSE,FALSE)
   cat("\n")
   ascii(ICER(sim1,sim2),caption="Continuous-time Sick-Sicker model for n=100,000 individuals")
 
