@@ -2,6 +2,102 @@
 ## library(microsimulation)
 ## microsimulation:::.testPackage()
 
+## Simple example including a listing
+library(Rcpp)
+library(microsimulation)
+sourceCpp(code="
+  //[[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  enum state_t {Healthy,Cancer,Death};
+  enum event_t {toOtherDeath, toCancer, toCancerDeath, toCancerManagement};
+  /**
+      Define a class for the process (or classes for multiple processes)
+  */
+  class SimplePerson : public ssim::cProcess
+  {
+  public:
+    int id;
+    state_t state;
+    double utility;
+    Rcpp::List param;
+    ssim::SummaryReport<short,short> report;
+    SimplePerson(Rcpp::List param) : param(param) {
+      id = -1;
+      report.clear();
+      report.setPartition(0.0,100.0,param[\"partitionBy\"]);
+      report.setDiscountRate(param[\"discountRate\"]);
+    }
+    void init();
+    virtual void handleMessage(const ssim::cMessage* msg);
+  };
+  /**
+      Initialise a simulation run for an individual
+  */
+  void SimplePerson::init() {
+    id++;
+    state = Healthy;
+    utility = 1.0;
+    scheduleAt(R::rweibull(param[\"odShape\"],85.0),toOtherDeath);
+    scheduleAt(R::rweibull(3.0,90.0),toCancer);
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void SimplePerson::handleMessage(const ssim::cMessage* msg) {
+    report.add(state, msg->kind, this->previousEventTime, ssim::now(), utility);
+    switch(msg->kind) {
+    case toOtherDeath:
+    case toCancerDeath:
+      ssim::Sim::stop_simulation();
+      break;
+    case toCancer:
+      state = Cancer;
+      utility = 0.8;
+      report.addPointCost(state, ssim::now(), 15000.0);
+      scheduleAt(ssim::now() + 2.0, toCancerManagement);
+      if (R::runif(0.0,1.0) < 0.5)
+	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
+      break;
+    case toCancerManagement:
+      report.addPointCost(state, ssim::now(), 1000.0);
+      scheduleAt(ssim::now() + 2.0, toCancerManagement);
+      break;
+    default:
+      REprintf(\"Invalid kind of event: %i.\\n\", msg->kind);
+      break;
+    }
+    if (id % 10000 == 0) Rcpp::checkUserInterrupt();
+  }
+  /**
+      Exported function: Run the simulation n times and return a report
+  */
+  //[[Rcpp::export]]
+  Rcpp::List simulations(int n = 1e4, double discountRate = 0.03, double odShape=8.0,
+                         double partitionBy = 50.0) {
+    using namespace Rcpp;
+    List param = List::create(_(\"odShape\")=odShape,
+                              _(\"discountRate\")=discountRate,
+                              _(\"partitionBy\")=partitionBy,
+                              _(\"n\")=n);
+    SimplePerson person(param);
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(&person);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+    return lst;
+  }")
+set.seed(12345)
+sim1 <- simulations(1e4,partitionBy=20)
+sim1
+##
+within(sim1, { LE <- sum(pt$pt)/param$n
+    QALE <- sum(ut$utility)/param$n
+    Ecosts=sum(costs$cost)/param$n }) # summaries
+transform(merge(sim1$events, sim1$pt, all.y=TRUE),
+          rate=number/pt) # event rates
+
+
 ## Simple example including a report
 library(Rcpp)
 library(microsimulation)
