@@ -497,7 +497,8 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
  typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventsMap;
  typedef vector<Utility> IndividualUtilities;
- EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1) : discountRate(discountRate), outputUtilities(outputUtilities) {
+   EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1, Time startReportAge = Time(0), bool indiv = false) :
+     discountRate(discountRate), outputUtilities(outputUtilities), startReportAge(startReportAge), id(0), indiv(indiv) {
    _vector.resize(size);
  }
  void resize(int size) {
@@ -512,6 +513,13 @@ inline double discountedInterval(double start, double end, double discountRate) 
    for (Time t=start; t<=finish; t+=delta) _partition.insert(t);
    _partition.insert(maxTime);
  }
+ void setIndivN(const int n) {
+   resize(n);
+   indiv = true;
+ }
+ void setStartReportAge(const Time a) {
+   startReportAge = a;
+ }
  void clear() {
    _ut.clear();
    _pt.clear();
@@ -522,8 +530,16 @@ inline double discountedInterval(double start, double end, double discountRate) 
    current = Utility(0);
  }
  void individualReset () {
-   mean_utilities += double(current);
+   if (now() >= startReportAge)
+     mean_utilities += double(current);
+   if (indiv) {
+     if (id>=int(_vector.size()))
+       REprintf("Vector too small in EventReport: use resize(int) method");
+     else
+       _vector[id] = (now() >= startReportAge) ? double(current) : NA_REAL;
+   }
    current = Utility(0);
+   id++;
  }
  Utility discountedUtilities(Time a, Time b, Utility utility = 1.0) {
    if (discountRate == 0.0) return utility * (b-a);
@@ -537,7 +553,12 @@ inline double discountedInterval(double start, double end, double discountRate) 
      return 0.0;
    }
  }
- void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1, int index = 0) {
+ void addBrief(const Time lhs, const Time rhs, const Utility utility = 1) {
+   if (rhs >= startReportAge)
+     current += discountedUtilities(std::max<Time>(lhs-startReportAge,Time(0)), rhs-startReportAge, utility);
+ }
+ void add(const State state, const Event event, const Time lhs, const Time rhs, const Utility utility = 1, int index = 0 /* deprecated argument */) {
+   addBrief(lhs, rhs, utility);
    Iterator lo, hi, it, last;
    lo = _partition.lower_bound(lhs);
    hi = _partition.lower_bound(rhs);
@@ -551,8 +572,6 @@ inline double discountedInterval(double start, double end, double discountRate) 
 	if (outputUtilities) {
 	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), rhs, utility);
 	  _ut[Pair(state,*it)] += u;
-	  _vector[index] += u;
-	  current += u;
 	}
 	_pt[Pair(state,*it)] += rhs - std::max<Time>(lhs,*it);
       }
@@ -561,8 +580,6 @@ inline double discountedInterval(double start, double end, double discountRate) 
 	if (outputUtilities) {
 	  Utility u = discountedUtilities(std::max<Time>(lhs,*it), std::min<Time>(rhs,next_value), utility);
 	  _ut[Pair(state,*it)] += u;
-	  _vector[index] += u;
-	  current += u;
 	}
 	_pt[Pair(state,*it)] += std::min<Time>(rhs,next_value) - std::max<Time>(lhs,*it);
       }
@@ -609,7 +626,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
  EventsMap _events;
  IndividualUtilities _vector;
  Means mean_utilities;
- };
+ Time startReportAge;
+ int id;
+ bool indiv;
+};
 
  /**
    @brief SummaryReport class for collecting statistics on person-time, prevalence, events and costs.
@@ -809,16 +829,31 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef CostReport<State,Time,Cost> This;
  typedef boost::unordered_map<pair<State,Time>, Cost > Table;
  typedef std::vector<Cost> IndividualCosts;
- CostReport(Cost discountRate = 0, int size = 1) : discountRate(discountRate) {
+   CostReport(Cost discountRate = 0, int size = 1, Time startReportAge = Time(0), bool indiv = false) : discountRate(discountRate), startReportAge(startReportAge), id(0), indiv(indiv) {
    _vector.resize(size);
  }
  void individualReset () {
-   mean_costs += double(current);
+   if (now() >= startReportAge)
+     mean_costs += double(current);
+   if (indiv) {
+     if (id>=int(_vector.size()))
+       REprintf("Vector too small in CostReport: use resize(int) method");
+     else
+       _vector[id] = (now() >= startReportAge) ? double(current) : NA_REAL;
+   }
    current = Cost(0);
+   id++;
+ }
+ void setIndivN(const int n) {
+   resize(n);
+   indiv = true;
+ }
+ void setStartReportAge(const Time a) {
+   startReportAge = a;
  }
  Cost discountedCost(Time a, Cost cost) {
-   if (discountRate == 0) return cost;
-   else if (discountRate>0)
+   if (discountRate == 0.0) return cost;
+   else if (discountRate>0.0)
      return cost/pow(1+discountRate,a);
    else {
      REprintf("discountRate less than zero.");
@@ -850,12 +885,15 @@ inline double discountedInterval(double start, double end, double discountRate) 
      _table[it->first] += it->second;
    }
  }
- void add(const State state, const Time time, const Cost cost, const int index = 0) {
+   void add(const State state, const Time time, const Cost cost, const int index = 0 /* deprecated argument */) {
    Time time_lhs = * _partition.lower_bound(time);
    Cost c = discountedCost(time,cost);
    _table[Pair(state,time_lhs)] += c;
-   _vector[index] += c;
-   current += c;
+   if (startReportAge == 0.0)
+     current += c;
+   else
+     if (time>=startReportAge)
+       current += discountedCost(time-startReportAge,cost);
  }
  SEXP wrap() {
    return Rcpp::wrap_map(_table,"Key","age","cost");
@@ -871,6 +909,9 @@ inline double discountedInterval(double start, double end, double discountRate) 
  Table _table;
  IndividualCosts _vector;
  Means mean_costs;
+ Time startReportAge;
+ int id;
+ bool indiv;
  };
 
  /**
