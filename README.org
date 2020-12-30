@@ -116,6 +116,7 @@ To install the microsimulation R-package run this in your shell:
 : #>                Max.   :100.00   Max.   :100000
 : #>
 
+
 ** In-line example: Sick-Sicker example from Krijkamp et al (2018)
 
 We have provided a continuous-time re-implementation of the discrete-time Markov model developed by Krijkamp et al (2018).
@@ -127,8 +128,8 @@ The example demonstrates:
 
 For the specific example, the transformation from discrete to continuous time showed that the discrete time formulation could have been improved. In particular, the discrete time formulation assumes no transitions between Healthy and Sicker over one year, while the approximate probability of that event is the one-year probability of moving from Healthy to Sick times the probability of moving from Sick to Sicker. We have included that probability in the transition matrix and using matrix logarithms to calculate the transition probabilities.
 
-# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
-#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
+#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
+# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
 library(expm) # logm
 library(Rcpp) # sourceCpp
 library(microsimulation) # Rcpp::depends and include files
@@ -180,13 +181,26 @@ param = within(param,
 rm(Pmat, Qmat)
 ##
 sourceCpp(code="
-  //[[Rcpp::depends(microsimulation)]]
+  // [[Rcpp::depends(BH)]]
+  // [[Rcpp::depends(microsimulation)]]
   #include <microsimulation.h>
   enum state_t {Healthy, Sick, Sicker, Dead};
   enum event_t {toS1, toS2, toH, toD, toEOF};
   typedef ssim::SummaryReport<short,short> Report;
-  // random exponential using rate (cf. mean) parameterisation
-  template<class T> double rexp(T rate) { return R::rexp(1.0/as<double>(rate)); }
+  /**
+      Utility: Random exponential using rate parameterisation
+  */
+  template<class T> double rexpRate(T rate) { return R::rexp(1.0/as<double>(rate)); }
+  /**
+      Utility: Run a set of simulations for a single process
+  */
+  void runSimulations(ssim::cProcess* process, int n) {
+    for (int i = 0; i < n; i++) {
+      ssim::Sim::create_process(process);
+      ssim::Sim::run_simulation();
+      ssim::Sim::clear();
+    }
+  }
   /**
       Define a class for the process
   */
@@ -208,8 +222,8 @@ sourceCpp(code="
   void SickSicker::init() {
     id++;
     state = Healthy;
-    scheduleAt(::rexp(param[\"r_HS1\"]),toS1);
-    scheduleAt(::rexp(param[\"r_HD\"]),toD);
+    scheduleAt(rexpRate(param[\"r_HS1\"]),toS1);
+    scheduleAt(rexpRate(param[\"r_HD\"]),toD);
     scheduleAt(31.0,toEOF); // end of follow-up
   }
   /**
@@ -222,22 +236,22 @@ sourceCpp(code="
       state = Healthy;
       report->setUtility(param[\"u_H\"]);
       report->setCost(param[\"c_H\"]);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_HS1\"]), toH);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_HD\"]), toD);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_HS1\"]), toH);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_HD\"]), toD);
       break;
     case toS1:
       state = Sick;
       report->setUtility(param[\"Trt\"] ? param[\"u_Trt\"] : param[\"u_S1\"]);
       report->setCost(param[\"c_S1\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S1H\"]), toH);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S1S2\"]), toS2);
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S1D\"]), toD);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_S1H\"]), toH);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_S1S2\"]), toS2);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_S1D\"]), toD);
       break;
     case toS2:
       state = Sicker;
       report->setUtility(param[\"u_S2\"]);
       report->setCost(param[\"c_S2\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
-      scheduleAt(ssim::now() + ::rexp(param[\"r_S2D\"]), toD);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_S2D\"]), toD);
       break;
     case toD:
     case toEOF:
@@ -250,7 +264,7 @@ sourceCpp(code="
     if (id % 10000 == 0) Rcpp::checkUserInterrupt(); /* be polite */
   }
   /**
-      Exported function: Run the simulation n times and return a report
+      Exported function: Set up the report and process, run the simulations and return a report
   */
   //[[Rcpp::export]]
   Rcpp::List callSim(int n, Rcpp::List param, bool indivp = true) {
@@ -258,18 +272,13 @@ sourceCpp(code="
     report.setPartition(0.0,30.0,param[\"partitionBy\"]);
     report.setDiscountRate(param[\"discountRate\"]);
     SickSicker person(param,&report);
-    for (int i = 0; i < n; i++) {
-      ssim::Sim::create_process(&person);
-      ssim::Sim::run_simulation();
-      ssim::Sim::clear();
-    }
+    runSimulations(&person, n);
     Rcpp::List lst = report.asList();
     lst.push_back(param,\"param\");
     return lst;
   }")
-## NOTE: the following function needs to be defined or re-defined /after/ sourceCpp()
-simulations = function(n, param, indivp=TRUE) {
-    object = callSim(n, param, indivp)
+simulations = function(n, param, simulator=callSim, indivp=TRUE) {
+    object = simulator(n, param, indivp)
     stateT = c("Healthy","Sick","Sicker","Dead")
     eventT = c("toS1", "toS2", "toH", "toD", "toEOF")
     for (name in c("ut","costs","pt","events","prev"))
@@ -283,9 +292,11 @@ ascii.proc_time = function(x, include.rownames=FALSE, include.colnames=TRUE, ...
     ascii(summary(x), include.rownames, include.colnames, ...)
 ## run the simulations
 set.seed(12345)
-ascii(system.time(sim1 <- simulations(1e4,within(param, {Trt = FALSE}))),header=TRUE)
+ascii(system.time(sim1 <- simulations(1e4,
+                                      param=within(param, {Trt = FALSE}))),header=TRUE)
 set.seed(12345)
-ascii(system.time(sim2 <- simulations(1e4,within(param, {Trt = TRUE}))),FALSE,FALSE)
+ascii(system.time(sim2 <- simulations(1e4,
+                                      param=within(param, {Trt = TRUE}))),FALSE,FALSE)
 cat("\n")
 ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
       caption="Continuous-time Sick-Sicker model for n=10,000 individuals")
@@ -295,8 +306,8 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 0.36 |   0.00 |    0.37 |
-| 0.37 |   0.00 |    0.37 |
+| 0.36 |   0.00 |    0.36 |
+| 0.36 |   0.00 |    0.36 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=10,000 individuals
 |              | *Total*  |       |        |       | *Incremental* |       |       |       |          |
@@ -317,7 +328,7 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
       n.seg <- diff(c((0:(mc.cores-1))*floor(n/mc.cores),n))
       do.call(rbind, mclapply(n.seg, simulations, ..., mc.cores=mc.cores))
   }
-  ascii(system.time(sim1 <- mcsimulations(1e5, simulations,
+  ascii(system.time(sim1 <- mcsimulations(1e5, simulations, 
                                           param=within(param, {Trt = FALSE}))),
         header=TRUE)
   set.seed(12345)
@@ -333,15 +344,15 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 3.90 |   0.02 |    1.96 |
-| 4.01 |   0.02 |    2.02 |
+| 3.92 |   0.04 |    2.01 |
+| 4.67 |   0.03 |    2.40 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=100,000 individuals
 |           | *Total*  |       |        |       | *Incremental* |       |       |       |          |
 |           | Costs    | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
 |-----------+----------+-------+--------+-------+---------------+-------+-------+-------+----------|
-| Reference | 69951.3  | 159.5 | 15.305 | 0.027 |               |       |       |       |          |
-| Treatment | 112771.7 | 281.1 | 15.490 | 0.027 | 42820.4       | 127.8 | 0.185 | 0.001 | 231934.8 |
+| Reference | 70019.5  | 159.1 | 15.294 | 0.027 |               |       |       |       |          |
+| Treatment | 112536.0 | 278.6 | 15.460 | 0.027 | 42516.5       | 321.6 | 0.166 | 0.039 | 256052.6 |
 :END:
 
 There was an appreciable difference in the estimates from the discrete-time case and the continuous-time case. This issue warrants further investigation, particularly given that the discrete time case ignores any transitions between Healthy and Sicker within a one-year period.
