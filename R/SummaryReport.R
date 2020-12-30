@@ -13,7 +13,7 @@ summary.SummaryReport = function(object)
 
 print.summary.SummaryReport <- function(object,...)
     with(object,
-         print(c("n"=n,"Discount rate"=discountRate,"Cost"=Ecosts,"(se)"=se.Ecosts,"QALYs"=QALE,
+         print(c("n"=n,"Utility discount rate"=utilityDiscountRate,"Cost discount rate"=costDiscountRate,"Cost"=Ecosts,"(se)"=se.Ecosts,"QALYs"=QALE,
                  "(se)"=se.QALE),
                ...))
 
