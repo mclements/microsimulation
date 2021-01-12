@@ -8,3 +8,9 @@ PKG_CFLAGS = -I.
 SOURCES = $(wildcard *.c */*.c */*/*.c)
 
 OBJECTS = microsimulation.o person-r.o calibperson-r.o simple-example.o simple-example2.o illness-death.o ssim.o RngStream.o cervical.o $(SOURCES:.c=.o)
+
+all: $(SHLIB) staticLibrary
+
+staticLibrary: $(SHLIB)
+	       $(AR) cr ../inst/lib/libmicrosimulation.a $(OBJECTS)
+	       $(RANLIB) ../inst/lib/libmicrosimulation.a
