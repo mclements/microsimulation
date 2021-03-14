@@ -12,3 +12,4 @@ Imports: parallel, grDevices, ascii
 Suggests: testthat, ascii
 LinkingTo: Rcpp, BH
 LazyData: true
+RoxygenNote: 7.1.1

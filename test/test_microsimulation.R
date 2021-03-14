@@ -2,6 +2,17 @@
 ## library(microsimulation)
 ## microsimulation:::.testPackage()
 
+## testing pqueue
+library(microsimulation)
+pq = pqueue()
+pq$clear()
+pq$push(1, "a")
+pq$push(3, "c")
+pq$push(2, "b")
+while(!pq$empty())
+    print(pq$pop())
+
+
 ## Simple example including a listing
 library(Rcpp)
 library(microsimulation)
