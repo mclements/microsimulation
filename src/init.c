@@ -22,7 +22,7 @@ extern SEXP callSimplePerson2(SEXP);
 extern SEXP pqueue__cancel(SEXP, SEXP);
 extern SEXP pqueue__clear(SEXP);
 extern SEXP pqueue__empty(SEXP);
-extern SEXP pqueue__new();
+extern SEXP pqueue__new(SEXP);
 extern SEXP pqueue__pop(SEXP);
 extern SEXP pqueue__push(SEXP, SEXP, SEXP);
 extern SEXP r_create_current_stream();
@@ -45,7 +45,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"pqueue__cancel",            (DL_FUNC) &pqueue__cancel,            2},
     {"pqueue__clear",             (DL_FUNC) &pqueue__clear,             1},
     {"pqueue__empty",             (DL_FUNC) &pqueue__empty,             1},
-    {"pqueue__new",               (DL_FUNC) &pqueue__new,               0},
+    {"pqueue__new",               (DL_FUNC) &pqueue__new,               1},
     {"pqueue__pop",               (DL_FUNC) &pqueue__pop,               1},
     {"pqueue__push",              (DL_FUNC) &pqueue__push,              3},
     {"r_create_current_stream",   (DL_FUNC) &r_create_current_stream,   0},

@@ -125,8 +125,9 @@ namespace ssim {
   };
   
   RcppExport
-  SEXP pqueue__new() {
-    Rcpp::XPtr<pqueue> ptr(new pqueue());
+  SEXP pqueue__new(SEXP _lower) {
+    bool lower = as<bool>(_lower);
+    Rcpp::XPtr<pqueue> ptr(new pqueue(lower));
     return wrap(ptr);
   }
   RcppExport
