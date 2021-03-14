@@ -106,16 +106,12 @@ callPersonSimulation <- function(n=20,seed=rep(12345,6)) {
   eventT =c("toDeath", "toPCDeath", "toLocalised", "toDxLocalised",
 	      "toDxLocallyAdvanced",
 	      "toLocallyAdvanced", "toMetastatic", "toDxMetastatic")
-  out <- .Call("callPersonSimulation",
+  out <- .Call(.callPersonSimulation,
                as.integer(rep(seed,length=6)), # magic
-               list(n=as.integer(n)),
-               PACKAGE="microsimulation")
-  out <- `names<-`(as.data.frame(out$Value),out$Key)
-  out <- transform(out,
-                   state=enum(state,stateT),
-                   event=enum(event,eventT))
-  ## tidy up
-  out
+               list(n=as.integer(n)))
+  out$state = enum(out$state,stateT)
+  out$event = enum(out$event,eventT)
+  as.data.frame(out)
 }
 
 callSimplePerson <- function(n=10) {
@@ -124,13 +120,11 @@ callSimplePerson <- function(n=10) {
   set.seed(12345)
   stateT <- c("Healthy","Cancer","Death")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
-  out <- .Call("callSimplePerson",
-               parms=list(n=as.integer(n)),
-               PACKAGE="microsimulation")
-  out <- transform(as.data.frame(out),
-                   state=enum(state,stateT),
-                   event=enum(event,eventT))
-  out
+  out <- .Call(.callSimplePerson,
+               parms=list(n=as.integer(n)))
+  out$state = enum(out$state,stateT)
+  out$event = enum(out$event,eventT)
+  as.data.frame(out)
 }
 
 callSimplePerson2 <- function(n=10) {
@@ -139,9 +133,8 @@ callSimplePerson2 <- function(n=10) {
   set.seed(12345)
   stateT <- c("Healthy","Cancer","Death")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
-  out <- .Call("callSimplePerson2",
-               parms=list(n=as.integer(n)),
-               PACKAGE="microsimulation")
+  out <- .Call(.callSimplePerson2,
+               parms=list(n=as.integer(n)))
   reader <- function(obj)
       cbind(data.frame(state=enum(obj[[1]],stateT)),
           data.frame(obj[-1]))
@@ -165,9 +158,8 @@ callIllnessDeath <- function(n=10L,cure=0.1,zsd=0) {
   set.seed(12345)
   stateT <- c("Healthy","Cancer")
   eventT <- c("toOtherDeath", "toCancer", "toCancerDeath")
-  out <- .Call("callIllnessDeath",
-               parms=list(n=as.integer(n),cure=as.double(cure),zsd=as.double(zsd)),
-               PACKAGE="microsimulation")
+  out <- .Call(.callIllnessDeath,
+               parms=list(n=as.integer(n),cure=as.double(cure),zsd=as.double(zsd)))
   reader <- function(obj)
       cbind(data.frame(state=enum(obj[[1]],stateT)),
           data.frame(obj[-1]))
