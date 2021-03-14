@@ -10,3 +10,5 @@ src/tprocessconf.h
 .lst
 Makefile
 README.html
+microsimulation_*.tar.gz
+microsimulation.Rcheck/
