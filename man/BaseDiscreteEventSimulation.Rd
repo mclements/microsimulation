@@ -143,7 +143,8 @@ testRsimulation3 <- function(n=100) {
     Simulation <-
         setRefClass("Simulation",
                     contains = "BaseDiscreteEventSimulation",
-                    fields = list(state = "character", everCancer = "logical", report = "data.frame"))
+                    fields = list(state = "character", everCancer = "logical",
+                                  report = "data.frame"))
     Simulation$methods(
         init = function() {
             report <<- data.frame()
