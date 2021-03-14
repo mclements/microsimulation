@@ -1,4 +1,4 @@
-summary.SummaryReport = function(object)
+summary.SummaryReport = function(object, ...)
     with(object,
          structure(list(n = n,
                         indivp = indivp,
@@ -11,14 +11,14 @@ summary.SummaryReport = function(object)
                         se.Ecosts = sd(indiv$costs)/sqrt(n)),
                    class="summary.SummaryReport"))
 
-print.summary.SummaryReport <- function(object,...)
-    with(object,
+print.summary.SummaryReport <- function(x,...)
+    with(x,
          print(c("n"=n,"Utility discount rate"=utilityDiscountRate,"Cost discount rate"=costDiscountRate,"Cost"=Ecosts,"(se)"=se.Ecosts,"QALYs"=QALE,
                  "(se)"=se.QALE),
                ...))
 
-print.SummaryReport <- function(object,...)
-    print(summary(object),...)
+print.SummaryReport <- function(x,...)
+    print(summary(x),...)
 
 rbind.SummaryReport <- function(...) {
     objects = list(...)
@@ -43,7 +43,7 @@ ascii.SummaryReport <- function(object,include.rownames=FALSE,include.colnames=T
     } else stop("ascii package not available")
 }
 
-ICER.SummaryReport = function(object1, object2) {
+ICER.SummaryReport = function(object1, object2, ...) {
     stopifnot(object1$n == object2$n)
     stopifnot(object1$utilityDiscountRate == object2$utilityDiscountRate)
     stopifnot(object1$costDiscountRate == object2$costDiscountRate)
