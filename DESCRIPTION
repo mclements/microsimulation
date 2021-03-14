@@ -1,15 +1,16 @@
 Package: microsimulation
 Type: Package
-Title: Discrete event simulation in R and C++, with tools for microsimulation.
+Title: Discrete Event Simulation in R and C++, with Tools for Cost-Effectiveness Analysis
 Version: 1.3.3
 Date: 2021-03-14
 Author: Mark Clements, Alexandra Jauhiainen, Andreas Karlsson.
 Maintainer: Mark Clements <mark.clements@ki.se>
-Description: Microsimulation using discrete event simulation in R and C++.
+Description: Discrete event simulation in R and C++, with tools for cost-effectiveness analysis.
 License: GPL (>= 3)
 Depends: Rcpp (>= 0.10.2), methods
 Imports: parallel, grDevices, ascii
 Suggests: testthat
 LinkingTo: Rcpp, BH
 LazyData: true
+Encoding: UTF-8
 RoxygenNote: 7.1.1
