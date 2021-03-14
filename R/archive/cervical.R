@@ -83,7 +83,7 @@ cervicalData <- list(H=Hcervical)
 
 callCervical <- function(n=10, nLifeHistories=10,
                       seed=12345,
-                      flatPop = FALSE, pop = pop1, tables = IHE, debug=FALSE,
+                      flatPop = FALSE, pop = pop1, tables = list(), debug=FALSE,
                       discountRate = 0.03, parms = NULL, mc.cores=1) {
   ## save the random number state for resetting later
   state <- RNGstate(); on.exit(state$reset())
