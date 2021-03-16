@@ -78,20 +78,57 @@ RNGstate <- function() {
   list(oldseed = oldseed, reset = reset)
 }
 
-## find the concave frontier
-frontier<-function(x,y)
-  {
-      ichull <- grDevices::chull(cbind(x,y)) # convex hull
-      if (length(ichull)<2) return(ichull)
-      xi <- x[ichull]
-      yi <- y[ichull]          # subset to convex hull
-      imin <- which(xi==min(xi))
-      include <- sapply(1:length(ichull),
-                        function(i)       # establish the frontier
-                        i==imin || (i>imin && yi[i-1]<yi[i] && xi[i-1]<xi[i]))
-      ichull[include]
+#' Utility to calculate the cost-efficiency frontier
+#'
+#' @param x vector of x coordinates
+#' @param y vector y coordinates
+#' @param concave logical for whether to calculate a concave frontier (default=TRUE)
+#' @param convex logical for whether to calculate a convex frontier (default=NULL)
+#' @return a list with components x and y for the frontier
+#' @rdname Utilities
+#' @export
+frontier <- function (x, y, concave=TRUE, convex=NULL)
+{
+    ## check arguments
+    stopifnot(is.logical(concave),
+              is.null(convex) || is.logical(convex),
+              is.numeric(x),
+              is.numeric(y),
+              length(x) == length(y),
+              !any(is.na(x)),
+              !any(is.na(y)))
+    ## Change concave if convex is defined
+    if (!is.null(convex))
+        concave <- !convex
+    if (concave) {
+        ichull <- grDevices::chull(cbind(x, y))
+        ## case: length == 0
+        if ((n <- length(ichull)) == 0)
+            return(NULL)
+        ## case: length == 1
+        if (n == 1)
+            return(list(x=x[ichull], y=y[ichull]))
+        ## case: length > 1
+        ## if min(x) value is not first in ichull, then re-order
+        if ((iminx <- which.min(x[ichull])) > 1) {
+            ichull <- ichull[c(iminx:n, 1:(iminx-1))]
+        }
+        ## find those that are increasing for x and y
+        include <- c(TRUE,diff(x[ichull])>0 & diff(y[ichull])>0)
+        list(x=x[ichull][include], y=y[ichull][include])
+    } else # convex case
+        with(Recall(y,x,concave=TRUE), list(x=y, y=x))
 }
-lines.frontier <- function(x,y,pch=19,type="b",...) {
+
+#' plot lines for a frontier
+#'
+#' @param x vector of x coordinates
+#' @param y vector of y coordinates
+#' @param pch type of pch for the plotted symbols (default=19)
+#' @param type join type (default="b")
+#' @param ... other arguments to lines
+#' @rdname Utilities
+lines_frontier <- function(x,y,pch=19,type="b",...) {
     index <- frontier(x,y)
     lines(x[index],y[index],pch=pch,type=type,...)
 }
