@@ -1,10 +1,16 @@
 
-
+#' Internal function
+#'
+#' @rdname Utilities
 .microsimulationLdFlags <- function(){
     paste( '-L"', system.file( "lib", package = "microsimulation" ), '" -lmicrosimulation',
           sep = "" )
 }
 
+#' Code to use the microsimulation package inline
+#' @param ... arguments
+#' @rdname Utilities
+#' @export
 inlineCxxPlugin <- function(...) {
     ismacos <- Sys.info()[["sysname"]] == "Darwin"
     openmpflag <- if (ismacos) "" else "$(SHLIB_OPENMP_CFLAGS)"
