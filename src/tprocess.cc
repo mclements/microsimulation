@@ -212,8 +212,8 @@ const Event * TProcess::wait_for_event(Time timeout) {
     return msg;
 }
 
-void TProcess::stop() { };
+void TProcess::stop() { }
 
-}; // namespace ssim
+} // namespace ssim
 
 #endif // TPROCESS_IMPL == 0

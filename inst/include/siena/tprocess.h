@@ -170,7 +170,7 @@ private:
     void resume();
 };
 
-}; // end namespace ssim
+} // end namespace ssim
 
 #endif /* TPROCESS_IMPL!=VOID */
 
