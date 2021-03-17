@@ -20,3 +20,5 @@ rngstream-boost\.hpp
 cervical.R
 NAMESPACE_old
 archive
+dll$
+^R\.h$

@@ -14,3 +14,5 @@ README.html
 microsimulation_*.tar.gz
 microsimulation.Rcheck/
 inst/lib/libmicrosimulation.a
+*.dll
+src/R.h
