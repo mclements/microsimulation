@@ -13,3 +13,4 @@ README.html
 .Rproj.user
 microsimulation_*.tar.gz
 microsimulation.Rcheck/
+inst/lib/libmicrosimulation.a
