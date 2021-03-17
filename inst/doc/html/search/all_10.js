@@ -19,7 +19,7 @@ var searchData=
   ['removename_304',['RemoveName',['../a00078.html#a64ef5a9b487e7250188629e859b4df5e',1,'ssim']]],
   ['report_305',['report',['../a00077.html#af04956d0fd23b30d20b75fa560543b38',1,'illnessDeath']]],
   ['resetnextsubstream_306',['ResetNextSubstream',['../a01072.html#a64a7e00b2874826622e4b2fc3503e177',1,'ssim::RngStream']]],
-  ['resetpopulation_307',['resetPopulation',['../a00904.html#a32fa18a33f1388289dc72e99f9c25b74',1,'Person']]],
+  ['resetpopulation_307',['resetPopulation',['../a00932.html#a32fa18a33f1388289dc72e99f9c25b74',1,'Person']]],
   ['resetstartstream_308',['ResetStartStream',['../a01072.html#a2dfd3a967fe332b9ce7b46b0c274b9a0',1,'ssim::RngStream']]],
   ['resetstartsubstream_309',['ResetStartSubstream',['../a01072.html#a8a5b85e36e54f01a735601bcd6ee99ed',1,'ssim::RngStream']]],
   ['resize_310',['resize',['../a01020.html#a73d0f731eb55337f2c41ce692d610283',1,'ssim::EventReport::resize()'],['../a01024.html#adac39083a3a1fe8a4863b40f67431111',1,'ssim::SummaryReport::resize()'],['../a01028.html#ac43ee8dfc3c38deb0cb6cf6138886064',1,'ssim::CostReport::resize()']]],

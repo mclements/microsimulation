@@ -6,5 +6,5 @@ var searchData=
   ['discountedinterval_550',['discountedInterval',['../a00078.html#a440a324691afecd012af46363a59b135',1,'ssim']]],
   ['discountedutilities_551',['discountedUtilities',['../a01020.html#ac266e138fd735d862ee4855ed8d75d25',1,'ssim::EventReport']]],
   ['discountedutilityinterval_552',['discountedUtilityInterval',['../a01024.html#a645a5faaf92f3f78946a534335f2a342',1,'ssim::SummaryReport']]],
-  ['dxhr_553',['dxHR',['../a00002.html#ab2d855a7c23a0fb0d7e0465d04f24b74',1,'person-r-20121231.cc']]]
+  ['dxhr_553',['dxHR',['../a00005.html#ab2d855a7c23a0fb0d7e0465d04f24b74',1,'person-r-20121231.cc']]]
 ];

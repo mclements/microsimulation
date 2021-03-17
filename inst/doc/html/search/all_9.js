@@ -12,7 +12,7 @@ var searchData=
   ['individualreset_173',['individualReset',['../a01020.html#ae371ab2ae6b14a9f33f9d65e20970e38',1,'ssim::EventReport::individualReset()'],['../a01028.html#a61bf1c102f0e83e9e6a4312844926ba7',1,'ssim::CostReport::individualReset()']]],
   ['individualutilities_174',['IndividualUtilities',['../a01020.html#a145541f5612d85dd5b22a42f1289e55c',1,'ssim::EventReport::IndividualUtilities()'],['../a01024.html#aa4ef1083542a73d7f3cf9f63cec3e3a2',1,'ssim::SummaryReport::IndividualUtilities()']]],
   ['indivp_175',['indivp',['../a01024.html#a44f6d78d102f4a9f822a67633d3fbe68',1,'ssim::SummaryReport']]],
-  ['init_176',['init',['../a00904.html#a4a89c9477a1ce549db410af42b46b430',1,'Person::init()'],['../a00940.html#a584c666a3013ff9af8751b656910eca8',1,'illnessDeath::SimplePerson::init()'],['../a01004.html#a8742b8248561ca3064eb8c4f12f88213',1,'ssim::cProcess::init()']]],
+  ['init_176',['init',['../a00932.html#a4a89c9477a1ce549db410af42b46b430',1,'Person::init()'],['../a00940.html#a584c666a3013ff9af8751b656910eca8',1,'illnessDeath::SimplePerson::init()'],['../a01004.html#a8742b8248561ca3064eb8c4f12f88213',1,'ssim::cProcess::init()']]],
   ['init_2ec_177',['init.c',['../a00020.html',1,'']]],
   ['init_5ftime_178',['INIT_TIME',['../a00078.html#a5d837e0e63fb4c72883760fb4ad3467d',1,'ssim']]],
   ['initialize_179',['initialize',['../a01004.html#a91e08ea2d214e1efc93bb01aa855032f',1,'ssim::cProcess::initialize()'],['../a01080.html#a71e33568acc66f9febc7f0112944c3b8',1,'ssim::Process::initialize()']]],

@@ -3,7 +3,7 @@ var searchData=
   ['calcmatrix_530',['CalcMatrix',['../a01072.html#ab1a59869e71cf8046b0d7f451e3ba4ad',1,'ssim::RngStream']]],
   ['callcalibrationsimulation_531',['callCalibrationSimulation',['../a00020.html#ad24ff5b4dfb39eac8f3cea34780b08ae',1,'init.c']]],
   ['callillnessdeath_532',['callIllnessDeath',['../a00077.html#a3b1cd76fab3b36679822fc9903eea798',1,'illnessDeath::callIllnessDeath()'],['../a00020.html#a1e4d1899fd8b583092f5b738da90c999',1,'callIllnessDeath():&#160;illness-death.cpp']]],
-  ['callpersonsimulation_533',['callPersonSimulation',['../a00002.html#a4f0c191a5186200ba1ed8fcb8daa4aad',1,'callPersonSimulation(int *inseed, double *parms, int *nin, double *out, int *nout):&#160;person-r-20121231.cc'],['../a00020.html#ada8a6f4c4fa46b5f80ff9b6b817284b9',1,'callPersonSimulation(SEXP, SEXP):&#160;init.c']]],
+  ['callpersonsimulation_533',['callPersonSimulation',['../a00005.html#a4f0c191a5186200ba1ed8fcb8daa4aad',1,'callPersonSimulation(int *inseed, double *parms, int *nin, double *out, int *nout):&#160;person-r-20121231.cc'],['../a00020.html#ada8a6f4c4fa46b5f80ff9b6b817284b9',1,'callPersonSimulation(SEXP, SEXP):&#160;init.c']]],
   ['callsimpleperson_534',['callSimplePerson',['../a00020.html#a02e96677d01d9acc87e175b59b284768',1,'init.c']]],
   ['callsimpleperson2_535',['callSimplePerson2',['../a00020.html#a08982ebf3275525e1f19cc94491a2a88',1,'init.c']]],
   ['cancel_536',['cancel',['../a00960.html#a46f53314b35becc9b040a95e8285a7a4',1,'ssim::pqueue']]],
