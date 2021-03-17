@@ -1,4 +1,7 @@
 var searchData=
 [
-  ['y',['y',['../class_interpolate.html#aa436b1585e9aeb5c9dc41d77df49ff7e',1,'Interpolate::y()'],['../class_numeric_interpolate.html#a90e4a9c45eac6a765b01e5add5017f28',1,'NumericInterpolate::y()']]]
+  ['unmodified_843',['unmodified',['../a00011.html#a77391387047a9b93cb594951b777da45',1,'fdl.txt']]],
+  ['utility_844',['utility',['../a01024.html#a412b506d39620f5521be4a381a115667',1,'ssim::SummaryReport']]],
+  ['utilityalpha_845',['utilityAlpha',['../a01024.html#ac6100897362f2d207bfd652f911fc51d',1,'ssim::SummaryReport']]],
+  ['utilitydiscountrate_846',['utilityDiscountRate',['../a01024.html#a06fcd6b9473e3f9019ff83224c84124f',1,'ssim::SummaryReport']]]
 ];

@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['n',['n',['../classssim_1_1_means.html#a5c7834b4f85b303cb3ec6bce595081f1',1,'ssim::Means']]],
-  ['nextsubstream',['nextSubstream',['../classssim_1_1_rng.html#a0b5c9231912529372cb069429f28c100',1,'ssim::Rng']]],
-  ['now',['now',['../namespacessim.html#a4f5da079da642a3ab4bc28f4f307a9d1',1,'ssim']]],
-  ['numericinterpolate',['NumericInterpolate',['../class_numeric_interpolate.html#ae334305d36b0f28cc4556c0db2257ec6',1,'NumericInterpolate::NumericInterpolate()'],['../class_numeric_interpolate.html#a6f4b08bc12405f07105afabf8218f754',1,'NumericInterpolate::NumericInterpolate(DataFrame df, int i0=0, int i1=1)']]]
+  ['main_582',['main',['../a00035.html#ae66f6b31b5ad750f1fe042a706a4e3d4',1,'rngstream-example.cpp']]],
+  ['max_583',['max',['../a01016.html#ad997d7be32751dbb9328d162a463b8a5',1,'ssim::Rng']]],
+  ['mean_584',['mean',['../a01008.html#a56b6b79b62503f1de8ac8949b94dd458',1,'ssim::Means']]],
+  ['means_585',['Means',['../a01008.html#ab53d53da74fd84a7cc3eaa48c988ed41',1,'ssim::Means']]],
+  ['min_586',['min',['../a01016.html#af753c1dc6487ef0ddc43d179f015634f',1,'ssim::Rng']]]
 ];

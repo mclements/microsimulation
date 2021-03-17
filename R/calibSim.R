@@ -1,3 +1,12 @@
+#' call CalibrationPerson example
+#'
+#' @param seed random number seed
+#' @param n number of simulations
+#' @param runpar parameters
+#' @param mc.cores number of cores
+#' @return data-frame
+#' @export
+#' @rdname Examples
 callCalibrationPerson <- function(seed=12345,n=500,runpar=c(4,0.5,0.05,10,3,0.5),mc.cores=1) {
   
   state <- RNGstate(); on.exit(state$reset())

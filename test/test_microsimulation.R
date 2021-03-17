@@ -1,6 +1,52 @@
 ## try(detach("package:microsimulation", unload=TRUE))
 ## library(microsimulation)
-## microsimulation:::.testPackage()
+
+## testing pqueue
+library(microsimulation)
+pq = pqueue()
+pq$clear()
+pq$push(1, "a")
+pq$push(3, "c")
+pq$push(2, "b")
+while(!pq$empty())
+    print(pq$pop())
+##
+system.time({
+    pq = pqueue()
+    pq$clear()
+    set.seed(12345)
+    for (i in 1:1e4)
+        pq$push(rnorm(1), i)
+    for (i in 1:5)
+        print(pq$pop()$priority)
+})
+system.time({
+    pq = new("PQueueRef")
+    pq$clear()
+    set.seed(12345)
+    for (i in 1:1e4)
+        pq$push(rnorm(1), i)
+    for (i in 1:5)
+        print(pq$pop()$priority)
+})
+library(datastructures)
+system.time({
+    pq = fibonacci_heap("numeric")
+    set.seed(12345)
+    for (i in 1:1e4)
+        pq <- insert(pq, rnorm(1), i)
+    for (i in 1:5)
+        print(pop(pq))
+})
+system.time({
+    pq = binomial_heap("numeric")
+    set.seed(12345)
+    for (i in 1:1e4)
+        pq <- insert(pq, rnorm(1), i)
+    for (i in 1:5)
+        print(pop(pq))
+})
+
 
 ## Simple example including a listing
 library(Rcpp)

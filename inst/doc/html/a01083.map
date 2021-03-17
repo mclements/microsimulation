@@ -1,0 +1,4 @@
+<map id="ssim::ProcessWithPId" name="ssim::ProcessWithPId">
+<area shape="rect" id="node1" title="utility Process class providing a utility interface with the simulator." alt="" coords="5,80,167,107"/>
+<area shape="rect" id="node2" href="$a01080.html" title="Virtual class (interface) representing processes running within the simulator." alt="" coords="31,5,141,32"/>
+</map>

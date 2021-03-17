@@ -1,8 +1,6 @@
 var searchData=
 [
-  ['rcpp_5ftable_2eh',['rcpp_table.h',['../rcpp__table_8h.html',1,'']]],
-  ['rngstream_2dboost_2ehpp',['rngstream-boost.hpp',['../rngstream-boost_8hpp.html',1,'']]],
-  ['rngstream_2dexample_2ecpp',['rngstream-example.cpp',['../rngstream-example_8cpp.html',1,'']]],
-  ['rngstream_2ecpp',['RngStream.cpp',['../_rng_stream_8cpp.html',1,'']]],
-  ['rngstream_2eh',['RngStream.h',['../_rng_stream_8h.html',1,'']]]
+  ['person_2dr_2d20121231_2ecc_496',['person-r-20121231.cc',['../a00002.html',1,'']]],
+  ['person_2dr_2ecc_497',['person-r.cc',['../a00026.html',1,'']]],
+  ['pqueue_2ecpp_498',['pqueue.cpp',['../a00029.html',1,'']]]
 ];

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['r',['R',['../namespace_r.html',1,'']]],
-  ['rcpp',['Rcpp',['../namespace_rcpp.html',1,'']]]
+  ['r_484',['R',['../a00079.html',1,'']]],
+  ['rcpp_485',['Rcpp',['../a00088.html',1,'']]]
 ];

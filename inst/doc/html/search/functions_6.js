@@ -1,7 +1,10 @@
 var searchData=
 [
-  ['handle_5fbusy',['handle_busy',['../classssim_1_1_sim_error_handler.html#a9c58b21960840c9012c183d0996eb9b1',1,'ssim::SimErrorHandler']]],
-  ['handle_5fterminated',['handle_terminated',['../classssim_1_1_sim_error_handler.html#addddc5a9681701043d59b2df1d97fb8f',1,'ssim::SimErrorHandler']]],
-  ['handlemessage',['handleMessage',['../class_person.html#aaf2b11f162db3e1df6adb2816d69bcd9',1,'Person::handleMessage()'],['../classillness_death_1_1_simple_person.html#a704e777c401e78ba9a0320d7e64d9687',1,'illnessDeath::SimplePerson::handleMessage()'],['../classssim_1_1c_process.html#ad89844c8ea2b9f7032191d1747155980',1,'ssim::cProcess::handleMessage()']]],
-  ['hash_5fvalue',['hash_value',['../namespaceboost_1_1tuples.html#a824c38fa3bc4c8f2ce1a28c0570c5fbb',1,'boost::tuples']]]
+  ['genadvancestate_560',['GenAdvanceState',['../a01072.html#ac33b58cede99db935c6a8183337621d7',1,'ssim::RngStream']]],
+  ['generate_561',['generate',['../a00964.html#af9dd9b859b5d925f72187a92cdcd6e5f',1,'boost::random::rngstream']]],
+  ['getkind_562',['getKind',['../a01000.html#ac33203376a9d527d7d576dc0010706e5',1,'ssim::cMessage']]],
+  ['getname_563',['getName',['../a01000.html#a5c5f3b357b1cd90c55bc49a8bb2d3f89',1,'ssim::cMessage']]],
+  ['getsendingtime_564',['getSendingTime',['../a01000.html#ad92607e6bdf4f518161e2912ada611f3',1,'ssim::cMessage']]],
+  ['getstate_565',['GetState',['../a01072.html#a107ff9698c68eaa795dd3a459f26c5e1',1,'ssim::RngStream']]],
+  ['gettimestamp_566',['getTimestamp',['../a01000.html#a654326fb8db171ade8c1987bedff063d',1,'ssim::cMessage']]]
 ];

@@ -1,2 +1,24 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+<<<<<<< HEAD
+=======
+^microsimulation.*\.tar\.gz$
+Makefile
+NEWS\.html
+README\.html
+README\.org
+clean\.sh
+log$
+[~]$
+^.*\.bbl$
+^.*\.blg$
+^.*\.tex$
+jss\.bst
+^.*\.dvi$
+test
+microsimulation\.a
+rngstream-example\.cpp
+rngstream-boost\.hpp
+cervical.R
+NAMESPACE_old
+>>>>>>> 52077cae567f066d30987d329bff4e615b4e7e57

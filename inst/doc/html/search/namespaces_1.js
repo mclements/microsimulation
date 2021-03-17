@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['illnessdeath',['illnessDeath',['../namespaceillness_death.html',1,'']]]
+  ['illnessdeath_483',['illnessDeath',['../a00077.html',1,'']]]
 ];
