@@ -10,9 +10,6 @@ src/tprocessconf.h
 .lst
 Makefile
 README.html
-<<<<<<< HEAD
 .Rproj.user
-=======
 microsimulation_*.tar.gz
 microsimulation.Rcheck/
->>>>>>> 52077cae567f066d30987d329bff4e615b4e7e57
