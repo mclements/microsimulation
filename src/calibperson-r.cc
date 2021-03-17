@@ -74,6 +74,7 @@ public:
     mu3=par[4];
     tau3=par[5];
     id=i;
+    stage=DiseaseFree;
   };
 	
   void init();
