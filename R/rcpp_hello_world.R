@@ -1,12 +1,10 @@
 #' microsimulation
 #'
-#' The packages provides implementations of discrete event simulations in both R
-#' and C++.
+#' Discrete event simulations in both R and C++ with Tools for Cost-Effectiveness Analysis.
 #'
 #' @section Introduction:
 #'
-#' The packages provides implementations of discrete event simulations in both R
-#' and C++.
+#' Discrete event simulations in both R and C++ with Tools for Cost-Effectiveness Analysis.
 #'
 #' @docType package
 #' @name microsimulation-package
@@ -26,6 +24,7 @@ NULL
 #' Cat a string for the library archive for use in loading the package
 #' 
 #' @rdname Utilities
+#' @return No return value, called for side effects
 #' @export
 LdFlags <- function()
     cat(system.file("lib/libmicrosimulation.a",  package="microsimulation", mustWork=TRUE))
@@ -38,18 +37,20 @@ LdFlags <- function()
 #' @param PACKAGE package from which this is called.
 #'
 #' @rdname Utilities
+#' @return No return value, called for side effects
 #' @export
 microsimulation.init <- function(PACKAGE="microsimulation") {
     .C("r_create_current_stream",PACKAGE=PACKAGE)
     return(1)
 }
 
-#' On exit from the package, remove teh current stream.
+#' On exit from the package, remove the current stream.
 #'
 #' Again, is this needed?
 #' 
 #' @param PACKAGE package from which this is called.
 #'
+#' @return No return value, called for side effects
 #' @rdname Utilities
 #' @export
 microsimulation.exit <- function(PACKAGE="microsimulation") {
@@ -61,7 +62,7 @@ microsimulation.exit <- function(PACKAGE="microsimulation") {
 #' Convert from signed to unsigned
 #'
 #' @param seed signed seed (possibly a vector)
-#' @returns unsigned seed
+#' @return unsigned seed
 #' @rdname Utilities
 #' @export 
 unsigned <- function(seed) ifelse(seed < 0, seed + 2^32, seed)
@@ -69,7 +70,7 @@ unsigned <- function(seed) ifelse(seed < 0, seed + 2^32, seed)
 #' Convert from unsigned to signed
 #'
 #' @param seed unsigned seed (possibly a vector)
-#' @returns signed seed
+#' @return signed seed
 #' 
 #' @rdname Utilities
 #' @export 
@@ -81,6 +82,7 @@ signed <- function(seed) ifelse(seed>2^31, seed-2^32, seed)
 #' @param mean numeric for the mean of the (untruncated) normal distribution (default=0)
 #' @param sd numeric for the sd of the (untruncated) normal distribution (default=1)
 #' @param lbound numeric for the lower bound (default=0)
+#' @return numeric vector
 #'
 #' @importFrom stats rnorm sd
 #' @rdname Utilities
@@ -98,7 +100,7 @@ rnormPos <- function(n,mean=0,sd=1,lbound=0) {
 #'
 #' @param seed random number seed
 #' @param PACKAGE package for the seed
-#'
+#' @return invisibly returns the new seed
 #' @rdname Utilities
 #' @export
 set.user.Random.seed <- function (seed,PACKAGE="microsimulation") {
@@ -114,6 +116,7 @@ set.user.Random.seed <- function (seed,PACKAGE="microsimulation") {
 #' @param seed random number seed
 #' @param n number of sub-streams to advance
 #' @param PACKAGE package for the seed
+#' @return the advanced seed
 #'
 #' @rdname Utilities
 #' @export
@@ -128,6 +131,7 @@ advance.substream <- function (seed,n,PACKAGE="microsimulation") {
 #'
 #' @param seed random number seed
 #' @param PACKAGE package for the seed
+#' @return invisibly returns TRUE -- called for side effect
 #'
 #' @rdname Utilities
 #' @export
@@ -139,7 +143,7 @@ next.user.Random.substream <- function(PACKAGE="microsimulation") {
 #' Get the current RngStream random seed
 #'
 #' @param PACKAGE package for the seed
-#'
+#' @return random seed
 #' @rdname Utilities
 #' @export
 user.Random.seed <- function(PACKAGE="microsimulation") {
@@ -153,7 +157,8 @@ user.Random.seed <- function(PACKAGE="microsimulation") {
 #' @param obj integer or logical for factor levels
 #' @param labels labels for the factor levels
 #' @param start first value of the levels
-#'
+#' @return the new factor
+#' 
 #' @rdname Utilities
 #' @export
 enum <- function(obj, labels, start=0) {
@@ -166,7 +171,7 @@ enum <- function(obj, labels, start=0) {
 #'
 #' @param obj integer or logical for factor levels
 #' @param value labels for the factor levels
-#'
+#' @return update the factor
 #' @rdname Utilities
 #' @export
 "enum<-" <- function(obj, value) {
@@ -248,6 +253,9 @@ frontier <- function (x, y, concave=TRUE, convex=NULL)
 #' @param pch type of pch for the plotted symbols (default=19)
 #' @param type join type (default="b")
 #' @param ... other arguments to lines
+#' 
+#' @return No return value, called for side effects
+#' 
 #' @rdname Utilities
 lines_frontier <- function(x,y,pch=19,type="b",...) {
     index <- frontier(x,y)
@@ -260,6 +268,7 @@ lines_frontier <- function(x,y,pch=19,type="b",...) {
 #' @param start the start time
 #' @param finish the finish time
 #' @param dr discount rate, expressed as a percentage
+#' @return numeric discounted value
 #' @export
 discountedInterval <- function(y, start, finish, dr) {
     duration = finish - start
@@ -273,6 +282,7 @@ discountedInterval <- function(y, start, finish, dr) {
 #' @param y the undiscounted value
 #' @param time the time of the event
 #' @param dr discount rate, expressed as a percentage
+#' @return numeric vector
 #' @rdname Utilities
 #' @export
 discountedPoint <- function(y, time, dr)
@@ -824,41 +834,48 @@ with.RNGStream <- function(data,expr,...) {
 #' C++ function
 #' @rdname Internal
 #' @name callCalibrationSimulation
+#' @return data-frame
 NULL
 
 #' C++ function
 #' @rdname Internal
 #' @name r_create_current_stream
+#' @return No return value, called for side effects
 #' @export
 NULL
 
 #' C++ function
 #' @rdname Internal
 #' @name r_remove_current_stream
+#' @return No return value, called for side effects
 #' @export
 NULL
 
 #' C++ function
 #' @rdname Internal
 #' @name r_set_user_random_seed
+#' @return No return value, called for side effects
 #' @export
 NULL
 
 #' C++ function
 #' @rdname Internal
 #' @name r_rng_advance_substream
+#' @return No return value, called for side effects
 #' @export
 NULL
 
 #' C++ function
 #' @rdname Internal
 #' @name r_next_rng_substream
+#' @return No return value, called for side effects
 #' @export
 NULL
 
 #' C++ function
 #' @rdname Internal
 #' @name r_get_user_random_seed
+#' @return No return value, called for side effects
 #' @export
 NULL
 
