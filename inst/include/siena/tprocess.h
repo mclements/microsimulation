@@ -30,7 +30,7 @@
 #endif
 
 // to make OSX happy with using ucontext.h
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600
 
 #if TPROCESS_IMPL != 0
 
