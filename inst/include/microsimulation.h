@@ -149,9 +149,10 @@ namespace Rcpp {
 #include <Rdefines.h>
 #include <R_ext/Random.h>
 
-#include <siena/ssim.h>
-#include <RngStream.h>
-#include <rcpp_table.h>
+#include "siena/ssim.h"
+#include "RngStream.h"
+#include "rcpp_table.h"
+#include "pqueue.h"
 
 #include <string>
 #include <algorithm>
@@ -286,12 +287,16 @@ typedef Time simtime_t;
 /**
    @brief simTime() function for OMNET++ API compatibility
 */
-Time simTime();
+inline Time simTime() {
+  return Sim::clock();
+}
 
 /**
    @brief now() function for compatibility with C++SIM
 */
-Time now();
+inline Time now()  {
+  return Sim::clock();
+}
 
 /**
    @brief Utility class to incrementally add values to calculate the mean,
@@ -381,15 +386,20 @@ public:
 /**
     @brief Random Weibull distribution for a given shape, scale and hazard ratio
 */
-double rweibullHR(double shape, double scale, double hr);
+inline double rweibullHR(double shape, double scale, double hr) {
+  return R::rweibull(shape, scale*pow(hr,1.0/shape));
+}
 
+  class Rng; // forward declaration
+  extern int counter_id;
+  extern Rng * default_stream, * current_stream;
+  extern double rn;
 
 /**
     @brief C++ wrapper class for the RngStream library.
     set() sets the current R random number stream to this stream.
     This is compliant with being a Boost random number generator.
 */
-static int counter_id = 0;
 class Rng : public RngStream {
  public:
   typedef double result_type;
@@ -397,11 +407,16 @@ class Rng : public RngStream {
   result_type min() { return 0.0; }
   result_type max() { return 1.0; }
   Rng() : RngStream() { id = ++counter_id; }
-  virtual ~Rng();
+  virtual ~Rng() {
+    if (current_stream->id == this->id)
+      current_stream = default_stream;
+  }
   void seed(const double seed[6]) {
     SetSeed(seed);
   }
-  void set();
+  void set() {
+    current_stream = this;
+  }
   void nextSubstream() { ResetNextSubstream(); }
   int id;
 };
@@ -1317,19 +1332,31 @@ namespace R {
      @brief rnorm function constrained to be positive. This uses brute-force re-sampling rather
      than conditioning on the distribution function.
   */
-  double rnormPos(double mean, double sd);
+  inline double rnormPos(double mean, double sd) {
+    double x;
+    while ((x=R::rnorm(mean,sd))<0.0) { }
+    return x;
+  }
 
   /**
      @brief rllogis function for a random covariate from a log-logistic distribution with shape and scale.
      S(t) = 1/(1+(t/scale)^shape).
   */
-  double rllogis(double shape, double scale);
+  inline double rllogis(double shape, double scale) {
+    double u = R::runif(0.0,1.0);
+    return scale*exp(-log(1.0/u-1.0)/shape);
+  }
+
   /**
      @brief rllogis_trunc function for a random covariate from a log-logistic distribution with shape and scale
      with minimum time left.
      S(t|t>x)=S(t)/S(x) where S(t)=1/(1+(t/scale)^shape).
   */
-  double rllogis_trunc(double shape, double scale, double left);
+  inline double rllogis_trunc(double shape, double scale, double left) {
+    double S0 = 1.0/(1.0+exp(log(left/scale)*shape));
+    double u = R::runif(0.0,1.0);
+    return scale*exp(log(1.0/(u*S0)-1.0)/shape);
+  }
 
 }
 

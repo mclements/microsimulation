@@ -1,37 +1,11 @@
-
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-
 #include <microsimulation.h>
 
 namespace ssim {
 
-  double rweibullHR(double shape, double scale, double hr){
-    return R::rweibull(shape, scale*pow(hr,1.0/shape));
-  }
-
-  Time now() {
-    return Sim::clock();
-  }
-
-  Time simTime() {
-    return Sim::clock();
-  }
-
-
-  static Rng * default_stream, * current_stream;
-  static double rn = 0.0;
-
-  Rng::~Rng() {
-    if (current_stream->id == this->id)
-      current_stream = default_stream;
-  }
-
-  void Rng::set() {
-    current_stream = this;
-  }
-
+  Rng * default_stream, * current_stream;
+  double rn = 0.0;
+  int counter_id = 0;
+  
   extern "C" {
 
     void r_create_current_stream()
@@ -103,22 +77,3 @@ namespace ssim {
 
 } // namespace ssim
 
-namespace R {
-  double rnormPos(double mean, double sd) {
-    double x;
-    while ((x=R::rnorm(mean,sd))<0.0) { }
-    return x;
-  }
-
-  double rllogis(double shape, double scale) {
-    double u = R::runif(0.0,1.0);
-    return scale*exp(-log(1.0/u-1.0)/shape);
-  }
-
-  double rllogis_trunc(double shape, double scale, double left) {
-    double S0 = 1.0/(1.0+exp(log(left/scale)*shape));
-    double u = R::runif(0.0,1.0);
-    return scale*exp(log(1.0/(u*S0)-1.0)/shape);
-  }
-
-}
