@@ -2,9 +2,11 @@
 #define PQUEUE_H
 
 #include <vector> // vector
-#include <algorithm> // push_heap, pop_heap
+#include <algorithm> // push_heap, pop_heap, make_heap, for_each
+#include <exception> // exception
 #include <stdexcept> // length_error
-#include <R_ext/Error.h> // Rf_error
+#include <utility> // move
+#include <Rcpp.h> // Rf_error, forward_exception_to_r
 
 namespace ssim {
 
@@ -112,6 +114,26 @@ namespace ssim {
       std::for_each(_elements.begin(), _elements.end(), f);
       if (remake)
 	std::make_heap(_elements.begin(), _elements.end(), _compare);
+    }
+    /**
+       Cancel elements that satisfy a predicate (that is, a test)
+    */
+    template<class Predicate>
+    void cancel_element(Predicate predicate) {
+      if (!empty()) {
+	for(size_type i=0; i < _elements.size(); i++) {
+	  if (predicate(_elements[i]))
+	    _elements[i].active = false;
+	}
+      _anyCancelled = true;
+      }
+    }
+    /**
+       Cancel events that satisfy a predicate (that is, a test)
+    */
+    template<class Predicate>
+    void cancel_event(Predicate predicate) {
+      cancel_element([predicate](Element element) { return predicate(element.event); });
     }
     virtual ~pqueue() = default;
   };
