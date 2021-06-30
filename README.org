@@ -128,8 +128,8 @@ The example demonstrates:
 
 For the specific example, the transformation from discrete to continuous time showed that the discrete time formulation could have been improved. In particular, the discrete time formulation assumes no transitions between Healthy and Sicker over one year, while the approximate probability of that event is the one-year probability of moving from Healthy to Sick times the probability of moving from Sick to Sicker. We have included that probability in the transition matrix and using matrix logarithms to calculate the transition probabilities.
 
-#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
-# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
+# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
+#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
 library(expm) # logm
 library(Rcpp) # sourceCpp
 library(microsimulation) # Rcpp::depends and include files
@@ -158,7 +158,7 @@ param <- within(list(), {
     u_S2 = 0.5 # utility when sicker
     u_Trt = 0.95 # utility when sick (as per the code) and being treated
     ## new parameters
-    discountRate=0.0 # discount rate
+    discountRate=0.03 # discount rate
     partitionBy=1.0 # partition used in the report
     Trt = FALSE # Treatment?
 })
@@ -215,6 +215,7 @@ sourceCpp(code="
     }
     void init(); // to be specified
     void handleMessage(const ssim::cMessage* msg); // to be specified
+    void cancelEvents(); // utility function
   };
   /**
       Initialise a simulation run for an individual
@@ -226,6 +227,15 @@ sourceCpp(code="
     scheduleAt(rexpRate(param[\"r_HD\"]),toD);
     scheduleAt(31.0,toEOF); // end of follow-up
   }
+ /**
+      Utility to cancel some events
+  */
+  void SickSicker::cancelEvents() {
+    ssim::RemoveKind(toH);
+    ssim::RemoveKind(toS1);
+    ssim::RemoveKind(toS2);
+    ssim::RemoveKind(toD);
+  }
   /**
       Handle receiving self-messages
   */
@@ -236,6 +246,7 @@ sourceCpp(code="
       state = Healthy;
       report->setUtility(param[\"u_H\"]);
       report->setCost(param[\"c_H\"]);
+      cancelEvents();
       scheduleAt(ssim::now() + rexpRate(param[\"r_HS1\"]), toH);
       scheduleAt(ssim::now() + rexpRate(param[\"r_HD\"]), toD);
       break;
@@ -243,6 +254,7 @@ sourceCpp(code="
       state = Sick;
       report->setUtility(param[\"Trt\"] ? param[\"u_Trt\"] : param[\"u_S1\"]);
       report->setCost(param[\"c_S1\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      cancelEvents();
       scheduleAt(ssim::now() + rexpRate(param[\"r_S1H\"]), toH);
       scheduleAt(ssim::now() + rexpRate(param[\"r_S1S2\"]), toS2);
       scheduleAt(ssim::now() + rexpRate(param[\"r_S1D\"]), toD);
@@ -251,6 +263,7 @@ sourceCpp(code="
       state = Sicker;
       report->setUtility(param[\"u_S2\"]);
       report->setCost(param[\"c_S2\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      cancelEvents();
       scheduleAt(ssim::now() + rexpRate(param[\"r_S2D\"]), toD);
       break;
     case toD:
@@ -306,15 +319,15 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 0.36 |   0.00 |    0.36 |
-| 0.36 |   0.00 |    0.36 |
+| 0.60 |   0.00 |    0.60 |
+| 0.59 |   0.00 |    0.60 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=10,000 individuals
-|              | *Total*  |       |        |       | *Incremental* |       |       |       |          |
-|              | Costs    | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
-|--------------+----------+-------+--------+-------+---------------+-------+-------+-------+----------|
-| No treatment | 70261.0  | 507.8 | 15.223 | 0.085 |               |       |       |       |          |
-| Treatment    | 113445.4 | 895.3 | 15.406 | 0.086 | 43184.4       | 406.1 | 0.184 | 0.002 | 235016.9 |
+|              | *Total* |        |        |       | *Incremental* |       |       |       |          |
+|              | Costs   | (se)   | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
+|--------------+---------+--------+--------+-------+---------------+-------+-------+-------+----------|
+| No treatment | 63864.4 | 576.9  | 17.178 | 0.053 |               |       |       |       |          |
+| Treatment    | 97071.7 | 1114.8 | 17.338 | 0.053 | 33207.3       | 544.8 | 0.161 | 0.002 | 206812.6 |
 :END:
 
 + The simulations can also be undertaken in parallel:
@@ -344,15 +357,15 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 3.92 |   0.04 |    2.01 |
-| 4.67 |   0.03 |    2.40 |
+| 2.88 |   0.03 |    2.94 |
+| 2.94 |   0.01 |    2.98 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=100,000 individuals
-|           | *Total*  |       |        |       | *Incremental* |       |       |       |          |
-|           | Costs    | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
-|-----------+----------+-------+--------+-------+---------------+-------+-------+-------+----------|
-| Reference | 70019.5  | 159.1 | 15.294 | 0.027 |               |       |       |       |          |
-| Treatment | 112536.0 | 278.6 | 15.460 | 0.027 | 42516.5       | 321.6 | 0.166 | 0.039 | 256052.6 |
+|           | *Total* |       |        |       | *Incremental* |       |       |       |          |
+|           | Costs   | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
+|-----------+---------+-------+--------+-------+---------------+-------+-------+-------+----------|
+| Reference | 63551.2 | 181.6 | 17.118 | 0.017 |               |       |       |       |          |
+| Treatment | 97122.6 | 352.4 | 17.308 | 0.017 | 33571.5       | 396.3 | 0.190 | 0.024 | 176660.8 |
 :END:
 
 There was an appreciable difference in the estimates from the discrete-time case and the continuous-time case. This issue warrants further investigation, particularly given that the discrete time case ignores any transitions between Healthy and Sicker within a one-year period.
