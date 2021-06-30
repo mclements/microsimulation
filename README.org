@@ -215,6 +215,7 @@ sourceCpp(code="
     }
     void init(); // to be specified
     void handleMessage(const ssim::cMessage* msg); // to be specified
+    void cancelEvents(); // to be specified
   };
   /**
       Initialise a simulation run for an individual
@@ -227,6 +228,15 @@ sourceCpp(code="
     scheduleAt(31.0,toEOF); // end of follow-up
   }
   /**
+      Utility to cancel some events
+  */
+  void SickSicker::cancelEvents() {
+    ssim::RemoveKind(toH);
+    ssim::RemoveKind(toS1);
+    ssim::RemoveKind(toS2);
+    ssim::RemoveKind(toD);
+  }
+  /**
       Handle receiving self-messages
   */
   void SickSicker::handleMessage(const ssim::cMessage* msg) {
@@ -236,13 +246,15 @@ sourceCpp(code="
       state = Healthy;
       report->setUtility(param[\"u_H\"]);
       report->setCost(param[\"c_H\"]);
-      scheduleAt(ssim::now() + rexpRate(param[\"r_HS1\"]), toH);
+      cancelEvents();
+      scheduleAt(ssim::now() + rexpRate(param[\"r_HS1\"]), toS1);
       scheduleAt(ssim::now() + rexpRate(param[\"r_HD\"]), toD);
       break;
     case toS1:
       state = Sick;
       report->setUtility(param[\"Trt\"] ? param[\"u_Trt\"] : param[\"u_S1\"]);
       report->setCost(param[\"c_S1\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      cancelEvents();
       scheduleAt(ssim::now() + rexpRate(param[\"r_S1H\"]), toH);
       scheduleAt(ssim::now() + rexpRate(param[\"r_S1S2\"]), toS2);
       scheduleAt(ssim::now() + rexpRate(param[\"r_S1D\"]), toD);
@@ -251,6 +263,7 @@ sourceCpp(code="
       state = Sicker;
       report->setUtility(param[\"u_S2\"]);
       report->setCost(param[\"c_S2\"] + (param[\"Trt\"] ? param[\"c_Trt\"] : 0.0));
+      cancelEvents();
       scheduleAt(ssim::now() + rexpRate(param[\"r_S2D\"]), toD);
       break;
     case toD:
@@ -306,15 +319,15 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 0.36 |   0.00 |    0.36 |
-| 0.36 |   0.00 |    0.36 |
+| 0.63 |   0.00 |    0.63 |
+| 0.63 |   0.00 |    0.63 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=10,000 individuals
-|              | *Total*  |       |        |       | *Incremental* |       |       |       |          |
-|              | Costs    | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
-|--------------+----------+-------+--------+-------+---------------+-------+-------+-------+----------|
-| No treatment | 70261.0  | 507.8 | 15.223 | 0.085 |               |       |       |       |          |
-| Treatment    | 113445.4 | 895.3 | 15.406 | 0.086 | 43184.4       | 406.1 | 0.184 | 0.002 | 235016.9 |
+|              | *Total*  |        |        |       | *Incremental* |       |       |       |          |
+|              | Costs    | (se)   | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
+|--------------+----------+--------+--------+-------+---------------+-------+-------+-------+----------|
+| No treatment | 173748.1 | 1164.6 | 19.319 | 0.084 |               |       |       |       |          |
+| Treatment    | 328213.7 | 2109.8 | 20.103 | 0.088 | 154465.7      | 962.8 | 0.784 | 0.006 | 196939.5 |
 :END:
 
 + The simulations can also be undertaken in parallel:
