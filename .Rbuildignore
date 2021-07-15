@@ -22,3 +22,10 @@ NAMESPACE_old
 archive
 dll$
 ^R\.h$
+README\.4\.vrb
+README\.5\.vrb
+README\.aux
+README\.out
+auto
+index\.org
+

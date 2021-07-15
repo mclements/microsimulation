@@ -404,11 +404,11 @@ ICER <- function(object1, object2, ...)
 #'
 #'   This event queue is simple and useful for pedagogic purposes.
 #' 
-#'   The algorithm for inserting values into the queue is computationally
+#'   The algorithm for pushing values into the queue is computationally
 #'   very simple: simply rank the times using \code{order()} and re-order
 #'   times and events. This approach is probably of acceptable performance
 #'   for smaller queue. A more computationally efficient approach for
-#'   insert into larger queues would be to use a binary search (e.g. using
+#'   pushing into larger queues would be to use a binary search (e.g. using
 #'   \code{findInterval()}).
 #' 
 #' For faster alternatives, see \code{pqueue} and \code{PQueueRef}.
