@@ -15,6 +15,9 @@ discountedInterval(y, start, finish, dr)
 
 \item{dr}{discount rate, expressed as a percentage}
 }
+\value{
+numeric discounted value
+}
 \description{
 Integrate a discounted value
 }

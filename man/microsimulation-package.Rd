@@ -6,14 +6,12 @@
 \alias{microsimulation}
 \title{microsimulation}
 \description{
-The packages provides implementations of discrete event simulations in both R
-and C++.
+Discrete event simulations in both R and C++ with Tools for Cost-Effectiveness Analysis.
 }
 \section{Introduction}{
 
 
-The packages provides implementations of discrete event simulations in both R
-and C++.
+Discrete event simulations in both R and C++ with Tools for Cost-Effectiveness Analysis.
 }
 
 \references{

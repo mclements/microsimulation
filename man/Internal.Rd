@@ -15,6 +15,21 @@
 \alias{r_next_rng_substream}
 \alias{r_get_user_random_seed}
 \title{C++ function}
+\value{
+data-frame
+
+No return value, called for side effects
+
+No return value, called for side effects
+
+No return value, called for side effects
+
+No return value, called for side effects
+
+No return value, called for side effects
+
+No return value, called for side effects
+}
 \description{
 C++ function
 

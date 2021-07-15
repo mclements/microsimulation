@@ -116,13 +116,37 @@ ICER(object1, object2, ...)
 \item{libpath}{library path string}
 }
 \value{
+No return value, called for side effects
+
+No return value, called for side effects
+
+No return value, called for side effects
+
 unsigned seed
 
 signed seed
 
+numeric vector
+
+invisibly returns the new seed
+
+the advanced seed
+
+invisibly returns TRUE -- called for side effect
+
+random seed
+
+the new factor
+
+update the factor
+
 a list with oldseed (the old value of .Random.seed), and reset(), which resets .Random.seed
 
 a list with components x and y for the frontier
+
+No return value, called for side effects
+
+numeric vector
 }
 \description{
 Is this function needed? We could define the current stream in open code.

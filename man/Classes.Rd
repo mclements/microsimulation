@@ -43,11 +43,11 @@ simulation is run using the \code{run} method, and the \code{final}
 method is called at the end of the simulation.
 }
 \details{
-The algorithm for inserting values into the queue is computationally
+The algorithm for pushing values into the queue is computationally
   very simple: simply rank the times using \code{order()} and re-order
   times and events. This approach is probably of acceptable performance
   for smaller queue. A more computationally efficient approach for
-  insert into larger queues would be to use a binary search (e.g. using
+  pushing into larger queues would be to use a binary search (e.g. using
   \code{findInterval()}).
 
 For faster alternatives, see \code{pqueue} and \code{PQueueRef}.
@@ -81,15 +81,15 @@ For faster alternatives, see \code{pqueue} and \code{PQueueRef}.
 
 \item{\code{push(priority, event)}}{Method to push an event with a given priority}
 
+\item{\code{cancel(predicate, ...)}}{Method to remove events that satisfy some predicate}
+
 \item{\code{clear()}}{Method to clear the event queue}
 
 \item{\code{empty()}}{Method to check whether there are no events in the queue}
 
-\item{\code{insert(time, event)}}{Method to insert the event at the given time}
-
 \item{\code{pop()}}{Method to remove the head of the event queue and return its value}
 
-\item{\code{remove(predicate, ...)}}{Method to remove events that satisfy some predicate}
+\item{\code{push(time, event)}}{Method to insert the event at the given time}
 
 \item{\code{final()}}{Method for finalising the simulation}
 
@@ -124,11 +124,11 @@ while(!pq$empty())
   print(pq$pop())
 
 pq = new("EventQueue")
-pq$insert(3,"Clear drains")
-pq$insert(4, "Feed cat")
-pq$insert(5, "Make tea")
-pq$insert(1, "Solve RC tasks")
-pq$insert(2, "Tax return")
+pq$push(3,"Clear drains")
+pq$push(4, "Feed cat")
+pq$push(5, "Make tea")
+pq$push(1, "Solve RC tasks")
+pq$push(2, "Tax return")
 while(!pq$empty())
   print(pq$pop())
 
@@ -142,7 +142,7 @@ DES = setRefClass("DES",
                          scheduleAt(1, "Solve RC tasks")
                          scheduleAt(2, "Tax return")
                       },
-                      handleMessage=function(event) {print(event)}))
+                      handleMessage=function(event) print(event)))
 
 des = new("DES")
 des$run()
@@ -278,19 +278,19 @@ testRsimulation4 <- function(n=1) {
             }
             else if (event == "Metastatic cancer") {
                 state <<- event
-                remove(function(event) event \%in\%
+                cancel(function(event) event \%in\%
                        c("Clinical cancer diagnosis","Cancer death")) # competing events
                 scheduleAt(now() + rweibull(1,2,5), "Cancer death")
             }
             else if (event == "Clinical cancer diagnosis") {
                 state <<- event
-                remove(function(event) event == "Metastatic cancer")
+                cancel(function(event) event == "Metastatic cancer")
             }
             else if (event == "Screening") {
                 switch(state,
                        "Cancer onset" = {
                            state <<- "Screen-detected cancer diagnosis"
-                           remove(function(event) event \%in\%
+                           cancel(function(event) event \%in\%
                                   c("Clinical cancer diagnosis","Metastatic cancer"))
                        },
                        "Metastatic cancer" = {}, # ignore
