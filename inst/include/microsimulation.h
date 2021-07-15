@@ -159,7 +159,7 @@ namespace Rcpp {
 #include <functional>
 #include <set>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/functional.hpp>
 
 namespace ssim {
@@ -267,14 +267,14 @@ public:
    @brief RemoveKind is a function to remove messages with the given kind from the queue (NB: void)
 */
  inline void RemoveKind(short kind) {
-   Sim::ignore_event(boost::bind(cMessageKindPred,_1,kind));
+   Sim::ignore_event(boost::bind(cMessageKindPred,boost::placeholders::_1,kind));
  }
 
  /**
     @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
  */
  inline void RemoveName(string name) {
-   Sim::ignore_event(boost::bind(cMessageNamePred,_1,name));
+   Sim::ignore_event(boost::bind(cMessageNamePred,boost::placeholders::_1,name));
  }
 
 
