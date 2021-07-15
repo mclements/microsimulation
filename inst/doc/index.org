@@ -1,0 +1,5 @@
+#+title: Additional documentation
+
+#+options: html-postamble:nil
+
+For extensive Doxygen documentation, see [[file:html/index.html][here]].
