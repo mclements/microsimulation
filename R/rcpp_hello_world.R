@@ -459,11 +459,13 @@ EventQueue <-
                     },
                     cancel = function(predicate, ...) {
                         'Method to remove events that satisfy some predicate'
-                        i <- sapply(events, predicate, ...)
-                        stopifnot(is.logical(i))
-                        i[is.na(i)] <- TRUE
-                        times <<- times[!i]
-                        events <<- events[!i]
+                        if (!empty()) {
+                            i <- sapply(events, predicate, ...)
+                            stopifnot(is.logical(i))
+                            i[is.na(i)] <- TRUE
+                            times <<- times[!i]
+                            events <<- events[!i]
+                        }
                     }))
 
 #' Reference class implementation of a discrete event simulation
@@ -692,7 +694,8 @@ EventQueue <-
 #' @rdname Classes
 BaseDiscreteEventSimulation <-
     setRefClass("BaseDiscreteEventSimulation",
-                contains = "PQueueRef",
+                contains = "EventQueue",
+                ## contains = "PQueueRef",
                 fields = list(currentTime = "numeric",
                     previousEventTime = "numeric"),
                 methods = list(
