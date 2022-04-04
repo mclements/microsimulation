@@ -128,8 +128,8 @@ The example demonstrates:
 
 For the specific example, the transformation from discrete to continuous time showed that the discrete time formulation could have been improved. In particular, the discrete time formulation assumes no transitions between Healthy and Sicker over one year, while the approximate probability of that event is the one-year probability of moving from Healthy to Sick times the probability of moving from Sick to Sicker. We have included that probability in the transition matrix and using matrix logarithms to calculate the transition probabilities.
 
-# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
-#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
+#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
+# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
 library(expm) # logm
 library(Rcpp) # sourceCpp
 library(microsimulation) # Rcpp::depends and include files
@@ -158,9 +158,10 @@ param <- within(list(), {
     u_S2 = 0.5 # utility when sicker
     u_Trt = 0.95 # utility when sick (as per the code) and being treated
     ## new parameters
-    discountRate=0.03 # discount rate
-    partitionBy=1.0 # partition used in the report
+    discountRate = 0.03 # discount rate
+    partitionBy = 1.0 # partition used in the report
     Trt = FALSE # Treatment?
+    debug = FALSE
 })
 ## For converting from discrete to continuous time: *p.HS2 should be non-zero*
 param = within(param, { p.HS2 = p.HS1*p.S1S2 })
@@ -177,8 +178,6 @@ param = within(param,
 { r_HS1 = Qmat[1,2]; r_HD = Qmat[1,4]
     r_S1H = Qmat[2,1]; r_S1S2 = Qmat[2,3]; r_S1D = Qmat[2,4]
     r_S2D = Qmat[3,4] })
-## tidy up
-rm(Pmat, Qmat)
 ##
 sourceCpp(code="
   // [[Rcpp::depends(BH)]]
@@ -240,6 +239,8 @@ sourceCpp(code="
       Handle receiving self-messages
   */
   void SickSicker::handleMessage(const ssim::cMessage* msg) {
+    if (param[\"debug\"]) Rprintf(\"id: %i, state: %i, kind: %i, previous: %f, now: %f\\n\",
+                       id, state, msg->kind, this->previousEventTime, ssim::now());
     report->add(state, msg->kind, this->previousEventTime, ssim::now(), id);
     switch(msg->kind) {
     case toH:
@@ -247,7 +248,7 @@ sourceCpp(code="
       report->setUtility(param[\"u_H\"]);
       report->setCost(param[\"c_H\"]);
       cancelEvents();
-      scheduleAt(ssim::now() + rexpRate(param[\"r_HS1\"]), toH);
+      scheduleAt(ssim::now() + rexpRate(param[\"r_HS1\"]), toS1);
       scheduleAt(ssim::now() + rexpRate(param[\"r_HD\"]), toD);
       break;
     case toS1:
@@ -282,7 +283,7 @@ sourceCpp(code="
   //[[Rcpp::export]]
   Rcpp::List callSim(int n, Rcpp::List param, bool indivp = true) {
     Report report(n,indivp);
-    report.setPartition(0.0,30.0,param[\"partitionBy\"]);
+    report.setPartition(0.0,31.0,param[\"partitionBy\"]);
     report.setDiscountRate(param[\"discountRate\"]);
     SickSicker person(param,&report);
     runSimulations(&person, n);
@@ -305,11 +306,11 @@ ascii.proc_time = function(x, include.rownames=FALSE, include.colnames=TRUE, ...
     ascii(summary(x), include.rownames, include.colnames, ...)
 ## run the simulations
 set.seed(12345)
-ascii(system.time(sim1 <- simulations(1e4,
-                                      param=within(param, {Trt = FALSE}))),header=TRUE)
+ascii(system.time(sim1 <- simulations(1e3,
+                                      param=modifyList(param, list(Trt = FALSE)))),header=TRUE)
 set.seed(12345)
-ascii(system.time(sim2 <- simulations(1e4,
-                                      param=within(param, {Trt = TRUE}))),FALSE,FALSE)
+ascii(system.time(sim2 <- simulations(1e3,
+                                      param=modifyList(param, list(Trt = TRUE)))),FALSE,FALSE)
 cat("\n")
 ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
       caption="Continuous-time Sick-Sicker model for n=10,000 individuals")
@@ -319,21 +320,21 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 0.60 |   0.00 |    0.60 |
-| 0.59 |   0.00 |    0.60 |
+| 0.10 |   0.00 |    0.10 |
+| 0.09 |   0.00 |    0.09 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=10,000 individuals
-|              | *Total* |        |        |       | *Incremental* |       |       |       |          |
-|              | Costs   | (se)   | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
-|--------------+---------+--------+--------+-------+---------------+-------+-------+-------+----------|
-| No treatment | 63864.4 | 576.9  | 17.178 | 0.053 |               |       |       |       |          |
-| Treatment    | 97071.7 | 1114.8 | 17.338 | 0.053 | 33207.3       | 544.8 | 0.161 | 0.002 | 206812.6 |
+|              | *Total*  |        |        |       | *Incremental* |        |       |       |          |
+|              | Costs    | (se)   | QALYs  | (se)  | Costs         | (se)   | QALYs | (se)  | ICER     |
+|--------------+----------+--------+--------+-------+---------------+--------+-------+-------+----------|
+| No treatment | 117835.7 | 2263.0 | 13.101 | 0.160 |               |        |       |       |          |
+| Treatment    | 223871.9 | 4097.8 | 13.658 | 0.167 | 106036.1      | 1881.9 | 0.558 | 0.013 | 190110.5 |
 :END:
 
 + The simulations can also be undertaken in parallel:
  
-# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
-#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
+#+BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both
+# +BEGIN_SRC R :session *R-microsimulation* :results output wrap :exports both :eval never-export
 
   library(parallel)
   set.seed(12345)
@@ -342,11 +343,11 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
       do.call(rbind, mclapply(n.seg, simulations, ..., mc.cores=mc.cores))
   }
   ascii(system.time(sim1 <- mcsimulations(1e5, simulations, 
-                                          param=within(param, {Trt = FALSE}))),
+                                          param=modifyList(param, list(Trt = FALSE)))),
         header=TRUE)
   set.seed(12345)
   ascii(system.time(sim2 <- mcsimulations(1e5, simulations,
-                                          param=within(param, {Trt = TRUE}))),
+                                          param=modifyList(param, list(Trt = TRUE)))),
         FALSE,FALSE)
   cat("\n")
   ascii(ICER(sim1,sim2),caption="Continuous-time Sick-Sicker model for n=100,000 individuals")
@@ -357,15 +358,15 @@ ascii(ICER(sim1,sim2), rownames=c("No treatment","Treatment"),
 :RESULTS:
 | user | system | elapsed |
 |------+--------+---------|
-| 2.88 |   0.03 |    2.94 |
-| 2.94 |   0.01 |    2.98 |
+| 8.25 |   0.03 |    4.14 |
+| 4.18 |   0.02 |    4.20 |
 
 #+CAPTION: Continuous-time Sick-Sicker model for n=100,000 individuals
-|           | *Total* |       |        |       | *Incremental* |       |       |       |          |
-|           | Costs   | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
-|-----------+---------+-------+--------+-------+---------------+-------+-------+-------+----------|
-| Reference | 63551.2 | 181.6 | 17.118 | 0.017 |               |       |       |       |          |
-| Treatment | 97122.6 | 352.4 | 17.308 | 0.017 | 33571.5       | 396.3 | 0.190 | 0.024 | 176660.8 |
+|           | *Total*  |       |        |       | *Incremental* |       |       |       |          |
+|           | Costs    | (se)  | QALYs  | (se)  | Costs         | (se)  | QALYs | (se)  | ICER     |
+|-----------+----------+-------+--------+-------+---------------+-------+-------+-------+----------|
+| Reference | 118425.3 | 234.4 | 13.133 | 0.016 |               |       |       |       |          |
+| Treatment | 225548.4 | 424.3 | 13.720 | 0.017 | 107123.1      | 485.7 | 0.587 | 0.023 | 182387.6 |
 :END:
 
 There was an appreciable difference in the estimates from the discrete-time case and the continuous-time case. This issue warrants further investigation, particularly given that the discrete time case ignores any transitions between Healthy and Sicker within a one-year period.
@@ -379,6 +380,87 @@ There was an appreciable difference in the estimates from the discrete-time case
 | Treatment |  141644 |  343 | 16.38 | 0.016 |         65648 |  164 | 0.561 | 0.001 | 117087 |
 
 
+#+BEGIN_SRC R :session *R-microsimulation* :results output :exports both
+  set.seed(12345)
+  invisible(callSim(5, modifyList(param, list(debug=TRUE))))
+  set.seed(12345)
+  invisible(callSim(5, modifyList(param, list(Trt=TRUE, debug=TRUE))))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+id: 0, state: 0, kind: 0, previous: 0.000000, now: 1.554306
+id: 0, state: 1, kind: 1, previous: 1.554306, now: 1.660357
+id: 0, state: 2, kind: 3, previous: 1.660357, now: 2.137922
+id: 1, state: 0, kind: 0, previous: 0.000000, now: 22.523279
+id: 1, state: 1, kind: 2, previous: 22.523279, now: 23.538790
+id: 1, state: 0, kind: 0, previous: 23.538790, now: 25.110528
+id: 1, state: 1, kind: 2, previous: 25.110528, now: 25.529621
+id: 1, state: 0, kind: 4, previous: 25.529621, now: 31.000000
+id: 2, state: 0, kind: 0, previous: 0.000000, now: 1.279403
+id: 2, state: 1, kind: 2, previous: 1.279403, now: 2.482209
+id: 2, state: 0, kind: 0, previous: 2.482209, now: 4.467754
+id: 2, state: 1, kind: 2, previous: 4.467754, now: 5.240185
+id: 2, state: 0, kind: 0, previous: 5.240185, now: 6.123519
+id: 2, state: 1, kind: 2, previous: 6.123519, now: 7.951863
+id: 2, state: 0, kind: 0, previous: 7.951863, now: 10.967305
+id: 2, state: 1, kind: 2, previous: 10.967305, now: 11.127479
+id: 2, state: 0, kind: 0, previous: 11.127479, now: 15.295999
+id: 2, state: 1, kind: 1, previous: 15.295999, now: 16.663526
+id: 2, state: 2, kind: 4, previous: 16.663526, now: 31.000000
+id: 3, state: 0, kind: 0, previous: 0.000000, now: 0.021088
+id: 3, state: 1, kind: 2, previous: 0.021088, now: 1.648953
+id: 3, state: 0, kind: 0, previous: 1.648953, now: 1.665451
+id: 3, state: 1, kind: 1, previous: 1.665451, now: 2.825812
+id: 3, state: 2, kind: 3, previous: 2.825812, now: 3.378253
+id: 4, state: 0, kind: 0, previous: 0.000000, now: 1.548766
+id: 4, state: 1, kind: 2, previous: 1.548766, now: 4.303079
+id: 4, state: 0, kind: 0, previous: 4.303079, now: 5.128089
+id: 4, state: 1, kind: 2, previous: 5.128089, now: 5.418233
+id: 4, state: 0, kind: 0, previous: 5.418233, now: 9.734630
+id: 4, state: 1, kind: 2, previous: 9.734630, now: 11.013894
+id: 4, state: 0, kind: 0, previous: 11.013894, now: 26.388802
+id: 4, state: 1, kind: 2, previous: 26.388802, now: 26.514306
+id: 4, state: 0, kind: 0, previous: 26.514306, now: 27.803678
+id: 4, state: 1, kind: 2, previous: 27.803678, now: 28.437418
+id: 4, state: 0, kind: 4, previous: 28.437418, now: 31.000000
+id: 0, state: 0, kind: 0, previous: 0.000000, now: 1.554306
+id: 0, state: 1, kind: 1, previous: 1.554306, now: 1.660357
+id: 0, state: 2, kind: 3, previous: 1.660357, now: 2.137922
+id: 1, state: 0, kind: 0, previous: 0.000000, now: 22.523279
+id: 1, state: 1, kind: 2, previous: 22.523279, now: 23.538790
+id: 1, state: 0, kind: 0, previous: 23.538790, now: 25.110528
+id: 1, state: 1, kind: 2, previous: 25.110528, now: 25.529621
+id: 1, state: 0, kind: 4, previous: 25.529621, now: 31.000000
+id: 2, state: 0, kind: 0, previous: 0.000000, now: 1.279403
+id: 2, state: 1, kind: 2, previous: 1.279403, now: 2.482209
+id: 2, state: 0, kind: 0, previous: 2.482209, now: 4.467754
+id: 2, state: 1, kind: 2, previous: 4.467754, now: 5.240185
+id: 2, state: 0, kind: 0, previous: 5.240185, now: 6.123519
+id: 2, state: 1, kind: 2, previous: 6.123519, now: 7.951863
+id: 2, state: 0, kind: 0, previous: 7.951863, now: 10.967305
+id: 2, state: 1, kind: 2, previous: 10.967305, now: 11.127479
+id: 2, state: 0, kind: 0, previous: 11.127479, now: 15.295999
+id: 2, state: 1, kind: 1, previous: 15.295999, now: 16.663526
+id: 2, state: 2, kind: 4, previous: 16.663526, now: 31.000000
+id: 3, state: 0, kind: 0, previous: 0.000000, now: 0.021088
+id: 3, state: 1, kind: 2, previous: 0.021088, now: 1.648953
+id: 3, state: 0, kind: 0, previous: 1.648953, now: 1.665451
+id: 3, state: 1, kind: 1, previous: 1.665451, now: 2.825812
+id: 3, state: 2, kind: 3, previous: 2.825812, now: 3.378253
+id: 4, state: 0, kind: 0, previous: 0.000000, now: 1.548766
+id: 4, state: 1, kind: 2, previous: 1.548766, now: 4.303079
+id: 4, state: 0, kind: 0, previous: 4.303079, now: 5.128089
+id: 4, state: 1, kind: 2, previous: 5.128089, now: 5.418233
+id: 4, state: 0, kind: 0, previous: 5.418233, now: 9.734630
+id: 4, state: 1, kind: 2, previous: 9.734630, now: 11.013894
+id: 4, state: 0, kind: 0, previous: 11.013894, now: 26.388802
+id: 4, state: 1, kind: 2, previous: 26.388802, now: 26.514306
+id: 4, state: 0, kind: 0, previous: 26.514306, now: 27.803678
+id: 4, state: 1, kind: 2, previous: 27.803678, now: 28.437418
+id: 4, state: 0, kind: 4, previous: 28.437418, now: 31.000000
+#+end_example
+
 *** Limitations of the in-line approach
 
 One limitation for the in-line code is that common random numbers, which are manipulated in C++ and use R's random number functions, are *not* available. Common random numbers can be used in a package, which is used by the [[https://github.com/mclements/prostata][prostata]] package.
@@ -389,7 +471,3 @@ For more advance use of the microsimulation framework, please have a
 look at our prostate cancer natural history model:
 
 [[https://github.com/mclements/prostata]]
-
-# Local Variables:
-# org-confirm-babel-evaluate: nil
-# End:
