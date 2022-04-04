@@ -8,8 +8,82 @@ pq$clear()
 pq$push(1, "a")
 pq$push(3, "c")
 pq$push(2, "b")
+pq$cancel(\(x) x=="c")
 while(!pq$empty())
     print(pq$pop())
+BaseDiscreteEventSimulationTest <-
+    setRefClass("BaseDiscreteEventSimulationTest",
+                ## contains = "EventQueue",
+                contains = "PQueueRef",
+                fields = list(currentTime = "numeric",
+                    previousEventTime = "numeric"),
+                methods = list(
+                    help = function() {
+                        'Reference class implementation of an event-oriented discrete event simulation. Fields for the event times and the events list.'
+                    },
+                    scheduleAt = function(time, event) {
+                        'Method that adds attributes for the event time and the sendingTime, and then insert the event into the event queue'
+                        attr(event,"time") <- time
+                        attr(event,"sendingTime") <- currentTime
+                        push(time, event)
+                    },
+                    init = function() {
+                        'Virtual method to initialise the event queue and attributes'
+                        stop("VIRTUAL!")
+                    },
+                    handleMessage = function(event) {
+                        'Virtual method to handle the messages as they arrive'
+                        stop("VIRTUAL!")
+                    },
+                    final = function() {
+                        'Method for finalising the simulation'
+                        NULL
+                    },
+                    now = function() currentTime,
+                    previous = function() previousEventTime,
+                    reset = function(startTime = 0.0) {
+                        'Method to reset the event queue'
+                        clear()
+                        previousEventTime <<- currentTime <<- startTime
+                    },
+                    run = function(startTime = 0.0) {
+                        'Method to run the simulation'
+                        reset(startTime)
+                        init()
+                        while(!empty()) {
+                            event <- pop()$event
+                            currentTime <<- attr(event, "time")
+                            handleMessage(event)
+                            previousEventTime <<- currentTime
+                        }
+                        final()
+                    }))
+DES = setRefClass("DES",
+                  contains = "BaseDiscreteEventSimulationTest",
+                  methods = list(
+                      init = function() {
+                          scheduleAt(1, "a")
+                          scheduleAt(3, "c")
+                          scheduleAt(2, "b")
+                          cancel(\(e) e=="c")
+                      },
+                      handleMessage = print.default)) # \(e) print(e)))
+DES()$run()
+DES = setRefClass("DES",
+                  contains = "BaseDiscreteEventSimulationTest",
+                  methods = list(
+                      init = function() {
+                          scheduleAt(1, "a")
+                          scheduleAt(3, "c")
+                          scheduleAt(2, "b")
+                          cancel(\(e) e=="c")
+                      },
+                      handleMessage = function(event) {
+                          cancel(\(e) e %in% "c")
+                          print(event)
+                          }))
+DES()$run()
+
 ##
 system.time({
     pq = pqueue()
