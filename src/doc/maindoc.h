@@ -41,24 +41,20 @@ process may signal events to itself and to other processes,
 immediately or with a delay, thereby scheduling other execution steps.
 The simulation terminates when no more actions are scheduled.
 
-<p>The ssim library consists of essentially three classes defined
+<p>The ssim library consists of essentially two classes defined
 within the \link ssim ssim\endlink namespace: \link ssim::Sim
-Sim\endlink, which defines the interface to the simulator, \link
+Sim\endlink, which defines the interface to the simulator and \link
 ssim::Process Process\endlink, which defines the interface and base
-class for a reactive process, and \link ssim::TProcess
-TProcess\endlink, which defines and implements a sequential process.
-User processes can be programmed by extending either Process or
-TProcess.
+class for a reactive process.
+User processes can be programmed by extending Process.
 
 <p>\link ssim::Sim Sim\endlink offers the basic primitives for
 signaling \link ssim::Event events\endlink, and for creating,
 starting, and stopping processes.  \link ssim::Process Process\endlink
 declares the execution steps scheduled when a process is \link
-ssim::Process::init() started\endlink, \link
+ssim::Process::initialize() started\endlink, \link
 ssim::Process::process_event() signaled\endlink, and \link
-ssim::Process::stop() stopped\endlink.  \link ssim::TProcess
-TProcess\endlink defines a process by defining a \link
-ssim::TProcess::main() main\endlink body.  Notice that \link ssim::Sim
+ssim::Process::stop() stopped\endlink.  Notice that \link ssim::Sim
 Sim\endlink defines a single, static simulation module, rather than a
 class for simulation objects.  (See \link ssim::Sim Sim\endlink for
 more detailed comments.)
@@ -97,39 +93,5 @@ of the simulation in relation to virtual time.
 utility class \link ssim::ProcessWithPId ProcessWithPId\endlink, that
 automates some common procedures for process implementations.
 
-*/
-
-/** \example twoprocesses.cc 
-
-This is an example of how to program a simple simulation with two
-very simple iterative processes.  To compile this example on a
-GNU/Linux system or on other Unix-like systems, assuming SSim has
-been installed in $prefix, execute:
-
-<pre>
-c++ twoprocesses.cc -o twoprocesses -I$prefix/include -L$prefix/lib -lssim
-</pre>
-
-*/
-
-/** \example bs.cc 
-
-This extensive example implements a simulation of a simple
-supply-chain system with a manufacturer, a retailer, and a number of
-buyers.  <p>This uses reactive processes. <p>Thanks to Matt Rutherford
-for creating this example, and to Cyrus Hall for updating it.
-*/
-
-/** \example bstp.cc
-
-This is a variant of the bs.cc example that implements the same
-supply-chain system using a sequential style.
-*/
-
-/** \example tp.cc 
-
-This simplistic example illustrates the use of \em sequential
-processes, as defined by the \link ssim::TProcess Tprocess\endlink
-class.
 */
 
