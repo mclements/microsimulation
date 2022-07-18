@@ -4,13 +4,12 @@
 #include <Rcpp.h>
 
 #include <functional>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
+#include <tuple>
 #include <set>
 
 using namespace std;
 using namespace Rcpp;
-using boost::get;
+using std::get;
 
 // TODO: re-write the DataFrameView class and adapt the Table class for it.
 
@@ -148,9 +147,9 @@ template<class I0 = null_type, class I1 = null_type, class I2 = null_type,
   class Table {
  public:
  Table() {}
-  typedef boost::tuple<I0,I1,I2,I3,I4> key_type;
+  typedef std::tuple<I0,I1,I2,I3,I4> key_type;
   typedef Outcome mapped_type;
-  typedef boost::tuple<
+  typedef std::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> >,
     set<I2, greater<I2> >,
@@ -192,9 +191,9 @@ template<class I0 = null_type, class I1 = null_type, class I2 = null_type,
 template<class I0, class I1, class I2, class I3, class Outcome>
   class Table<I0,I1,I2,I3,Outcome> {
  public:
-  typedef boost::tuple<I0,I1,I2,I3> key_type;
+  typedef std::tuple<I0,I1,I2,I3> key_type;
   typedef Outcome mapped_type;
-  typedef boost::tuple<
+  typedef std::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> >,
     set<I2, greater<I2> >,
@@ -233,9 +232,9 @@ template<class I0, class I1, class I2, class I3, class Outcome>
 template<class I0, class I1, class I2, class Outcome>
   class Table<I0,I1,I2,Outcome> {
  public:
-  typedef boost::tuple<I0,I1,I2> key_type;
+  typedef std::tuple<I0,I1,I2> key_type;
   typedef Outcome mapped_type;
-  typedef boost::tuple<
+  typedef std::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> >,
     set<I2, greater<I2> >
@@ -270,9 +269,9 @@ template<class I0, class I1, class I2, class Outcome>
 template<class I0, class I1, class Outcome>
   class Table<I0,I1,Outcome> {
  public:
-  typedef boost::tuple<I0,I1> key_type;
+  typedef std::tuple<I0,I1> key_type;
   typedef Outcome mapped_type;
-  typedef boost::tuple<
+  typedef std::tuple<
     set<I0, greater<I0> >,
     set<I1, greater<I1> >
     > Axis;

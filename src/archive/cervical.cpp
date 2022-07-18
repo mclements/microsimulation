@@ -1,6 +1,6 @@
 #include <microsimulation.h>
 
-#include <boost/algorithm/cxx11/iota.hpp>
+#include <numeric>
 
 namespace {
 
@@ -22,7 +22,7 @@ namespace {
   class HPV_infection;
   
   // namespace FullState {
-  //   typedef boost::tuple<short,short,short,bool,double> Type;
+  //   typedef std::tuple<short,short,short,bool,double> Type;
   //   enum Fields {state, ext_grade, dx, psa_ge_3, cohort};
   //   // string names[5] = {"state","ext_grade","dx","psa_ge_3","cohort"};
   // }
@@ -30,7 +30,7 @@ namespace {
   // typedef pair<string,double> CostKey;
   // CostReport<CostKey> costs;
 
-  typedef boost::tuple<hpv_t,state_t,state_t> H_key;
+  typedef std::tuple<hpv_t,state_t,state_t> H_key;
   typedef map<H_key,NumericInterpolate> H_t;
   typedef vector<HPV_infection *> infections_t;
 
@@ -67,8 +67,8 @@ namespace {
     SimpleReport<double> outParameters;
   };
   
-  // typedef Table<boost::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
-  // typedef Table<boost::tuple<int,double,double,int>,double> TablePradt;
+  // typedef Table<std::tuple<double,double,int>,double> TablePrtx; // Age, DxY, G
+  // typedef Table<std::tuple<int,double,double,int>,double> TablePradt;
   // typedef Table<pair<double,double>,double> TableBiopsyCompliance;
   // typedef Table<pair<double,double>,double> TableDDD; // as per TableBiopsyCompliance
   // typedef map<int,NumericInterpolate> H_dist_t;
@@ -136,7 +136,7 @@ namespace {
     void init();
     virtual void handleMessage(const cMessage* msg);
     void removeEvents() {
-      Sim::ignore_event(boost::bind(cMessageHPVPred,_1,hpv));
+      cancel([hpv](const cMessage * msg) { return this->hpv == hpv; });
     }
   };
 
@@ -445,10 +445,10 @@ RcppExport SEXP callCervical(SEXP parmsIn) {
 
   // set up the parameters
   double ages0[106];
-  boost::algorithm::iota(ages0, ages0+106, 0.0);
+  std::iota(ages0, ages0+106, 0.0);
   in.rmu0 = Rpexp(&mu0[0], ages0, 106);
   vector<double> ages(101);
-  boost::algorithm::iota(ages.begin(), ages.end(), 0.0);
+  std::iota(ages.begin(), ages.end(), 0.0);
   ages.push_back(1.0e+6);
 
   // re-set the output objects
