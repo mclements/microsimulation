@@ -1,5 +1,5 @@
 PKG_LIBS = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()")
-PKG_CXXFLAGS = -I. -DVERSION=\"1.7.6\" -I../inst/include -DBOOST_NO_AUTO_PTR
+PKG_CXXFLAGS = -I. -I../inst/include
 PKG_CFLAGS = -I.
 
 OBJECTS = microsimulation.o person-r.o calibperson-r.o simple-example.o simple-example2.o illness-death.o ssim.o RngStream.o pqueue.o init.o

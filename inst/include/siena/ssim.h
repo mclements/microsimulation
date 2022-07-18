@@ -50,10 +50,6 @@
  **/
 namespace ssim {
 
-/** @brief version identifier for this ssim library
- **/
-extern const char *	Version;
-
 /** @brief process identifier type
  **/
 typedef int		ProcessId;

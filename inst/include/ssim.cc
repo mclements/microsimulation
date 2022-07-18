@@ -30,8 +30,6 @@
 
 namespace ssim {
 
-const char * Version = VERSION;
-
 // these are the "private" static variables and types of the Sim class
 //
 static Time			stop_time = INIT_TIME;
