@@ -25,7 +25,7 @@
 #ifndef _ssim_h
 #define _ssim_h
 
-#include <boost/function.hpp>
+#include <functional>
 #include <string>
 
 /** \file ssim.h 
@@ -120,7 +120,7 @@ class Event {
     friend class Sim;		// these need to be friends to manage refcount
 };
 
-  typedef boost::function<bool (const Event *)> EventPredicate;
+  typedef std::function<bool (const Event *)> EventPredicate;
 
 /** @brief Virtual class (interface) representing processes running
  *  within the simulator.

@@ -30,48 +30,72 @@
 #ifndef MICROSIMULATION_H
 #define MICROSIMULATION_H
 
-// #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-// #pragma GCC diagnostic ignored "-Wlong-long"
-
 #include <RcppCommon.h>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
+#include <tuple>
 #include <vector>
 #include <utility>
 #include <map>
 #include <string>
 
-// http://stackoverflow.com/questions/3611951/building-an-unordered-map-with-tuples-as-keys
-namespace boost {
-  namespace tuples { // fixed cf. the source URL
-    namespace detail {
-      template <class Tuple, size_t Index = length<Tuple>::value - 1>
-	struct HashValueImpl
-	{
-	  static void apply(size_t& seed, Tuple const& tuple)
-	  {
-	    HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
-	    boost::hash_combine(seed, get<Index>(tuple));
-	  }
-	};
-      template <class Tuple>
-      struct HashValueImpl<Tuple,0>
+/* https://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set for a generic hash function for std::tuple
+ */
+#include <tuple>
+namespace std{
+  namespace
+  {
+    // Code from boost
+    // Reciprocal of the golden ratio helps spread entropy
+    //     and handles duplicates.
+    // See Mike Seymour in magic-numbers-in-boosthash-combine:
+    //     http://stackoverflow.com/questions/4948780
+    template <class T>
+    inline void hash_combine(std::size_t& seed, T const& v)
+    {
+      seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+    }
+    // Recursive template code derived from Matthieu M.
+    template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
+    struct HashValueImpl
+    {
+      static void apply(size_t& seed, Tuple const& tuple)
       {
-	static void apply(size_t& seed, Tuple const& tuple)
-	{
-	  boost::hash_combine(seed, get<0>(tuple));
-	}
-      };
-    } // namespace detail
+	HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
+	hash_combine(seed, std::get<Index>(tuple));
+      }
+    };
     template <class Tuple>
-    size_t hash_value(Tuple const& tuple)
+    struct HashValueImpl<Tuple,0>
+    {
+      static void apply(size_t& seed, Tuple const& tuple)
+      {
+	hash_combine(seed, std::get<0>(tuple));
+      }
+    };
+  }
+  template <typename ... TT>
+  struct hash<std::tuple<TT...>>
+  {
+    size_t
+    operator()(std::tuple<TT...> const& tt) const
     {
       size_t seed = 0;
-      detail::HashValueImpl<Tuple>::apply(seed, tuple);
+      HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
       return seed;
     }
-  }
+  };
+  template <typename T1, typename T2>
+  struct hash<std::pair<T1,T2>>
+  {
+    size_t
+    operator()(std::pair<T1,T2> const& p) const
+    {
+      size_t seed = 0;
+      hash_combine(seed, p.first);
+      hash_combine(seed, p.second);
+      return seed;
+    }
+  };
 }
 
 namespace Rcpp {
@@ -82,31 +106,31 @@ namespace Rcpp {
 
   // vectors tuples: enumerated cases
   template <class T1, class T2>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2> > v);
 
   template <class T1, class T2, class T3>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3> > v);
 
   template <class T1, class T2, class T3, class T4>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4> > v);
 
   template <class T1, class T2, class T3, class T4, class T5>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5> > v);
 
   template <class T1, class T2, class T3, class T4, class T5, class T6>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6> > v);
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7> > v);
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8> > v);
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9> > v);
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-    SEXP wrap(const std::vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> > v);
+    SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> > v);
 
   // maps defined in terms of vectors
   template <class T1, class T2>
@@ -117,27 +141,27 @@ namespace Rcpp {
 		  std::string key, std::string name1, std::string name2);
 
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v,
+    SEXP wrap_map(const std::map<std::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string key, std::string name1, std::string name2, std::string name3);
 
   template <class T1, class T2, class T3, class T4, class T5>
-  SEXP wrap_map(const std::map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v,
+  SEXP wrap_map(const std::map<std::pair<std::tuple<T1,T2,T3>,T4>,T5> v,
 		  std::string key, std::string name1, std::string name2);
 
   // unordered_maps defined in terms of vectors
   template <class T1, class T2>
-    SEXP wrap_map(const boost::unordered_map<T1,T2> v);
+    SEXP wrap_map(const std::unordered_map<T1,T2> v);
 
   template <class T1a, class T1b, class T2>
-    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> v,
+    SEXP wrap_map(const std::unordered_map<std::pair<T1a,T1b>,T2> v,
 		  std::string key, std::string name1, std::string name2);
 
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> v,
+    SEXP wrap_map(const std::unordered_map<std::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string key, std::string name1, std::string name2, std::string name3);
 
   template <class T1, class T2, class T3, class T4, class T5>
-    SEXP wrap_map(const boost::unordered_map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v,
+    SEXP wrap_map(const std::unordered_map<std::pair<std::tuple<T1,T2,T3>,T4>,T5> v,
 		  std::string key, std::string name1, std::string name2);
 
 
@@ -158,9 +182,6 @@ namespace Rcpp {
 //#include <map>
 #include <functional>
 #include <set>
-
-#include <boost/bind/bind.hpp>
-#include <boost/functional.hpp>
 
 namespace ssim {
 
@@ -544,10 +565,10 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef std::set<Time, std::greater<Time> > Partition; // NB: greater<Time> cf. lesser<Time>
  typedef typename Partition::iterator Iterator;
  typedef std::pair<State,Time> Pair;
- typedef boost::unordered_map<pair<State,Time>, int > PrevMap;
- typedef boost::unordered_map<pair<State,Time>, Utility > UtilityMap;
- typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
- typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventsMap;
+ typedef std::unordered_map<pair<State,Time>, int > PrevMap;
+ typedef std::unordered_map<pair<State,Time>, Utility > UtilityMap;
+ typedef std::unordered_map<pair<State,Time>, Time > PtMap;
+ typedef std::unordered_map<std::tuple<State,Event,Time>, int > EventsMap;
  typedef vector<Utility> IndividualUtilities;
    EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1, Time startReportAge = Time(0), bool indiv = false) :
      discountRate(discountRate), outputUtilities(outputUtilities), startReportAge(startReportAge), id(0), indiv(indiv) {
@@ -615,7 +636,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    lo = _partition.lower_bound(lhs);
    hi = _partition.lower_bound(rhs);
    last = _partition.begin(); // because it is ordered by greater<Time>
-   ++_events[boost::make_tuple(state,event,*hi)];
+   ++_events[std::make_tuple(state,event,*hi)];
    bool iterating;
    for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
       if (lhs<=(*it) && (*it)<rhs) // cadlag
@@ -692,11 +713,11 @@ inline double discountedInterval(double start, double end, double discountRate) 
     typedef std::set<Time, std::greater<Time> > Partition; // NB: greater<Time> cf. lesser<Time>
     typedef typename Partition::iterator Iterator;
     typedef std::pair<State,Time> Pair;
-    typedef boost::unordered_map<pair<State,Time>, int > PrevMap;
-    typedef boost::unordered_map<pair<State,Time>, Utility > UtilityMap;
-    typedef boost::unordered_map<pair<State,Time>, Time > PtMap;
-    typedef boost::unordered_map<boost::tuple<State,Event,Time>, int > EventMap;
-    typedef boost::unordered_map<pair<State,Time>, Cost > CostMap;
+    typedef std::unordered_map<pair<State,Time>, int > PrevMap;
+    typedef std::unordered_map<pair<State,Time>, Utility > UtilityMap;
+    typedef std::unordered_map<pair<State,Time>, Time > PtMap;
+    typedef std::unordered_map<std::tuple<State,Event,Time>, int > EventMap;
+    typedef std::unordered_map<pair<State,Time>, Cost > CostMap;
     typedef std::vector<Cost> IndividualCosts;
     typedef std::vector<Utility> IndividualUtilities;
     SummaryReport(int n = 1, bool indivp = true, Utility discountRate = 0.0) : n(n), indivp(indivp) {
@@ -754,7 +775,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
       lo = _partition.lower_bound(lhs);
       hi = _partition.lower_bound(rhs);
       last = _partition.begin(); // because it is ordered by greater<Time>
-      ++_events[boost::make_tuple(state,event,*hi)];
+      ++_events[std::make_tuple(state,event,*hi)];
       bool iterating;
       for(it = lo, iterating = true; iterating; iterating = (it != hi), --it) { // decrement for greater<Time>
 	if (lhs<=(*it) && (*it)<rhs) // cadlag
@@ -879,7 +900,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
  typedef std::set<Time, std::greater<Time> > Partition;
  typedef std::pair<State,Time> Pair;
  typedef CostReport<State,Time,Cost> This;
- typedef boost::unordered_map<pair<State,Time>, Cost > Table;
+ typedef std::unordered_map<pair<State,Time>, Cost > Table;
  typedef std::vector<Cost> IndividualCosts;
    CostReport(Cost discountRate = 0, int size = 1, Time startReportAge = Time(0), bool indiv = false) : discountRate(discountRate), startReportAge(startReportAge), id(0), indiv(indiv) {
    _vector.resize(size);
@@ -1032,67 +1053,67 @@ namespace Rcpp {
   }
 
   template <class T1, class T2>
-    SEXP wrap(const vector<boost::tuple<T1,T2> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
-    typename vector<boost::tuple<T1,T2> >::const_iterator it;
+    typename vector<std::tuple<T1,T2> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2));
   }
 
   template <class T1, class T2, class T3>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
     vector<T3> v3(n);
-    typename vector<boost::tuple<T1,T2,T3> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),_("Var3")=wrap(v3));
   }
 
 
   template <class T1, class T2, class T3, class T4>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
     vector<T3> v3(n);
     vector<T4> v4(n);
-    typename vector<boost::tuple<T1,T2,T3,T4> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4));
   }
 
   template <class T1, class T2, class T3, class T4, class T5>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
     vector<T3> v3(n);
     vector<T4> v4(n);
     vector<T5> v5(n);
-    typename vector<boost::tuple<T1,T2,T3,T4,T5> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4,T5> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
-      v5[i] = boost::get<4>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
@@ -1100,7 +1121,7 @@ namespace Rcpp {
   }
 
   template <class T1, class T2, class T3, class T4, class T5, class T6>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
@@ -1108,14 +1129,14 @@ namespace Rcpp {
     vector<T4> v4(n);
     vector<T5> v5(n);
     vector<T6> v6(n);
-    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
-      v5[i] = boost::get<4>(*it);
-      v6[i] = boost::get<5>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
@@ -1123,7 +1144,7 @@ namespace Rcpp {
   }
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6,T7> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
@@ -1132,15 +1153,15 @@ namespace Rcpp {
     vector<T5> v5(n);
     vector<T6> v6(n);
     vector<T7> v7(n);
-    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6,T7> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
-      v5[i] = boost::get<4>(*it);
-      v6[i] = boost::get<5>(*it);
-      v7[i] = boost::get<6>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
+      v7[i] = std::get<6>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
@@ -1149,7 +1170,7 @@ namespace Rcpp {
   }
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
@@ -1159,16 +1180,16 @@ namespace Rcpp {
     vector<T6> v6(n);
     vector<T7> v7(n);
     vector<T8> v8(n);
-    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
-      v5[i] = boost::get<4>(*it);
-      v6[i] = boost::get<5>(*it);
-      v7[i] = boost::get<6>(*it);
-      v8[i] = boost::get<7>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
+      v7[i] = std::get<6>(*it);
+      v8[i] = std::get<7>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
@@ -1177,7 +1198,7 @@ namespace Rcpp {
   }
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
@@ -1188,17 +1209,17 @@ namespace Rcpp {
     vector<T7> v7(n);
     vector<T8> v8(n);
     vector<T9> v9(n);
-    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
-      v5[i] = boost::get<4>(*it);
-      v6[i] = boost::get<5>(*it);
-      v7[i] = boost::get<6>(*it);
-      v8[i] = boost::get<7>(*it);
-      v9[i] = boost::get<8>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
+      v7[i] = std::get<6>(*it);
+      v8[i] = std::get<7>(*it);
+      v9[i] = std::get<8>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
@@ -1208,7 +1229,7 @@ namespace Rcpp {
   }
 
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-    SEXP wrap(const vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> > v) {
+    SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> > v) {
     int i, n=v.size();
     vector<T1> v1(n);
     vector<T2> v2(n);
@@ -1220,18 +1241,18 @@ namespace Rcpp {
     vector<T8> v8(n);
     vector<T9> v9(n);
     vector<T10> v10(n);
-    typename vector<boost::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> >::const_iterator it;
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> >::const_iterator it;
     for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
-      v1[i] = boost::get<0>(*it);
-      v2[i] = boost::get<1>(*it);
-      v3[i] = boost::get<2>(*it);
-      v4[i] = boost::get<3>(*it);
-      v5[i] = boost::get<4>(*it);
-      v6[i] = boost::get<5>(*it);
-      v7[i] = boost::get<6>(*it);
-      v8[i] = boost::get<7>(*it);
-      v9[i] = boost::get<8>(*it);
-      v10[i] = boost::get<9>(*it);
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
+      v7[i] = std::get<6>(*it);
+      v8[i] = std::get<7>(*it);
+      v9[i] = std::get<8>(*it);
+      v10[i] = std::get<9>(*it);
     }
     return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
 			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
@@ -1259,12 +1280,12 @@ namespace Rcpp {
   //
   // map<pair<Tstate,T>, int > _prev;
   // map<pair<Tstate,T>, T > _pt;
-  // map<boost::tuple<Tstate,Tevent,T>, int > _events;
+  // map<std::tuple<Tstate,Tevent,T>, int > _events;
 
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const std::map<boost::tuple<T1a,T1b,T1c>,T2> v,
+    SEXP wrap_map(const std::map<std::tuple<T1a,T1b,T1c>,T2> v,
 		  std::string key, std::string name1, std::string name2, std::string name3) {
-    typedef boost::tuple<T1a,T1b,T1c> Tuple;
+    typedef std::tuple<T1a,T1b,T1c> Tuple;
     int i;
     int n = v.size();
     vector<T1a> xa(n);
@@ -1304,29 +1325,29 @@ namespace Rcpp {
 
 
   template <class T1, class T2>
-    SEXP wrap_map(const boost::unordered_map<T1,T2> ov) {
+    SEXP wrap_map(const std::unordered_map<T1,T2> ov) {
     std::map<T1,T2> v(ov.begin(), ov.end());
     return wrap_map<T1,T2>(v);
   }
 
   template <class T1a, class T1b, class T1c, class T2>
-    SEXP wrap_map(const boost::unordered_map<boost::tuple<T1a,T1b,T1c>,T2> ov,
+    SEXP wrap_map(const std::unordered_map<std::tuple<T1a,T1b,T1c>,T2> ov,
 		  std::string key, std::string name1, std::string name2, std::string name3) {
-    std::map<boost::tuple<T1a,T1b,T1c>,T2> v(ov.begin(), ov.end());
+    std::map<std::tuple<T1a,T1b,T1c>,T2> v(ov.begin(), ov.end());
     return wrap_map<T1a, T1b, T1c, T2>(v, key, name1, name2, name3);
   }
 
   template <class T1a, class T1b, class T2>
-    SEXP wrap_map(const boost::unordered_map<std::pair<T1a,T1b>,T2> ov,
+    SEXP wrap_map(const std::unordered_map<std::pair<T1a,T1b>,T2> ov,
 		  std::string key, std::string name1, std::string name2) {
     std::map<std::pair<T1a,T1b>,T2> v(ov.begin(), ov.end());
     return wrap_map<T1a, T1b, T2>(v, key, name1, name2);
    }
 
   template <class T1, class T2, class T3, class T4, class T5>
-  SEXP wrap_map(const std::map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v,
+  SEXP wrap_map(const std::map<std::pair<std::tuple<T1,T2,T3>,T4>,T5> v,
 		std::string name1, std::string name2) {
-    typedef boost::tuple<T1,T2,T3> Tuple;
+    typedef std::tuple<T1,T2,T3> Tuple;
     typedef std::pair<Tuple,T4> Pair;
     int i;
     int n = v.size();
@@ -1338,9 +1359,9 @@ namespace Rcpp {
     typename std::map<Pair,T5>::const_iterator it;
     for (it=v.begin(), i=0; it != v.end(); ++it, ++i) {
       Tuple tuple = (*it).first.first;
-      x1[i] = boost::get<0>(tuple);
-      x2[i] = boost::get<1>(tuple);
-      x3[i] = boost::get<2>(tuple);
+      x1[i] = std::get<0>(tuple);
+      x2[i] = std::get<1>(tuple);
+      x3[i] = std::get<2>(tuple);
       x4[i] = (*it).first.second;
       y[i] = (*it).second;
     }
@@ -1353,9 +1374,9 @@ namespace Rcpp {
    }
 
   template <class T1, class T2, class T3, class T4, class T5>
-  SEXP wrap_map(const boost::unordered_map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> ov,
+  SEXP wrap_map(const std::unordered_map<std::pair<std::tuple<T1,T2,T3>,T4>,T5> ov,
 		std::string name1, std::string name2) {
-    std::map<std::pair<boost::tuple<T1,T2,T3>,T4>,T5> v(ov.begin(), ov.end());
+    std::map<std::pair<std::tuple<T1,T2,T3>,T4>,T5> v(ov.begin(), ov.end());
     return wrap_map<T1,T2,T3,T4,T5>(v, name1, name2);
    }
 
