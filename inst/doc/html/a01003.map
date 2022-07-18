@@ -1,5 +1,0 @@
-<map id="ssim::cProcess" name="ssim::cProcess">
-<area shape="rect" id="node1" title="cProcess class for OMNET++ API compatibility. This provides a default for Process::process_event() th..." alt="" coords="46,80,165,107"/>
-<area shape="rect" id="node3" href="$a00940.html" title=" " alt="" coords="5,155,205,181"/>
-<area shape="rect" id="node2" href="$a01080.html" title="Virtual class (interface) representing processes running within the simulator." alt="" coords="50,5,161,32"/>
-</map>

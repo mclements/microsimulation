@@ -1,6 +1,0 @@
-<map id="illnessDeath::SimplePerson" name="illnessDeath::SimplePerson">
-<area shape="rect" id="node1" title=" " alt="" coords="5,229,188,256"/>
-<area shape="rect" id="node2" href="$a01003.html" title="cProcess class for OMNET++ API compatibility. This provides a default for Process::process_event() th..." alt="" coords="40,155,153,181"/>
-<area shape="rect" id="node3" href="$a01083.html" title="utility Process class providing a utility interface with the simulator." alt="" coords="20,80,173,107"/>
-<area shape="rect" id="node4" href="$a01079.html" title="Virtual class (interface) representing processes running within the simulator." alt="" coords="43,5,150,32"/>
-</map>

@@ -1,4 +1,0 @@
-<map id="ssim::cMessage" name="ssim::cMessage">
-<area shape="rect" id="node1" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,..." alt="" coords="5,80,124,107"/>
-<area shape="rect" id="node2" href="$a01075.html" title="basic event in the simulation." alt="" coords="19,5,111,32"/>
-</map>
