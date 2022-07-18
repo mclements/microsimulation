@@ -615,9 +615,15 @@ extern "C" { // functions that will be called from R
   */
 inline double discountedInterval(double start, double end, double discountRate) {
   if (discountRate == 0.0) return end - start;
-  //else if (start == 0.0) return (1.0 - (1.0+discountRate)^(-end)) / log(1.0+discountRate);
   else return (pow(1.0+discountRate,-start) - pow(1.0+discountRate,-end)) / log(1.0+discountRate);
 }
+
+  /**
+     @brief Simple function to calculate 1/(1+discountRate)^(time)
+  */
+  inline double discountedPoint(double time, double discountRate) {
+    return discountRate <= 0.0 ? 1.0 : pow(1.0+discountRate,-time);
+  }
 
 
 /**
