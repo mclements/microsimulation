@@ -74,7 +74,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><a class="el" href="a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>).  
+<p><a class="el" href="a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3" title="schedules at time t a message msg to the current process. Adds the sendingTime, process_id and sender...">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980" title="Abstract method to handle each message.">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3" title="schedules at time t a message msg to the current process. Adds the sendingTime, process_id and sender...">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>).  
  <a href="a00999.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="a00053_source.html">microsimulation.h</a>&gt;</code></p>
@@ -135,9 +135,9 @@ Public Attributes</h2></td></tr>
 <tr class="separator:ad51da0cd6e5124f9c04cf33184a2dd51"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p><a class="el" href="a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>). </p>
+<div class="textblock"><p><a class="el" href="a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3" title="schedules at time t a message msg to the current process. Adds the sendingTime, process_id and sender...">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980" title="Abstract method to handle each message.">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3" title="schedules at time t a message msg to the current process. Adds the sendingTime, process_id and sender...">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>). </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00212">212</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00211">211</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac5bb3c226990806ff3816d70c6c0163d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac5bb3c226990806ff3816d70c6c0163d">&#9670;&nbsp;</a></span>cMessage()</h2>
@@ -185,7 +185,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00214">214</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00213">213</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -213,7 +213,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00219">219</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00218">218</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -240,7 +240,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00220">220</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00219">219</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -267,7 +267,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00222">222</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00221">221</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -294,7 +294,7 @@ Public Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00221">221</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00220">220</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -323,7 +323,7 @@ Public Attributes</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="a01075.html#aeebd738a5d56148bf7f6bde5e4d84e94">ssim::Event</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00227">227</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00226">226</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -340,7 +340,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00223">223</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00222">222</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -356,7 +356,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00224">224</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00223">223</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -372,7 +372,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00226">226</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00225">225</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -388,7 +388,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00226">226</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00225">225</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -404,7 +404,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00225">225</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00224">224</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -420,7 +420,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00225">225</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00224">224</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -431,7 +431,7 @@ Public Attributes</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 18 2022 11:09:58 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 12:55:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

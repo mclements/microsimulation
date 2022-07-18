@@ -134,7 +134,7 @@ Static Public Member Functions</h2></td></tr>
 </p>
 <p>Notice that this class is designed to have only static members. It should therefore be seen and used more as a module than a class. In practice, this means that <a class="el" href="a01091.html" title="a generic discrete-event sequential simulator">Sim</a> <em>does not define simulation objects</em>, but rather a single, static simulator. This design is based on practical considerations: a simulation object would allow one to handle multiple simulations within the same program at the same time, however that situation is neither common nor desirable. Simulations tend to use a lot of memory and therefore having many of them is probably a bad idea. Also, having multiple simulation objects would require every process object to maintain a reference to the corresponding simulation context (object), so that processes can access the virtual clock of their own simulation, their scheduler, etc. This is both a waste of memory, for the many aditional references, and of CPU time for all the indirect calls to the simulation methods. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00330">330</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00326">326</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="aa6dbe3c23756f7bb0f33472db8003e2a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa6dbe3c23756f7bb0f33472db8003e2a">&#9670;&nbsp;</a></span>advance_delay()</h2>
@@ -198,7 +198,7 @@ Static Public Member Functions</h2></td></tr>
 <dd>
 <a class="el" href="a01087.html" title="an error handler for simulation errors.">SimErrorHandler</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00257">257</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00255">255</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -234,7 +234,7 @@ Static Public Member Functions</h2></td></tr>
 <p>clears out internal data structures </p>
 <p>Resets the simulator making it available for a completely new simulation. All scheduled actions are deleted together with the associated events. All process identifiers returned by previoius invocations of <a class="el" href="a01091.html#a2e5fe88542ebb3d1a45ef8a8906f6f26">create_process</a> are invalidated by this operation. Notice however that it is the responsibility of the simulation programmer to delete process objects used in the simulation. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00117">117</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00115">115</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -278,7 +278,7 @@ Static Public Member Functions</h2></td></tr>
 </div><!-- fragment --><dl class="section return"><dt>Returns</dt><dd>current virtual time for the current process. </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#aa6dbe3c23756f7bb0f33472db8003e2a" title="advance the execution time of the current process.">advance_delay(Time)</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00266">266</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00264">264</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -318,7 +318,7 @@ Static Public Member Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>the process id of the new simulation process. </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01079.html#a71e33568acc66f9febc7f0112944c3b8" title="action executed when the process is initialized.">Process::initialize()</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00110">110</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00108">108</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -352,7 +352,7 @@ Static Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00133">133</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00131">131</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -381,7 +381,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>starts execution of the simulation </p>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00150">150</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00148">148</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -426,7 +426,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#aed6993d25a133c11f7d83ae7af09f7c6" title="signal an event to the given process immediately">signal_event(ProcessId, const Event *)</a> and <a class="el" href="a01079.html#a0520b75c3ece365ee44a9bdefecf5418" title="action executed in response to an event signaled to this process.">Process::process_event(const Event *)</a>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00270">270</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00268">268</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -482,7 +482,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#aed6993d25a133c11f7d83ae7af09f7c6" title="signal an event to the given process immediately">signal_event()</a> and <a class="el" href="a01079.html#a0520b75c3ece365ee44a9bdefecf5418" title="action executed in response to an event signaled to this process.">Process::process_event(const Event *)</a>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00274">274</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00272">272</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -520,7 +520,7 @@ Static Public Member Functions</h2></td></tr>
 <p>An error handler is a callback object that handles all simulation errors.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01087.html" title="an error handler for simulation errors.">SimErrorHandler</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00286">286</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00284">284</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -558,7 +558,7 @@ Static Public Member Functions</h2></td></tr>
 <p>This method sets the absolute (virtual) time at which the simulation will terminate. This method can be used to limit the duration of a simulation even in the presence of schedulable actions. When called with the (default) INIT_TIME, the simulation is set for normal termination, that is, the simulation terminates in the absence of schedulable actions.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#ab59c6b180a0fda7a30933ebf5906f077" title="stops execution of the simulation">stop_simulation()</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00239">239</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00237">237</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -615,7 +615,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">self_signal_event()</a> and Process::process_event(ProcessId, const Event *). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00278">278</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00276">276</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -679,7 +679,7 @@ Static Public Member Functions</h2></td></tr>
 </dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">self_signal_event()</a> and <a class="el" href="a01079.html#a0520b75c3ece365ee44a9bdefecf5418" title="action executed in response to an event signaled to this process.">Process::process_event(const Event *)</a>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00282">282</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00280">280</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -714,7 +714,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>stops the execution of the current process </p>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00243">243</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00241">241</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -750,7 +750,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>stops the execution of a given process </p>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00247">247</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00245">245</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -785,7 +785,7 @@ Static Public Member Functions</h2></td></tr>
 
 <p>stops execution of the simulation </p>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00253">253</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00251">251</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -827,23 +827,23 @@ Static Public Member Functions</h2></td></tr>
 <div class="line">};</div>
 </div><!-- fragment --><dl class="section return"><dt>Returns</dt><dd>process id of the current process, or <a class="el" href="a00069.html#a98bb951548db584b29ac531647acdc4d">NULL_PROCESSID</a> if called outside the simulation. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00262">262</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00260">260</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>/home/marcle/src/R/microsimulation/inst/include/siena/<a class="el" href="a00062_source.html">ssim.h</a></li>
-<li>/home/marcle/src/R/microsimulation/src/<a class="el" href="a02933_source.html">ssim.cc</a></li>
+<li>/home/marcle/src/R/microsimulation/src/<a class="el" href="a02927_source.html">ssim.cc</a></li>
 </ul>
 </div><!-- contents -->
-<div class="ttc" id="aa01091_html_aed6993d25a133c11f7d83ae7af09f7c6"><div class="ttname"><a href="a01091.html#aed6993d25a133c11f7d83ae7af09f7c6">ssim::Sim::signal_event</a></div><div class="ttdeci">static void signal_event(ProcessId p, const Event *e)</div><div class="ttdoc">signal an event to the given process immediately</div><div class="ttdef"><b>Definition:</b> <a href="a02933_source.html#l00278">ssim.cc:278</a></div></div>
-<div class="ttc" id="aa01091_html_aa6dbe3c23756f7bb0f33472db8003e2a"><div class="ttname"><a href="a01091.html#aa6dbe3c23756f7bb0f33472db8003e2a">ssim::Sim::advance_delay</a></div><div class="ttdeci">static void advance_delay(Time)</div><div class="ttdoc">advance the execution time of the current process.</div><div class="ttdef"><b>Definition:</b> <a href="a02933_source.html#l00257">ssim.cc:257</a></div></div>
-<div class="ttc" id="aa01091_html_a732eb86d5dc04434d4ed88cbb62fd155"><div class="ttname"><a href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155">ssim::Sim::self_signal_event</a></div><div class="ttdeci">static void self_signal_event(const Event *e)</div><div class="ttdoc">signal an event to the current process immediately</div><div class="ttdef"><b>Definition:</b> <a href="a02933_source.html#l00270">ssim.cc:270</a></div></div>
-<div class="ttc" id="aa01091_html_aea08c0eb1e82c0bb5e92e5e845230bc0"><div class="ttname"><a href="a01091.html#aea08c0eb1e82c0bb5e92e5e845230bc0">ssim::Sim::clock</a></div><div class="ttdeci">static Time clock()</div><div class="ttdoc">returns the current virtual time for the current process</div><div class="ttdef"><b>Definition:</b> <a href="a02933_source.html#l00266">ssim.cc:266</a></div></div>
+<div class="ttc" id="aa01091_html_aed6993d25a133c11f7d83ae7af09f7c6"><div class="ttname"><a href="a01091.html#aed6993d25a133c11f7d83ae7af09f7c6">ssim::Sim::signal_event</a></div><div class="ttdeci">static void signal_event(ProcessId p, const Event *e)</div><div class="ttdoc">signal an event to the given process immediately</div><div class="ttdef"><b>Definition:</b> <a href="a02927_source.html#l00276">ssim.cc:276</a></div></div>
+<div class="ttc" id="aa01091_html_aa6dbe3c23756f7bb0f33472db8003e2a"><div class="ttname"><a href="a01091.html#aa6dbe3c23756f7bb0f33472db8003e2a">ssim::Sim::advance_delay</a></div><div class="ttdeci">static void advance_delay(Time)</div><div class="ttdoc">advance the execution time of the current process.</div><div class="ttdef"><b>Definition:</b> <a href="a02927_source.html#l00255">ssim.cc:255</a></div></div>
+<div class="ttc" id="aa01091_html_a732eb86d5dc04434d4ed88cbb62fd155"><div class="ttname"><a href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155">ssim::Sim::self_signal_event</a></div><div class="ttdeci">static void self_signal_event(const Event *e)</div><div class="ttdoc">signal an event to the current process immediately</div><div class="ttdef"><b>Definition:</b> <a href="a02927_source.html#l00268">ssim.cc:268</a></div></div>
+<div class="ttc" id="aa01091_html_aea08c0eb1e82c0bb5e92e5e845230bc0"><div class="ttname"><a href="a01091.html#aea08c0eb1e82c0bb5e92e5e845230bc0">ssim::Sim::clock</a></div><div class="ttdeci">static Time clock()</div><div class="ttdoc">returns the current virtual time for the current process</div><div class="ttdef"><b>Definition:</b> <a href="a02927_source.html#l00264">ssim.cc:264</a></div></div>
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 18 2022 11:09:58 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 12:55:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

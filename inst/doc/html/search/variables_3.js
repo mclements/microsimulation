@@ -15,7 +15,7 @@ var searchData=
   ['cost_738',['cost',['../a01023.html#af701da6a36bdd8ce0b5e3fa7ed7d4dae',1,'ssim::SummaryReport']]],
   ['costalpha_739',['costAlpha',['../a01023.html#a65998baadc188a3fe12845d25d6d0628',1,'ssim::SummaryReport']]],
   ['costdiscountrate_740',['costDiscountRate',['../a01023.html#a20233fd551c90d23ce44793ca32e534e',1,'ssim::SummaryReport']]],
-  ['counter_5fid_741',['counter_id',['../a00069.html#a6057c592bf37cae518df387f826fab07',1,'ssim']]],
+  ['counter_5fid_741',['counter_id',['../a00069.html#aaadf0ab5ca8eb7c55bdb45b5a28fda91',1,'ssim']]],
   ['cure_742',['cure',['../a00068.html#a40acb6755446a2812381d3b97cc5e988',1,'illnessDeath']]],
   ['current_743',['current',['../a01019.html#aa3b7dae35f9f792961118b68fc32aeab',1,'ssim::EventReport::current()'],['../a01027.html#af538692452973d8762031b9f76117e01',1,'ssim::CostReport::current()']]],
   ['current_5fprocess_744',['current_process',['../a00069.html#a2cd5510a5fa07971e9ae2884389d8b82',1,'ssim::current_process()'],['../a00069.html#a2cd5510a5fa07971e9ae2884389d8b82',1,'ssim::current_process()']]],

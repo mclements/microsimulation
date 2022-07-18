@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
-<title>Microsimulation API: /home/marcle/src/R/microsimulation/inst/include/RngStream.cpp File Reference</title>
+<title>Microsimulation API: /home/marcle/src/R/microsimulation/inst/include/ssim.cc File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -66,54 +66,94 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
-<div class="title">RngStream.cpp File Reference</div>  </div>
+<div class="title">ssim.cc File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="a00059_source.html">RngStream.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;vector&gt;</code><br />
+<code>#include &lt;<a class="el" href="a00062_source.html">siena/ssim.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="a00050_source.html">heap.h</a>&gt;</code><br />
+<code>#include &lt;R.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
-Include dependency graph for RngStream.cpp:</div>
+Include dependency graph for ssim.cc:</div>
 <div class="dyncontent">
-<div class="center"><img src="a02931.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2_rng_stream_8cpp" alt=""/></div>
-<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2_rng_stream_8cpp" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2_rng_stream_8cpp">
-<area shape="rect" title=" " alt="" coords="5,5,168,61"/>
-<area shape="rect" href="a00059.html" title=" " alt="" coords="37,109,136,136"/>
-<area shape="rect" title=" " alt="" coords="18,184,73,211"/>
-<area shape="rect" title=" " alt="" coords="97,184,162,211"/>
-</map>
-</div>
-</div><div class="textblock"><div class="dynheader">
-This graph shows which files directly or indirectly include this file:</div>
-<div class="dyncontent">
-<div class="center"><img src="a02932.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2_rng_stream_8cppdep" alt=""/></div>
-<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2_rng_stream_8cppdep" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2_rng_stream_8cppdep">
-<area shape="rect" title=" " alt="" coords="14,5,177,61"/>
-<area shape="rect" href="a02924.html" title=" " alt="" coords="5,109,185,165"/>
+<div class="center"><img src="a02931.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2ssim_8cc" alt=""/></div>
+<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2ssim_8cc" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2ssim_8cc">
+<area shape="rect" title=" " alt="" coords="49,5,191,61"/>
+<area shape="rect" title=" " alt="" coords="5,184,64,211"/>
+<area shape="rect" href="a00062.html" title=" " alt="" coords="124,109,220,136"/>
+<area shape="rect" href="a00050.html" title=" " alt="" coords="39,109,100,136"/>
+<area shape="rect" title=" " alt="" coords="244,109,287,136"/>
+<area shape="rect" title=" " alt="" coords="110,184,189,211"/>
+<area shape="rect" title=" " alt="" coords="213,184,267,211"/>
 </map>
 </div>
 </div>
 <p><a href="a02930_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00967.html">ssim::Action</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00971.html">ssim::PDescr</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00975.html">ssim::SimImpl</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:a00069"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html">ssim</a></td></tr>
 <tr class="memdesc:a00069"><td class="mdescLeft">&#160;</td><td class="mdescRight">name space for the Siena simulator. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ab287ebe9f2318115a1091a2114593420"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420">ssim::ActionType</a> { <br />
+&#160;&#160;<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420ac07811cfd08ca1be32081672b2ea62be">ssim::A_Event</a>, 
+<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420ac814d1aab3174d42cb2a54686eb2bb23">ssim::A_Init</a>, 
+<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420aad9c82508c26ec445d89a985feab4427">ssim::A_Stop</a>, 
+<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420a3fac32aba89aae5232efb3df46320df5">ssim::A_Ignore</a>, 
+<br />
+&#160;&#160;<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420ac07811cfd08ca1be32081672b2ea62be">ssim::A_Event</a>, 
+<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420ac814d1aab3174d42cb2a54686eb2bb23">ssim::A_Init</a>, 
+<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420aad9c82508c26ec445d89a985feab4427">ssim::A_Stop</a>, 
+<a class="el" href="a00069.html#ab287ebe9f2318115a1091a2114593420a3fac32aba89aae5232efb3df46320df5">ssim::A_Ignore</a>
+<br />
+ }</td></tr>
+<tr class="separator:ab287ebe9f2318115a1091a2114593420"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a2d51aa7c41a7d467d7c0d9f24c94c654"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a2d51aa7c41a7d467d7c0d9f24c94c654">ssim::Rprint_actions</a> ()</td></tr>
+<tr class="separator:a2d51aa7c41a7d467d7c0d9f24c94c654"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a58ff38cfb9d54f822cad921c2481dd55"><td class="memItemLeft" align="right" valign="top">static Time&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a58ff38cfb9d54f822cad921c2481dd55">ssim::stop_time</a> = INIT_TIME</td></tr>
+<tr class="separator:a58ff38cfb9d54f822cad921c2481dd55"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa81803f98384e1074a889bb9b7ba2aea"><td class="memItemLeft" align="right" valign="top">static Time&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#aa81803f98384e1074a889bb9b7ba2aea">ssim::current_time</a> = INIT_TIME</td></tr>
+<tr class="separator:aa81803f98384e1074a889bb9b7ba2aea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cd5510a5fa07971e9ae2884389d8b82"><td class="memItemLeft" align="right" valign="top">static ProcessId&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a2cd5510a5fa07971e9ae2884389d8b82">ssim::current_process</a> = NULL_PROCESSID</td></tr>
+<tr class="separator:a2cd5510a5fa07971e9ae2884389d8b82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3f659c5efa4cdfbd7021fbb6823d29f"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#ab3f659c5efa4cdfbd7021fbb6823d29f">ssim::running</a> = false</td></tr>
+<tr class="separator:ab3f659c5efa4cdfbd7021fbb6823d29f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab477b556ed4d697c13728d4cec195f7e"><td class="memItemLeft" align="right" valign="top">static SimErrorHandler *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#ab477b556ed4d697c13728d4cec195f7e">ssim::error_handler</a> = 0</td></tr>
+<tr class="separator:ab477b556ed4d697c13728d4cec195f7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabdacd152df9f24ff6b74716c3d5d82f"><td class="memItemLeft" align="right" valign="top">static a_table_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#aabdacd152df9f24ff6b74716c3d5d82f">ssim::actions</a></td></tr>
+<tr class="separator:aabdacd152df9f24ff6b74716c3d5d82f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92abc264bf23554097148d0542c26a51"><td class="memItemLeft" align="right" valign="top">static PsTable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a92abc264bf23554097148d0542c26a51">ssim::processes</a></td></tr>
+<tr class="separator:a92abc264bf23554097148d0542c26a51"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>for multiple streams of Random Numbers </p><dl class="section author"><dt>Author</dt><dd>Pierre L'Ecuyer, University of Montreal Original date: 14 August 2001 Modified by Mark Clements <a href="#" onclick="location.href='mai'+'lto:'+'mar'+'k.'+'cle'+'me'+'nts'+'@k'+'i.s'+'e'; return false;">mark.<span style="display: none;">.nosp@m.</span>clem<span style="display: none;">.nosp@m.</span>ents@<span style="display: none;">.nosp@m.</span>ki.s<span style="display: none;">.nosp@m.</span>e</a> 2014-03-22 for the microsimulation package.</dd></dl>
-<h1><a class="anchor" id="LICENSE"></a>
-LICENSE</h1>
-<p>This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.</p>
-<p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details at <a href="http://www.gnu.org/copyleft/gpl.html">http://www.gnu.org/copyleft/gpl.html</a> </p>
-
-<p class="definition">Definition in file <a class="el" href="a02930_source.html">RngStream.cpp</a>.</p>
-</div></div><!-- contents -->
+</div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 18 2022 11:09:58 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 12:55:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

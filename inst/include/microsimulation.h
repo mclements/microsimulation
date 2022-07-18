@@ -179,7 +179,6 @@ namespace Rcpp {
 
 #include <string>
 #include <algorithm>
-//#include <map>
 #include <functional>
 #include <set>
 
@@ -237,7 +236,9 @@ public:
 };
 
 /**
-   @brief Cancel is a function to cancel messages who satisfy a predicate
+   @brief Cancel is a function to cancel messages who satisfy a predicate.
+
+   This works across all processes.
 */
   inline void
   Cancel(std::function<bool(const cMessage * msg)> pred) {
@@ -249,42 +250,44 @@ public:
 
 /**
    @brief RemoveKind is a function to remove messages with the given kind from the queue
+
+   This works across all processes.
 */
   inline void RemoveKind(short kind) {
-    Cancel([kind](const cMessage * msg) {
-	     return msg->kind == kind;
-	   });
+    Cancel([kind](const cMessage * msg) { return msg->kind == kind; });
   }
 
 /**
    @brief CancelKind is a function to remove messages with the given kind from the queue
+
+   This works across all processes.
 */
   inline void CancelKind(short kind) {
-    Cancel([kind](const cMessage * msg) {
-	     return msg->kind == kind;
-	   });
+    Cancel([kind](const cMessage * msg) { return msg->kind == kind; });
   }
 
  /**
     @brief RemoveName is a function to remove messages with the given name from the queue
+
+   This works across all processes.
  */
   inline void RemoveName(string name) {
-    Cancel([name](const cMessage * msg) {
-	     return msg->name == name;
-	   });
+    Cancel([name](const cMessage * msg) { return msg->name == name; });
   }
  /**
     @brief CancelName is a function to remove messages with the given name from the queue
+
+   This works across all processes.
  */
   inline void CancelName(string name) {
-    Cancel([name](const cMessage * msg) {
-	     return msg->name == name;
-	   });
+    Cancel([name](const cMessage * msg) { return msg->name == name; });
   }
 
-   /**
-      @brief CanceEvents is a function to remove messages from the queue
-   */
+  /**
+     @brief CancelEvents is a function to remove messages from the queue
+
+     This works across all processes.
+  */
 inline void CancelEvents() {
     Cancel([](const cMessage * msg) { return true; });
   }
@@ -292,14 +295,132 @@ inline void CancelEvents() {
 
 /**
    @brief cProcess class for OMNET++ API compatibility.
-   This provides a default for Process::process_event() that calls
-   cProcess::handleMessage(). This class also provides scheduleAt()
-   methods for insert cMessages into the process event queue.
+
+   This provides implementations for the ProcessWithPId including:
+
+   <ol>
+   <li> process_event(const Event*) that calls handleMessage(const cMessage*)
+   <li> initialize() that calls init().
+   </ol>
+
+   The user can also implement a stop() method which is called at the
+   end of a process. The scheduleAt() and send() methods insert
+   cMessages into the current and other process event queues,
+   respectively. Messages for this process can be cancelled using
+   cancel(), cancel_kind(), cancel_name() and cancel_events(). The
+   previous event time for this process can be found using previous().
+
  */
 class cProcess : public ssim::ProcessWithPId {
 public:
+  Time startTime, previousEventTime;
   cProcess(Time startTime = Time(0.0)) : startTime(startTime), previousEventTime(startTime) { }
+  /**
+      @brief Abstract method to handle each message
+   */
   virtual void handleMessage(const cMessage * msg) = 0;
+  /**
+      @brief Abstract method to initialise a given process.
+   */
+  virtual void init() = 0;
+  // see also `void stop()`
+  /**
+      @brief schedules at time t a message msg to the current process.
+      Adds the sendingTime, process_id and sender_process_id to the message.
+   */
+  virtual void scheduleAt(Time t, cMessage * msg) { // virtual or not?
+    msg->timestamp = t;
+    msg->sendingTime = Sim::clock();
+    msg->process_id = msg->sender_process_id = pid();
+    Sim::self_signal_event(msg, t - Sim::clock());
+  }
+  /**
+      @brief schedules at time t a message msg with a specific name to the current process.
+   */
+  virtual void scheduleAt(Time t, string name) {
+    scheduleAt(t, new cMessage(-1,name));
+  }
+  /**
+      @brief schedules at time t a message msg with a specific kind to the current process.
+   */
+  virtual void scheduleAt(Time t, short k) {
+    scheduleAt(t, new cMessage(k,""));
+  }
+  /**
+      @brief send to a given process at time t a message msg.
+      Adds the sendingTime, process_id and sender_process_id to the message.
+   */
+  virtual void send(ProcessId process_id, Time t, cMessage * msg) { // virtual or not?
+    msg->timestamp = t;
+    msg->process_id = process_id;
+    msg->sender_process_id = pid();
+    msg->sendingTime = Sim::clock();
+    Sim::signal_event(process_id, msg, t - Sim::clock());
+  }
+  /**
+      @brief sends to a given process at time t a message msg with a specific name.
+   */
+  virtual void send(ProcessId process_id, Time t, string name) {
+    send(process_id, t, new cMessage(-1,name));
+  }
+  /**
+      @brief sends to a given process at time t a message msg with a specific kind.
+   */
+  virtual void send(ProcessId process_id, Time t, short kind) {
+    send(process_id, t, new cMessage(kind,""));
+  }
+  /**
+      @brief Given a predicate, remove the messages for this process.
+   */
+  void cancel(std::function<bool(const cMessage * msg)> pred) {
+    Cancel([pred,this](const cMessage * msg) {
+	     return pred(msg) &&
+	       msg->process_id == this->pid();
+	   });
+  }
+  /**
+      @brief Given a kind, remove the messages for this process.
+   */
+  void cancel_kind(short kind) {
+    cancel([kind,this](const cMessage * msg) {
+	     return msg->kind == kind &&
+	       msg->process_id == this->pid();
+	   });
+  }
+  /**
+      @brief Given a name, remove the messages for this process.
+   */
+  void cancel_name(string name) {
+    cancel([name,this](const cMessage * msg) {
+	     return msg->name == name &&
+	       msg->process_id == this->pid();
+	   });
+  }
+  /**
+      @brief Remove all of the messages for this process.
+   */
+  void cancel_events() {
+    cancel([this](const cMessage * msg) {
+	     return msg->process_id == this->pid();
+	   });
+  }
+  /**
+      @brief Returns the value of the previous event time for this process.
+   */
+  double previous() {
+    return previousEventTime;
+  }
+  /**
+      @brief Implements the method required by ssim::ProcessWithPId.
+      Calls init() and sets the previousEventTime to the startTime.
+   */
+  void initialize() { init(); previousEventTime = startTime; }
+  /**
+      @brief Implements the method required by ssim::ProcessWithPId
+      This requires that the event* can be cast to a cMessage*.
+      This calls the handleMessage(const cMessage*) method and updates
+      previousEventTime.
+   */
   virtual void process_event(const ssim::Event * e) { // virtual or not?
     const cMessage * msg;
     if ((msg = dynamic_cast<const cMessage *>(e)) != 0) {
@@ -309,61 +430,6 @@ public:
       // cf. cerr, specialised for R
       REprintf("cProcess is only written to receive cMessage events\n");
     }
-  }
-  virtual void scheduleAt(Time t, cMessage * msg) { // virtual or not?
-    msg->timestamp = t;
-    msg->sendingTime = Sim::clock();
-    msg->process_id = msg->sender_process_id = pid();
-    Sim::self_signal_event(msg, t - Sim::clock());
-  }
-  virtual void scheduleAt(Time t, string s) {
-    scheduleAt(t, new cMessage(-1,s));
-  }
-  virtual void scheduleAt(Time t, short k) {
-    scheduleAt(t, new cMessage(k,""));
-  }
-  virtual void send(ProcessId process_id, Time t, cMessage * msg) { // virtual or not?
-    msg->timestamp = t;
-    msg->process_id = process_id;
-    msg->sender_process_id = pid();
-    msg->sendingTime = Sim::clock();
-    Sim::signal_event(process_id, msg, t - Sim::clock());
-  }
-  virtual void send(ProcessId process_id, Time t, string s) {
-    send(process_id, t, new cMessage(-1,s));
-  }
-  virtual void send(ProcessId process_id, Time t, short k) {
-    send(process_id, t, new cMessage(k,""));
-  }
-  virtual void init() = 0;
-  // see also `void stop()`
-  void initialize() { init(); previousEventTime = startTime; }
-  Time startTime, previousEventTime;
-  void cancel(std::function<bool(const cMessage * msg)> pred) {
-    Cancel([pred,this](const cMessage * msg) {
-	     return pred(msg) &&
-	       msg->process_id == this->pid();
-	   });
-  }
-  void cancel_kind(short kind) {
-    cancel([kind,this](const cMessage * msg) {
-	     return msg->kind == kind &&
-	       msg->process_id == this->pid();
-	   });
-  }
-  void cancel_name(string name) {
-    cancel([name,this](const cMessage * msg) {
-	     return msg->name == name &&
-	       msg->process_id == this->pid();
-	   });
-  }
-  void cancel_events() {
-    cancel([this](const cMessage * msg) {
-	     return msg->process_id == this->pid();
-	   });
-  }
-  double previous() {
-    return previousEventTime;
   }
 };
 

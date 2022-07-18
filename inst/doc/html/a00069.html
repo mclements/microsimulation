@@ -80,13 +80,13 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00967.html">Action</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00999.html">cMessage</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>).  <a href="a00999.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3" title="schedules at time t a message msg to the current process. Adds the sendingTime, process_id and sender...">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980" title="Abstract method to handle each message.">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3" title="schedules at time t a message msg to the current process. Adds the sendingTime, process_id and sender...">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01091.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>).  <a href="a00999.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01027.html">CostReport</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01027.html" title="CostReport class for collecting statistics on costs.">CostReport</a> class for collecting statistics on costs.  <a href="a01027.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01003.html">cProcess</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01003.html" title="cProcess class for OMNET++ API compatibility. This provides a default for Process::process_event() th...">cProcess</a> class for OMNET++ API compatibility. This provides a default for <a class="el" href="a01079.html#a0520b75c3ece365ee44a9bdefecf5418" title="action executed in response to an event signaled to this process.">Process::process_event()</a> that calls <a class="el" href="a01003.html#ad89844c8ea2b9f7032191d1747155980">cProcess::handleMessage()</a>. This class also provides <a class="el" href="a01003.html#ac08a0d2fee8a0ca803d524c92c03e5f3">scheduleAt()</a> methods for insert cMessages into the process event queue.  <a href="a01003.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01003.html" title="cProcess class for OMNET++ API compatibility.">cProcess</a> class for OMNET++ API compatibility.  <a href="a01003.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01075.html">Event</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">basic event in the simulation.  <a href="a01075.html#details">More...</a><br /></td></tr>
@@ -213,8 +213,8 @@ Functions</h2></td></tr>
 <tr class="memitem:a6d41a0abcee760467e36c4bf7b4f1e92"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a6d41a0abcee760467e36c4bf7b4f1e92">r_rng_advance_substream</a> (double *seed, int *n)</td></tr>
 <tr class="memdesc:a6d41a0abcee760467e36c4bf7b4f1e92"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to advance the random sub-stream n steps for a specified seed.  <a href="a00069.html#a6d41a0abcee760467e36c4bf7b4f1e92">More...</a><br /></td></tr>
 <tr class="separator:a6d41a0abcee760467e36c4bf7b4f1e92"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad03c22862cc540bae7a7a9fca79727f2"><td class="memItemLeft" align="right" valign="top">double *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#ad03c22862cc540bae7a7a9fca79727f2">user_unif_rand</a> ()</td></tr>
-<tr class="separator:ad03c22862cc540bae7a7a9fca79727f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba1a8e589783461add222968a506c6b3"><td class="memItemLeft" align="right" valign="top">double *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#aba1a8e589783461add222968a506c6b3">user_unif_rand</a> ()</td></tr>
+<tr class="separator:aba1a8e589783461add222968a506c6b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a92ea4368d680bc6f17e71e508139b720"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a92ea4368d680bc6f17e71e508139b720">test_rstream2</a> (double *x)</td></tr>
 <tr class="memdesc:a92ea4368d680bc6f17e71e508139b720"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple test of the random streams (with a stupid name)  <a href="a00069.html#a92ea4368d680bc6f17e71e508139b720">More...</a><br /></td></tr>
 <tr class="separator:a92ea4368d680bc6f17e71e508139b720"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -248,7 +248,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:a043929840556f8886bd0cf846eea63f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">CancelName is a function to remove messages with the given name from the queue.  <a href="a00069.html#a043929840556f8886bd0cf846eea63f1">More...</a><br /></td></tr>
 <tr class="separator:a043929840556f8886bd0cf846eea63f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f4f7d4bfc7da34767521d03ed60124b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a2f4f7d4bfc7da34767521d03ed60124b">CancelEvents</a> ()</td></tr>
-<tr class="memdesc:a2f4f7d4bfc7da34767521d03ed60124b"><td class="mdescLeft">&#160;</td><td class="mdescRight">CanceEvents is a function to remove messages from the queue.  <a href="a00069.html#a2f4f7d4bfc7da34767521d03ed60124b">More...</a><br /></td></tr>
+<tr class="memdesc:a2f4f7d4bfc7da34767521d03ed60124b"><td class="mdescLeft">&#160;</td><td class="mdescRight">CancelEvents is a function to remove messages from the queue.  <a href="a00069.html#a2f4f7d4bfc7da34767521d03ed60124b">More...</a><br /></td></tr>
 <tr class="separator:a2f4f7d4bfc7da34767521d03ed60124b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a440a324691afecd012af46363a59b135"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a440a324691afecd012af46363a59b135">discountedInterval</a> (double start, double end, double discountRate)</td></tr>
 <tr class="memdesc:a440a324691afecd012af46363a59b135"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple function to calculate the integral between the start and end times for (1+kappa)^(-u), where kappa is the discountRate (e.g. 0.03)  <a href="a00069.html#a440a324691afecd012af46363a59b135">More...</a><br /></td></tr>
@@ -260,15 +260,12 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a83a2c52baf1be724a32a3b3f838ee3f7"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="a01015.html">Rng</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a83a2c52baf1be724a32a3b3f838ee3f7">default_stream</a></td></tr>
-<tr class="separator:a83a2c52baf1be724a32a3b3f838ee3f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a440132e78b23a3647933784d4a637a30"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="a01015.html">Rng</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a440132e78b23a3647933784d4a637a30">default_stream</a></td></tr>
+<tr class="separator:a440132e78b23a3647933784d4a637a30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a333191312066dc33f4582d846fdced99"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="a01015.html">Rng</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a333191312066dc33f4582d846fdced99">current_stream</a></td></tr>
 <tr class="separator:a333191312066dc33f4582d846fdced99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90d5d24de5922d60819c37f8c9bc8594"><td class="memItemLeft" align="right" valign="top">static double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a90d5d24de5922d60819c37f8c9bc8594">rn</a> = 0.0</td></tr>
 <tr class="separator:a90d5d24de5922d60819c37f8c9bc8594"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2786b3f6b385e40eac6b66d4a09b3af5"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a2786b3f6b385e40eac6b66d4a09b3af5">Version</a> = VERSION</td></tr>
-<tr class="memdesc:a2786b3f6b385e40eac6b66d4a09b3af5"><td class="mdescLeft">&#160;</td><td class="mdescRight">version identifier for this ssim library  <a href="a00069.html#a2786b3f6b385e40eac6b66d4a09b3af5">More...</a><br /></td></tr>
-<tr class="separator:a2786b3f6b385e40eac6b66d4a09b3af5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58ff38cfb9d54f822cad921c2481dd55"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="a00069.html#a21fe7fd998fc91994f9d0a57c222e23e">Time</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a58ff38cfb9d54f822cad921c2481dd55">stop_time</a> = <a class="el" href="a00069.html#a5d837e0e63fb4c72883760fb4ad3467d">INIT_TIME</a></td></tr>
 <tr class="separator:a58ff38cfb9d54f822cad921c2481dd55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa81803f98384e1074a889bb9b7ba2aea"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="a00069.html#a21fe7fd998fc91994f9d0a57c222e23e">Time</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#aa81803f98384e1074a889bb9b7ba2aea">current_time</a> = <a class="el" href="a00069.html#a5d837e0e63fb4c72883760fb4ad3467d">INIT_TIME</a></td></tr>
@@ -283,9 +280,9 @@ Variables</h2></td></tr>
 <tr class="separator:aabdacd152df9f24ff6b74716c3d5d82f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a92abc264bf23554097148d0542c26a51"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="a00069.html#aa83cd640d3303816b24a417a6904607f">PsTable</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a92abc264bf23554097148d0542c26a51">processes</a></td></tr>
 <tr class="separator:a92abc264bf23554097148d0542c26a51"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6057c592bf37cae518df387f826fab07"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a6057c592bf37cae518df387f826fab07">counter_id</a> = 0</td></tr>
-<tr class="memdesc:a6057c592bf37cae518df387f826fab07"><td class="mdescLeft">&#160;</td><td class="mdescRight">C++ wrapper class for the <a class="el" href="a01071.html">RngStream</a> library. set() sets the current <a class="el" href="a00070.html">R</a> random number stream to this stream. This is compliant with being a Boost random number generator.  <a href="a00069.html#a6057c592bf37cae518df387f826fab07">More...</a><br /></td></tr>
-<tr class="separator:a6057c592bf37cae518df387f826fab07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaadf0ab5ca8eb7c55bdb45b5a28fda91"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#aaadf0ab5ca8eb7c55bdb45b5a28fda91">counter_id</a> = 0</td></tr>
+<tr class="memdesc:aaadf0ab5ca8eb7c55bdb45b5a28fda91"><td class="mdescLeft">&#160;</td><td class="mdescRight">C++ wrapper class for the <a class="el" href="a01071.html">RngStream</a> library. set() sets the current <a class="el" href="a00070.html">R</a> random number stream to this stream. This is compliant with being a Boost random number generator.  <a href="a00069.html#aaadf0ab5ca8eb7c55bdb45b5a28fda91">More...</a><br /></td></tr>
+<tr class="separator:aaadf0ab5ca8eb7c55bdb45b5a28fda91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98bb951548db584b29ac531647acdc4d"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="a00069.html#a38996a82716c143fae8762e30089af81">ProcessId</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00069.html#a98bb951548db584b29ac531647acdc4d">NULL_PROCESSID</a> = -1</td></tr>
 <tr class="memdesc:a98bb951548db584b29ac531647acdc4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">no process will be identified by NULL_PROCESSID  <a href="a00069.html#a98bb951548db584b29ac531647acdc4d">More...</a><br /></td></tr>
 <tr class="separator:a98bb951548db584b29ac531647acdc4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -335,7 +332,7 @@ a few other utility classes </li>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00067">67</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00065">65</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -351,7 +348,7 @@ a few other utility classes </li>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00122">122</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00118">118</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
 
 </div>
 </div>
@@ -367,7 +364,7 @@ a few other utility classes </li>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00131">131</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00129">129</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -385,7 +382,7 @@ a few other utility classes </li>
 
 <p>process identifier type </p>
 
-<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00059">59</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00055">55</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
 
 </div>
 </div>
@@ -401,7 +398,7 @@ a few other utility classes </li>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00080">80</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00078">78</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -419,7 +416,7 @@ a few other utility classes </li>
 
 <p>simtime_t typedef for OMNET++ API compatibility </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00373">373</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00439">439</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -439,7 +436,7 @@ a few other utility classes </li>
 <p>This type represents the basic time in the virtual (simulated) world. Being defined as an integer type, virtual time is a discrete quantity. The actual semantics of the time unit is determined by the simulated application. In other words, a time interval of 1 may be interpreted as one second, one year, or any other time interval, depending on the semantics of the simulated application.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="a01091.html#aa6dbe3c23756f7bb0f33472db8003e2a" title="advance the execution time of the current process.">Sim::advance_delay(Time)</a>, <a class="el" href="a01091.html#aef95a1c752e4ebf99e6d8fdaef6491e8" title="signal an event to the given process at the given time">Sim::signal_event(ProcessId, const Event*, Time)</a>, and <a class="el" href="a01091.html#a9f7131201e7f6d32139d5b176b531c4d" title="signal an event to the current process at the given time">Sim::self_signal_event(const Event*, Time)</a>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00079">79</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00075">75</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
 
 </div>
 </div>
@@ -466,7 +463,7 @@ a few other utility classes </li>
 <tr><td class="fieldname"><a id="ab287ebe9f2318115a1091a2114593420a3fac32aba89aae5232efb3df46320df5"></a>A_Ignore&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00046">46</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00044">44</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -492,7 +489,7 @@ a few other utility classes </li>
 <tr><td class="fieldname"><a id="ab287ebe9f2318115a1091a2114593420a3fac32aba89aae5232efb3df46320df5"></a>A_Ignore&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00046">46</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00044">44</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -522,8 +519,9 @@ a few other utility classes </li>
 </div><div class="memdoc">
 
 <p>Cancel is a function to cancel messages who satisfy a predicate. </p>
+<p>This works across all processes. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00243">243</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00244">244</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -550,9 +548,10 @@ a few other utility classes </li>
 </table>
 </div><div class="memdoc">
 
-<p>CanceEvents is a function to remove messages from the queue. </p>
+<p>CancelEvents is a function to remove messages from the queue. </p>
+<p>This works across all processes. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00288">288</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00291">291</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -581,8 +580,9 @@ a few other utility classes </li>
 </div><div class="memdoc">
 
 <p>CancelKind is a function to remove messages with the given kind from the queue. </p>
+<p>This works across all processes. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00262">262</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00265">265</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -611,8 +611,9 @@ a few other utility classes </li>
 </div><div class="memdoc">
 
 <p>CancelName is a function to remove messages with the given name from the queue. </p>
+<p>This works across all processes. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00279">279</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00282">282</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -658,7 +659,7 @@ a few other utility classes </li>
 
 <p>Simple function to calculate the integral between the start and end times for (1+kappa)^(-u), where kappa is the discountRate (e.g. 0.03) </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00550">550</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00616">616</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -679,7 +680,7 @@ a few other utility classes </li>
 
 <p><a class="el" href="a00069.html#a4f5da079da642a3ab4bc28f4f307a9d1" title="now() function for compatibility with C++SIM">now()</a> function for compatibility with C++SIM </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00014">14</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00009">9</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -846,7 +847,7 @@ a few other utility classes </li>
 
 <p>A utility function to create the current_stream. Used when initialising the microsimulation package in <a class="el" href="a00070.html">R</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00037">37</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00032">32</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -868,7 +869,7 @@ a few other utility classes </li>
 
 <p>A utility function to set the user random seed for the simulation. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00057">57</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00052">52</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -889,7 +890,7 @@ a few other utility classes </li>
 
 <p>A utility function to move to the next user random stream for the simulation. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00065">65</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00060">60</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -910,7 +911,7 @@ a few other utility classes </li>
 
 <p>A utility function to remove the current_stream. Used when finalising the microsimulation package in <a class="el" href="a00070.html">R</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00043">43</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00038">38</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -942,7 +943,7 @@ a few other utility classes </li>
 
 <p>A utility function to advance the random sub-stream n steps for a specified seed. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00069">69</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00064">64</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -964,7 +965,7 @@ a few other utility classes </li>
 
 <p>A utility function to set the user random seed for the simulation. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00048">48</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00043">43</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -993,8 +994,9 @@ a few other utility classes </li>
 </div><div class="memdoc">
 
 <p>RemoveKind is a function to remove messages with the given kind from the queue. </p>
+<p>This works across all processes. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00253">253</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00256">256</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -1023,8 +1025,9 @@ a few other utility classes </li>
 </div><div class="memdoc">
 
 <p>RemoveName is a function to remove messages with the given name from the queue. </p>
+<p>This works across all processes. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00271">271</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00274">274</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -1043,7 +1046,7 @@ a few other utility classes </li>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00083">83</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00081">81</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1081,7 +1084,7 @@ a few other utility classes </li>
 
 <p>Random Weibull distribution for a given shape, scale and hazard ratio. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00010">10</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00005">5</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1102,7 +1105,7 @@ a few other utility classes </li>
 
 <p><a class="el" href="a00069.html#af2e3f218e7c225a02d8a41a3e58d3134" title="simTime() function for OMNET++ API compatibility">simTime()</a> function for OMNET++ API compatibility </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00018">18</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00013">13</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1124,7 +1127,7 @@ a few other utility classes </li>
 
 <p>Simple test of the random streams (with a stupid name) </p>
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00091">91</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00086">86</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1148,18 +1151,18 @@ template&lt;class T &gt; </div>
 
 <p>Function to transpose a vector of vectors. This assumes that all inner vectors have the same size and allocates space for the complete result in advance. From <a href="http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors">http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00564">564</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00630">630</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
-<a id="ad03c22862cc540bae7a7a9fca79727f2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad03c22862cc540bae7a7a9fca79727f2">&#9670;&nbsp;</a></span>user_unif_rand()</h2>
+<a id="aba1a8e589783461add222968a506c6b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba1a8e589783461add222968a506c6b3">&#9670;&nbsp;</a></span>user_unif_rand()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double * ssim::user_unif_rand </td>
+          <td class="memname">double* ssim::user_unif_rand </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -1167,7 +1170,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00081">81</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00076">76</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1192,7 +1195,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00069">69</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00067">67</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1216,25 +1219,33 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00069">69</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00067">67</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
-<a id="a6057c592bf37cae518df387f826fab07"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6057c592bf37cae518df387f826fab07">&#9670;&nbsp;</a></span>counter_id</h2>
+<a id="aaadf0ab5ca8eb7c55bdb45b5a28fda91"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaadf0ab5ca8eb7c55bdb45b5a28fda91">&#9670;&nbsp;</a></span>counter_id</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static int ssim::counter_id = 0</td>
+          <td class="memname">int ssim::counter_id = 0</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>C++ wrapper class for the <a class="el" href="a01071.html">RngStream</a> library. set() sets the current <a class="el" href="a00070.html">R</a> random number stream to this stream. This is compliant with being a Boost random number generator. </p>
 
-<p class="definition">Definition at line <a class="el" href="a02924_source.html#l00011">11</a> of file <a class="el" href="a02924_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00053_source.html#l00547">547</a> of file <a class="el" href="a00053_source.html">microsimulation.h</a>.</p>
 
 </div>
 </div>
@@ -1258,7 +1269,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00040">40</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00038">38</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1282,7 +1293,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00040">40</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00038">38</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1306,7 +1317,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00023">23</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00018">18</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1330,7 +1341,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00038">38</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00036">36</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1354,12 +1365,12 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00038">38</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00036">36</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
-<a id="a83a2c52baf1be724a32a3b3f838ee3f7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83a2c52baf1be724a32a3b3f838ee3f7">&#9670;&nbsp;</a></span>default_stream</h2>
+<a id="a440132e78b23a3647933784d4a637a30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a440132e78b23a3647933784d4a637a30">&#9670;&nbsp;</a></span>default_stream</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1368,7 +1379,7 @@ template&lt;class T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="a01015.html">Rng</a> * ssim::default_stream</td>
+          <td class="memname"><a class="el" href="a01015.html">Rng</a>* ssim::default_stream</td>
         </tr>
       </table>
   </td>
@@ -1378,7 +1389,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00023">23</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00018">18</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1402,7 +1413,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00044">44</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00042">42</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1426,7 +1437,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00044">44</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00042">42</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1444,7 +1455,7 @@ template&lt;class T &gt; </div>
 
 <p>beginning of time </p>
 
-<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00083">83</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00079">79</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
 
 </div>
 </div>
@@ -1462,7 +1473,7 @@ template&lt;class T &gt; </div>
 
 <p>no process will be identified by NULL_PROCESSID </p>
 
-<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00063">63</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00062_source.html#l00059">59</a> of file <a class="el" href="a00062_source.html">ssim.h</a>.</p>
 
 </div>
 </div>
@@ -1486,7 +1497,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00081">81</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00079">79</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1510,7 +1521,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00081">81</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00079">79</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1534,7 +1545,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02921_source.html#l00024">24</a> of file <a class="el" href="a02921_source.html">microsimulation.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00023_source.html#l00019">19</a> of file <a class="el" href="a00023_source.html">microsimulation.cc</a>.</p>
 
 </div>
 </div>
@@ -1558,7 +1569,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00042">42</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00040">40</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1582,7 +1593,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00042">42</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00040">40</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1606,7 +1617,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00037">37</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02930_source.html#l00035">35</a> of file <a class="el" href="a02930_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1630,25 +1641,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="a02936_source.html#l00037">37</a> of file <a class="el" href="a02936_source.html">ssim.cc</a>.</p>
-
-</div>
-</div>
-<a id="a2786b3f6b385e40eac6b66d4a09b3af5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2786b3f6b385e40eac6b66d4a09b3af5">&#9670;&nbsp;</a></span>Version</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">const char * ssim::Version = VERSION</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>version identifier for this ssim library </p>
-
-<p class="definition">Definition at line <a class="el" href="a02933_source.html#l00033">33</a> of file <a class="el" href="a02933_source.html">ssim.cc</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a02927_source.html#l00035">35</a> of file <a class="el" href="a02927_source.html">ssim.cc</a>.</p>
 
 </div>
 </div>
@@ -1656,7 +1649,7 @@ template&lt;class T &gt; </div>
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 18 2022 11:09:58 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 12:55:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -9,7 +9,7 @@ Authors@R: c(person("Mark", "Clements", role=c("aut","cre","cph"),email="mark.cl
 	   person("Antonio","Carzaniga", role="cph"),
 	   person("University of Colorado", role="cph"),
 	   person("Pierre", "L'Ecuyer", role="cph"))
-Description: Discrete event simulation using both R and C++ (Karlsson et al 2016; <doi:10.1109/eScience.2016.7870915>). The C++ code is adapted from the SSIM library <https://www.inf.usi.ch/carzaniga/ssim/>, allowing for both event-oriented and process-oriented simulation. The code includes a SummaryReport class for reporting events and costs by age and other covariates. The C++ code is available as a static library for linking to other packages. A priority queue implementation is given in C++ together with an S3 closure and a reference class implementation. Finally, some tools are provided for cost-effectiveness analysis.
+Description: Discrete event simulation using both R and C++ (Karlsson et al 2016; <doi:10.1109/eScience.2016.7870915>). The C++ code is adapted from the SSIM library <https://www.inf.usi.ch/carzaniga/ssim/>, allowing for event-oriented simulation. The code includes a SummaryReport class for reporting events and costs by age and other covariates. The C++ code is available as a static library for linking to other packages. A priority queue implementation is given in C++ together with an S3 closure and a reference class implementation. Finally, some tools are provided for cost-effectiveness analysis.
 License: GPL (>= 3)
 Depends: Rcpp (>= 0.10.2), methods
 Imports: parallel, grDevices, ascii

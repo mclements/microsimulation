@@ -34,7 +34,7 @@ var searchData=
   ['rngstream_318',['RngStream',['../a01071.html',1,'ssim::RngStream'],['../a00955.html',1,'boost::random::rngstream'],['../a00955.html#a5627e98805088c2cae104feaff987d3f',1,'boost::random::rngstream::rngstream()'],['../a01071.html#afd77227d848548fe570b63bd96702ff0',1,'ssim::RngStream::RngStream()']]],
   ['rngstream_2dboost_2ehpp_319',['rngstream-boost.hpp',['../a00032.html',1,'']]],
   ['rngstream_2dexample_2ecpp_320',['rngstream-example.cpp',['../a00035.html',1,'']]],
-  ['rngstream_2ecpp_321',['RngStream.cpp',['../a02927.html',1,'(Global Namespace)'],['../a02930.html',1,'(Global Namespace)']]],
+  ['rngstream_2ecpp_321',['RngStream.cpp',['../a02921.html',1,'(Global Namespace)'],['../a02924.html',1,'(Global Namespace)']]],
   ['rngstream_2eh_322',['RngStream.h',['../a00059.html',1,'']]],
   ['rnormpos_323',['rnormPos',['../a00070.html#ab3a430fb3f11743b39bc935e31763507',1,'R']]],
   ['rpexp_324',['Rpexp',['../a01011.html',1,'ssim::Rpexp'],['../a01011.html#a77227dc1c76d1bb1e64409386226b1c0',1,'ssim::Rpexp::Rpexp()'],['../a01011.html#aaededfcc2fc84ccaeccddc0a124dd21c',1,'ssim::Rpexp::Rpexp(double *hin, double *tin, int nin)']]],

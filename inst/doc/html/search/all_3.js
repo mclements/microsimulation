@@ -38,7 +38,7 @@ var searchData=
   ['costdiscountrate_91',['costDiscountRate',['../a01023.html#a20233fd551c90d23ce44793ca32e534e',1,'ssim::SummaryReport']]],
   ['costmap_92',['CostMap',['../a01023.html#ac92a32ef379439ac4e1a93e808eefc02',1,'ssim::SummaryReport']]],
   ['costreport_93',['CostReport',['../a01027.html',1,'ssim::CostReport&lt; State, Time, Cost &gt;'],['../a01027.html#a6dfb019d5679d2fe39980e773fe37596',1,'ssim::CostReport::CostReport()']]],
-  ['counter_5fid_94',['counter_id',['../a00069.html#a6057c592bf37cae518df387f826fab07',1,'ssim']]],
+  ['counter_5fid_94',['counter_id',['../a00069.html#aaadf0ab5ca8eb7c55bdb45b5a28fda91',1,'ssim']]],
   ['cprocess_95',['cProcess',['../a01003.html',1,'ssim::cProcess'],['../a01003.html#a9b43b5197e57c2b061a373bf80525598',1,'ssim::cProcess::cProcess()']]],
   ['create_5fprocess_96',['create_process',['../a01091.html#a2e5fe88542ebb3d1a45ef8a8906f6f26',1,'ssim::Sim']]],
   ['cure_97',['cure',['../a00068.html#a40acb6755446a2812381d3b97cc5e988',1,'illnessDeath']]],
