@@ -116,4 +116,9 @@ namespace R {
     return scale*exp(log(1.0/(u*S0)-1.0)/shape);
   }
 
+  double rgompertz(double shape, double rate) {
+    double u = 1.0 - R::runif(0.0, 1.0);
+    return (shape < 0.0 && u<exp(rate/shape)) ? R_PosInf :
+      log(1.0 - shape*log(u)/rate)/shape;
+  }
 }
