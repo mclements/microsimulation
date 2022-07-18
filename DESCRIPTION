@@ -1,8 +1,8 @@
 Package: microsimulation
 Type: Package
 Title: Discrete Event Simulation in R and C++, with Tools for Cost-Effectiveness Analysis
-Version: 1.3.7
-Date: 2022-04-04
+Version: 1.4.0
+Date: 2022-07-17
 Authors@R: c(person("Mark", "Clements", role=c("aut","cre","cph"),email="mark.clements@ki.se"),
   	   person("Alexandra", "Jauhiainen", role="aut"),
 	   person("Andreas", "Karlsson", role="aut"),
@@ -14,7 +14,8 @@ License: GPL (>= 3)
 Depends: Rcpp (>= 0.10.2), methods
 Imports: parallel, grDevices, ascii
 Suggests: testthat
-LinkingTo: Rcpp, BH
+LinkingTo: Rcpp
+SystemRequirements: C++11
 LazyData: true
 URL: https://github.com/mclements/microsimulation
 BugReports: https://github.com/mclements/microsimulation/issues
