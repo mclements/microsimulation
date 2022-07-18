@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$a00976.html" title=" " alt="" coords="5,5,108,32"/>
+<area shape="rect" id="node1" href="$a01075.html" title="basic event in the simulation." alt="" coords="5,5,97,32"/>
+<area shape="rect" id="node2" href="$a00999.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,..." alt="" coords="145,5,264,32"/>
 </map>

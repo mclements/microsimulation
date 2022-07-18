@@ -65,10 +65,10 @@ $(function() {
 <div class="title">Microsimulation C++ API Documentation </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>This documentation describes the C++ application programming interface to <a href="http://github.com/mclements/microsimulation/">Microsimulation</a>, a very simple discrete-event sequential simulation library for <a class="el" href="a00079.html">R</a> and C++. The C++ simulations build upon the to <a href="http://www.inf.usi.ch/carzaniga/ssim/">Ssim</a> simulation library. The simulator implemented by <em>ssim</em> executes <em>process objects</em>. Process objects can be programmed either as <em>reactive</em> or <em>sequential</em> processes. A reactive process is programmed by a "callback" function that defines the discrete execution steps of that process, performed in response to an <em>event</em>. A sequential process is programmed as a traditional sequential thread that can explicitly receive <em>events</em>.</p>
+<div class="textblock"><p>This documentation describes the C++ application programming interface to <a href="http://github.com/mclements/microsimulation/">Microsimulation</a>, a very simple discrete-event sequential simulation library for <a class="el" href="a00070.html">R</a> and C++. The C++ simulations build upon the to <a href="http://www.inf.usi.ch/carzaniga/ssim/">Ssim</a> simulation library. The simulator implemented by <em>ssim</em> executes <em>process objects</em>. Process objects can be programmed either as <em>reactive</em> or <em>sequential</em> processes. A reactive process is programmed by a "callback" function that defines the discrete execution steps of that process, performed in response to an <em>event</em>. A sequential process is programmed as a traditional sequential thread that can explicitly receive <em>events</em>.</p>
 <p>The events received by a process represent interactions with other processes, activities scheduled by the process itself, or timeouts. The simulation proceeds by scheduling the responses of each process to the event signalled to that process. During these execution steps, a process may signal events to itself and to other processes, immediately or with a delay, thereby scheduling other execution steps. The simulation terminates when no more actions are scheduled.</p>
-<p>The ssim library consists of essentially three classes defined within the <a class="el" href="a00078.html">ssim</a> namespace: <a class="el" href="a01092.html">Sim</a>, which defines the interface to the simulator, <a class="el" href="a01080.html">Process</a>, which defines the interface and base class for a reactive process, and <a class="el" href="">TProcess</a>, which defines and implements a sequential process. User processes can be programmed by extending either Process or TProcess.</p>
-<p><a class="el" href="a01092.html">Sim</a> offers the basic primitives for signaling <a class="el" href="a01076.html">events</a>, and for creating, starting, and stopping processes. <a class="el" href="a01080.html">Process</a> declares the execution steps scheduled when a process is <a class="el" href="">started</a>, <a class="el" href="a01080.html#a0520b75c3ece365ee44a9bdefecf5418">signaled</a>, and <a class="el" href="a01080.html#aad0b28947c7fcb0be529d66a3909996f">stopped</a>. <a class="el" href="">TProcess</a> defines a process by defining a <a class="el" href="a00035.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a> body. Notice that <a class="el" href="a01092.html">Sim</a> defines a single, static simulation module, rather than a class for simulation objects. (See <a class="el" href="a01092.html">Sim</a> for more detailed comments.)</p>
+<p>The ssim library consists of essentially three classes defined within the <a class="el" href="a00069.html">ssim</a> namespace: <a class="el" href="a01091.html">Sim</a>, which defines the interface to the simulator, <a class="el" href="a01079.html">Process</a>, which defines the interface and base class for a reactive process, and <a class="el" href="">TProcess</a>, which defines and implements a sequential process. User processes can be programmed by extending either Process or TProcess.</p>
+<p><a class="el" href="a01091.html">Sim</a> offers the basic primitives for signaling <a class="el" href="a01075.html">events</a>, and for creating, starting, and stopping processes. <a class="el" href="a01079.html">Process</a> declares the execution steps scheduled when a process is <a class="el" href="">started</a>, <a class="el" href="a01079.html#a0520b75c3ece365ee44a9bdefecf5418">signaled</a>, and <a class="el" href="a01079.html#aad0b28947c7fcb0be529d66a3909996f">stopped</a>. <a class="el" href="">TProcess</a> defines a process by defining a <a class="el" href="a00035.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a> body. Notice that <a class="el" href="a01091.html">Sim</a> defines a single, static simulation module, rather than a class for simulation objects. (See <a class="el" href="a01091.html">Sim</a> for more detailed comments.)</p>
 <p>The execution of the simulation is based on a <em>virtual clock</em> that represents the time in the simulated world. The virtual clock is simply a counter, therefore the time unit is determined by the semantics of the simulated processes. The initial value of the virtual clock is 0. The passage of (virtual) time in the simulated world is explicitly controlled by each process, essentially in three ways:</p>
 <ul>
 <li>
@@ -76,22 +76,22 @@ $(function() {
 <p class="endli"></p>
 </li>
 <li>
-<p class="startli">by signaling events to other processes with a given delay (see <a class="el" href="a01092.html#aef95a1c752e4ebf99e6d8fdaef6491e8">signal_event()</a>);</p>
+<p class="startli">by signaling events to other processes with a given delay (see <a class="el" href="a01091.html#aef95a1c752e4ebf99e6d8fdaef6491e8">signal_event()</a>);</p>
 <p class="endli"></p>
 </li>
 <li>
-<p class="startli">by explicitly declaring the duration of an action or an execution step using the <a class="el" href="a01092.html#aa6dbe3c23756f7bb0f33472db8003e2a">Sim::advance_delay(Time delay)</a> method.</p>
+<p class="startli">by explicitly declaring the duration of an action or an execution step using the <a class="el" href="a01091.html#aa6dbe3c23756f7bb0f33472db8003e2a">Sim::advance_delay(Time delay)</a> method.</p>
 <p class="endli"></p>
 </li>
 </ul>
-<p>The documentation of <a class="el" href="a01092.html#aa6dbe3c23756f7bb0f33472db8003e2a">advance_delay</a> provides an in-depth discussion of the semantics of the simulation in relation to virtual time.</p>
-<p>In addition to the basic Process class, the library provides a utility class <a class="el" href="a01084.html">ProcessWithPId</a>, that automates some common procedures for process implementations. </p>
+<p>The documentation of <a class="el" href="a01091.html#aa6dbe3c23756f7bb0f33472db8003e2a">advance_delay</a> provides an in-depth discussion of the semantics of the simulation in relation to virtual time.</p>
+<p>In addition to the basic Process class, the library provides a utility class <a class="el" href="a01083.html">ProcessWithPId</a>, that automates some common procedures for process implementations. </p>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 17 2021 11:00:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 10:47:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
-<title>Microsimulation API: /home/marcle/src/R/microsimulation/inst/include/microsimulation.h File Reference</title>
+<title>Microsimulation API: /home/marcle/src/R/microsimulation/inst/include/rcpp_table.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -67,80 +67,44 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Typedefs</a> &#124;
-<a href="#func-members">Functions</a> &#124;
-<a href="#var-members">Variables</a>  </div>
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">microsimulation.h File Reference</div>  </div>
+<div class="title">rcpp_table.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;RcppCommon.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;Rcpp.h&gt;</code><br />
+<code>#include &lt;functional&gt;</code><br />
 <code>#include &lt;boost/tuple/tuple.hpp&gt;</code><br />
 <code>#include &lt;boost/tuple/tuple_comparison.hpp&gt;</code><br />
-<code>#include &lt;boost/unordered_map.hpp&gt;</code><br />
-<code>#include &lt;vector&gt;</code><br />
-<code>#include &lt;utility&gt;</code><br />
-<code>#include &lt;map&gt;</code><br />
-<code>#include &lt;string&gt;</code><br />
-<code>#include &lt;Rcpp.h&gt;</code><br />
-<code>#include &lt;R.h&gt;</code><br />
-<code>#include &lt;Rmath.h&gt;</code><br />
-<code>#include &lt;Rdefines.h&gt;</code><br />
-<code>#include &lt;R_ext/Random.h&gt;</code><br />
-<code>#include &lt;<a class="el" href="a00065_source.html">siena/ssim.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="a00062_source.html">RngStream.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="a00059_source.html">rcpp_table.h</a>&gt;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
-<code>#include &lt;functional&gt;</code><br />
 <code>#include &lt;set&gt;</code><br />
-<code>#include &lt;boost/bind.hpp&gt;</code><br />
-<code>#include &lt;boost/functional.hpp&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
-Include dependency graph for microsimulation.h:</div>
+Include dependency graph for rcpp_table.h:</div>
 <div class="dyncontent">
-<div class="center"><img src="a00057.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2microsimulation_8h" alt=""/></div>
-<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2microsimulation_8h" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2microsimulation_8h">
-<area shape="rect" title=" " alt="" coords="988,5,1183,61"/>
-<area shape="rect" title=" " alt="" coords="141,109,267,136"/>
-<area shape="rect" title=" " alt="" coords="5,184,165,211"/>
-<area shape="rect" title=" " alt="" coords="189,184,432,211"/>
-<area shape="rect" title=" " alt="" coords="672,109,864,136"/>
-<area shape="rect" title=" " alt="" coords="889,109,951,136"/>
-<area shape="rect" title=" " alt="" coords="975,109,1035,136"/>
-<area shape="rect" title=" " alt="" coords="1060,109,1111,136"/>
-<area shape="rect" title=" " alt="" coords="1247,184,1305,211"/>
-<area shape="rect" title=" " alt="" coords="456,184,523,211"/>
-<area shape="rect" title=" " alt="" coords="1444,109,1487,136"/>
-<area shape="rect" title=" " alt="" coords="1511,109,1588,136"/>
-<area shape="rect" title=" " alt="" coords="1612,109,1703,136"/>
-<area shape="rect" title=" " alt="" coords="1727,109,1857,136"/>
-<area shape="rect" href="a00065.html" title=" " alt="" coords="1135,109,1239,136"/>
-<area shape="rect" href="a00062.html" title=" " alt="" coords="1313,109,1420,136"/>
-<area shape="rect" href="a00059.html" title=" " alt="" coords="443,109,546,136"/>
-<area shape="rect" title=" " alt="" coords="547,184,634,211"/>
-<area shape="rect" title=" " alt="" coords="659,184,701,211"/>
-<area shape="rect" title=" " alt="" coords="1881,109,1967,136"/>
-<area shape="rect" title=" " alt="" coords="1991,109,2110,136"/>
-<area shape="rect" title=" " alt="" coords="2133,109,2288,136"/>
-<area shape="rect" title=" " alt="" coords="1079,184,1222,211"/>
-<area shape="rect" title=" " alt="" coords="1331,184,1402,211"/>
+<div class="center"><img src="a00057.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2rcpp__table_8h" alt=""/></div>
+<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2rcpp__table_8h" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2rcpp__table_8h">
+<area shape="rect" title=" " alt="" coords="197,5,339,61"/>
+<area shape="rect" title=" " alt="" coords="5,109,69,136"/>
+<area shape="rect" title=" " alt="" coords="94,109,173,136"/>
+<area shape="rect" title=" " alt="" coords="197,109,339,136"/>
+<area shape="rect" title=" " alt="" coords="363,109,581,136"/>
+<area shape="rect" title=" " alt="" coords="605,109,645,136"/>
 </map>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
 <div class="dyncontent">
-<div class="center"><img src="a00058.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2microsimulation_8hdep" alt=""/></div>
-<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2microsimulation_8hdep" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2microsimulation_8hdep">
-<area shape="rect" title=" " alt="" coords="523,5,718,61"/>
-<area shape="rect" href="a00002.html" title=" " alt="" coords="5,109,161,165"/>
-<area shape="rect" href="a00008.html" title=" " alt="" coords="186,109,341,165"/>
-<area shape="rect" href="a00017.html" title=" " alt="" coords="365,109,519,165"/>
-<area shape="rect" href="a00023.html" title=" " alt="" coords="543,109,698,165"/>
-<area shape="rect" href="a00026.html" title=" " alt="" coords="722,109,877,165"/>
-<area shape="rect" href="a00041.html" title=" " alt="" coords="901,109,1055,165"/>
-<area shape="rect" href="a00044.html" title=" " alt="" coords="1080,109,1239,165"/>
+<div class="center"><img src="a00058.png" border="0" usemap="#_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2rcpp__table_8hdep" alt=""/></div>
+<map name="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2rcpp__table_8hdep" id="_2home_2marcle_2src_2_r_2microsimulation_2inst_2include_2rcpp__table_8hdep">
+<area shape="rect" title=" " alt="" coords="577,5,720,61"/>
+<area shape="rect" href="a00053.html" title=" " alt="" coords="562,109,735,165"/>
+<area shape="rect" href="a00002.html" title=" " alt="" coords="5,213,148,269"/>
+<area shape="rect" href="a00008.html" title=" " alt="" coords="173,213,311,269"/>
+<area shape="rect" href="a00017.html" title=" " alt="" coords="335,213,474,269"/>
+<area shape="rect" href="a02929.html" title=" " alt="" coords="498,213,637,269"/>
+<area shape="rect" href="a00026.html" title=" " alt="" coords="661,213,799,269"/>
+<area shape="rect" href="a00041.html" title=" " alt="" coords="823,213,962,269"/>
+<area shape="rect" href="a00044.html" title=" " alt="" coords="987,213,1129,269"/>
+<area shape="rect" href="a02932.html" title=" " alt="" coords="1153,213,1333,269"/>
 </map>
 </div>
 </div>
@@ -148,241 +112,62 @@ This graph shows which files directly or indirectly include this file:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00992.html">boost::tuples::detail::HashValueImpl&lt; Tuple, Index &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01035.html">Interpolate</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00996.html">boost::tuples::detail::HashValueImpl&lt; Tuple, 0 &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01039.html">NumericInterpolate</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01000.html">ssim::cMessage</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01000.html" title="cMessage class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event,...">cMessage</a> class for OMNET++ API compatibility. This provides a heavier message class than Sim::Event, with short 'kind' and std::string 'name' attributes. The events by default are scheduled using <a class="el" href="a01004.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a>, and handled using <a class="el" href="a01004.html#ad89844c8ea2b9f7032191d1747155980">cProcess::handleMessage()</a> (as per OMNET++). NB: <a class="el" href="a01004.html#ac08a0d2fee8a0ca803d524c92c03e5f3">cProcess::scheduleAt()</a> uses simulation time rather than time in state (which is used by <a class="el" href="a01092.html#a732eb86d5dc04434d4ed88cbb62fd155" title="signal an event to the current process immediately">Sim::self_signal_event()</a>).  <a href="a01000.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01043.html">DataFrameSelect&lt; T &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01004.html">ssim::cProcess</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01004.html" title="cProcess class for OMNET++ API compatibility. This provides a default for Process::process_event() th...">cProcess</a> class for OMNET++ API compatibility. This provides a default for <a class="el" href="a01080.html#a0520b75c3ece365ee44a9bdefecf5418" title="action executed in response to an event signaled to this process.">Process::process_event()</a> that calls <a class="el" href="a01004.html#ad89844c8ea2b9f7032191d1747155980">cProcess::handleMessage()</a>. This class also provides <a class="el" href="a01004.html#ac08a0d2fee8a0ca803d524c92c03e5f3">scheduleAt()</a> methods for insert cMessages into the process event queue.  <a href="a01004.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01047.html">null_type</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A table class for lookups. For the case of a single key, this is a small extension to std::map, including the ability to read columns from a DataFrame. Looking up a key which is less than the lowest key value will use the lowest key.  <a href="a01047.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01008.html">ssim::Means</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility class to incrementally add values to calculate the mean, sum, variance and standard deviation. This could be replaced by boost::accumulator.  <a href="a01008.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01051.html">Table&lt; I0, I1, I2, I3, I4, Outcome &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01012.html">ssim::Rpexp</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01012.html" title="Rpexp is a random number generator class for piecewise constant hazards. Given time lower bounds t an...">Rpexp</a> is a random number generator class for piecewise constant hazards. Given time lower bounds t and piecewise constant hazards h, <a class="el" href="a01012.html#a714da39c6da94b1208d4d52ebf61990d">rand()</a> returns a random time. The random number is calculated using the inversion formula. Constructors provided for arrays.  <a href="a01012.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01055.html">Table&lt; I0, I1, I2, I3, Outcome &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01016.html">ssim::Rng</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01059.html">Table&lt; I0, I1, I2, Outcome &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01020.html">ssim::EventReport&lt; State, Event, Time, Utility &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01020.html" title="EventReport class for collecting statistics on person-time, prevalence and numbers of events.">EventReport</a> class for collecting statistics on person-time, prevalence and numbers of events.  <a href="a01020.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01063.html">Table&lt; I0, I1, Outcome &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01024.html">ssim::SummaryReport&lt; State, Event, Time, Utility, Cost &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01024.html" title="SummaryReport class for collecting statistics on person-time, prevalence, events and costs.">SummaryReport</a> class for collecting statistics on person-time, prevalence, events and costs.  <a href="a01024.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01067.html">Table&lt; key_type, mapped_type &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01028.html">ssim::CostReport&lt; State, Time, Cost &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01028.html" title="CostReport class for collecting statistics on costs.">CostReport</a> class for collecting statistics on costs.  <a href="a01028.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a01032.html">ssim::SimpleReport&lt; T &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a01032.html" title="SimpleReport class for collecting data for homogeneous fields of type T with string names.">SimpleReport</a> class for collecting data for homogeneous fields of type T with string names.  <a href="a01032.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
-Namespaces</h2></td></tr>
-<tr class="memitem:a00081"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00081.html">boost</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00086"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00086.html">boost::tuples</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00087"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00087.html">boost::tuples::detail</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00088"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00088.html">Rcpp</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00078"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html">ssim</a></td></tr>
-<tr class="memdesc:a00078"><td class="mdescLeft">&#160;</td><td class="mdescRight">name space for the Siena simulator. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00079"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00079.html">R</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:ab764f9304b41ac0316774d1d2d025dc0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00056.html#ab764f9304b41ac0316774d1d2d025dc0">WithRNG</a>(rng,  expr)&#160;&#160;&#160;(rng-&gt;set(), expr)</td></tr>
-<tr class="memdesc:ab764f9304b41ac0316774d1d2d025dc0"><td class="mdescLeft">&#160;</td><td class="mdescRight">WithRNG is a macro for using the random number generator rng and then evaluating the expression expr.  <a href="a00056.html#ab764f9304b41ac0316774d1d2d025dc0">More...</a><br /></td></tr>
-<tr class="separator:ab764f9304b41ac0316774d1d2d025dc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a9e8c6f728bb5211c8277306ac0021db7"><td class="memItemLeft" align="right" valign="top">typedef Time&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a9e8c6f728bb5211c8277306ac0021db7">ssim::simtime_t</a></td></tr>
-<tr class="memdesc:a9e8c6f728bb5211c8277306ac0021db7"><td class="mdescLeft">&#160;</td><td class="mdescRight">simtime_t typedef for OMNET++ API compatibility  <a href="a00078.html#a9e8c6f728bb5211c8277306ac0021db7">More...</a><br /></td></tr>
-<tr class="separator:a9e8c6f728bb5211c8277306ac0021db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a824c38fa3bc4c8f2ce1a28c0570c5fbb"><td class="memTemplParams" colspan="2">template&lt;class Tuple &gt; </td></tr>
-<tr class="memitem:a824c38fa3bc4c8f2ce1a28c0570c5fbb"><td class="memTemplItemLeft" align="right" valign="top">size_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00086.html#a824c38fa3bc4c8f2ce1a28c0570c5fbb">boost::tuples::hash_value</a> (Tuple const &amp;tuple)</td></tr>
-<tr class="separator:a824c38fa3bc4c8f2ce1a28c0570c5fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbe941ac926cf5f4e5e5bf42a189f9a9"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 &gt; </td></tr>
-<tr class="memitem:abbe941ac926cf5f4e5e5bf42a189f9a9"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#abbe941ac926cf5f4e5e5bf42a189f9a9">Rcpp::wrap</a> (const std::vector&lt; std::pair&lt; T1, T2 &gt; &gt; v)</td></tr>
-<tr class="separator:abbe941ac926cf5f4e5e5bf42a189f9a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2e6f12f183b3154283739314752ca438"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 &gt; </td></tr>
-<tr class="memitem:a2e6f12f183b3154283739314752ca438"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a2e6f12f183b3154283739314752ca438">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2 &gt; &gt; v)</td></tr>
-<tr class="separator:a2e6f12f183b3154283739314752ca438"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a424d2fe2da5c6320a25385741074ad7f"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 &gt; </td></tr>
-<tr class="memitem:a424d2fe2da5c6320a25385741074ad7f"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a424d2fe2da5c6320a25385741074ad7f">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3 &gt; &gt; v)</td></tr>
-<tr class="separator:a424d2fe2da5c6320a25385741074ad7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a61cd2adbdccf5c908a20489f4b6ce1a3"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 &gt; </td></tr>
-<tr class="memitem:a61cd2adbdccf5c908a20489f4b6ce1a3"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a61cd2adbdccf5c908a20489f4b6ce1a3">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4 &gt; &gt; v)</td></tr>
-<tr class="separator:a61cd2adbdccf5c908a20489f4b6ce1a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe2f3cb073336e831c1fd32f18b73fba"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 &gt; </td></tr>
-<tr class="memitem:abe2f3cb073336e831c1fd32f18b73fba"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#abe2f3cb073336e831c1fd32f18b73fba">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4, T5 &gt; &gt; v)</td></tr>
-<tr class="separator:abe2f3cb073336e831c1fd32f18b73fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3aee996e7001d4b0674d20c8fa88097"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 , class T6 &gt; </td></tr>
-<tr class="memitem:ab3aee996e7001d4b0674d20c8fa88097"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#ab3aee996e7001d4b0674d20c8fa88097">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4, T5, T6 &gt; &gt; v)</td></tr>
-<tr class="separator:ab3aee996e7001d4b0674d20c8fa88097"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a223b34de99487b52f3910a15b32b065e"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 , class T6 , class T7 &gt; </td></tr>
-<tr class="memitem:a223b34de99487b52f3910a15b32b065e"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a223b34de99487b52f3910a15b32b065e">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4, T5, T6, T7 &gt; &gt; v)</td></tr>
-<tr class="separator:a223b34de99487b52f3910a15b32b065e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a441f51d9d189a32070f7ea9d632102f8"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 , class T6 , class T7 , class T8 &gt; </td></tr>
-<tr class="memitem:a441f51d9d189a32070f7ea9d632102f8"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a441f51d9d189a32070f7ea9d632102f8">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4, T5, T6, T7, T8 &gt; &gt; v)</td></tr>
-<tr class="separator:a441f51d9d189a32070f7ea9d632102f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe18c8aca34dfb2b7bf6f039fb2ea44a"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 , class T6 , class T7 , class T8 , class T9 &gt; </td></tr>
-<tr class="memitem:abe18c8aca34dfb2b7bf6f039fb2ea44a"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#abe18c8aca34dfb2b7bf6f039fb2ea44a">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4, T5, T6, T7, T8, T9 &gt; &gt; v)</td></tr>
-<tr class="separator:abe18c8aca34dfb2b7bf6f039fb2ea44a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aefe47516d459bce9e4af442e06e8a927"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 , class T6 , class T7 , class T8 , class T9 , class T10 &gt; </td></tr>
-<tr class="memitem:aefe47516d459bce9e4af442e06e8a927"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#aefe47516d459bce9e4af442e06e8a927">Rcpp::wrap</a> (const std::vector&lt; boost::tuple&lt; T1, T2, T3, T4, T5, T6, T7, T8, T9, T10 &gt; &gt; v)</td></tr>
-<tr class="separator:aefe47516d459bce9e4af442e06e8a927"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8492abf48596714cc94b1966086be1c"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 &gt; </td></tr>
-<tr class="memitem:af8492abf48596714cc94b1966086be1c"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#af8492abf48596714cc94b1966086be1c">Rcpp::wrap_map</a> (const std::map&lt; T1, T2 &gt; v)</td></tr>
-<tr class="separator:af8492abf48596714cc94b1966086be1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac57572cbf230c67ea065e5d8aa68c6df"><td class="memTemplParams" colspan="2">template&lt;class T1a , class T1b , class T2 &gt; </td></tr>
-<tr class="memitem:ac57572cbf230c67ea065e5d8aa68c6df"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#ac57572cbf230c67ea065e5d8aa68c6df">Rcpp::wrap_map</a> (const std::map&lt; std::pair&lt; T1a, T1b &gt;, T2 &gt; v, std::string key, std::string name1, std::string name2)</td></tr>
-<tr class="separator:ac57572cbf230c67ea065e5d8aa68c6df"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32f6c6147a3f28f8276f488481192072"><td class="memTemplParams" colspan="2">template&lt;class T1a , class T1b , class T1c , class T2 &gt; </td></tr>
-<tr class="memitem:a32f6c6147a3f28f8276f488481192072"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a32f6c6147a3f28f8276f488481192072">Rcpp::wrap_map</a> (const std::map&lt; boost::tuple&lt; T1a, T1b, T1c &gt;, T2 &gt; v, std::string key, std::string name1, std::string name2, std::string name3)</td></tr>
-<tr class="separator:a32f6c6147a3f28f8276f488481192072"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0517f5d67da0a2c652c42f94708cbed1"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 &gt; </td></tr>
-<tr class="memitem:a0517f5d67da0a2c652c42f94708cbed1"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a0517f5d67da0a2c652c42f94708cbed1">Rcpp::wrap_map</a> (const std::map&lt; std::pair&lt; boost::tuple&lt; T1, T2, T3 &gt;, T4 &gt;, T5 &gt; v, std::string key, std::string name1, std::string name2)</td></tr>
-<tr class="separator:a0517f5d67da0a2c652c42f94708cbed1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a191c74497238a91d8e8f6e5b84d7dc14"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 &gt; </td></tr>
-<tr class="memitem:a191c74497238a91d8e8f6e5b84d7dc14"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a191c74497238a91d8e8f6e5b84d7dc14">Rcpp::wrap_map</a> (const boost::unordered_map&lt; T1, T2 &gt; v)</td></tr>
-<tr class="separator:a191c74497238a91d8e8f6e5b84d7dc14"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4b6c757dde0160f97b95aab6072badc"><td class="memTemplParams" colspan="2">template&lt;class T1a , class T1b , class T2 &gt; </td></tr>
-<tr class="memitem:ae4b6c757dde0160f97b95aab6072badc"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#ae4b6c757dde0160f97b95aab6072badc">Rcpp::wrap_map</a> (const boost::unordered_map&lt; std::pair&lt; T1a, T1b &gt;, T2 &gt; v, std::string key, std::string name1, std::string name2)</td></tr>
-<tr class="separator:ae4b6c757dde0160f97b95aab6072badc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac01f702ce85f27ab3417b6fd4456056"><td class="memTemplParams" colspan="2">template&lt;class T1a , class T1b , class T1c , class T2 &gt; </td></tr>
-<tr class="memitem:aac01f702ce85f27ab3417b6fd4456056"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#aac01f702ce85f27ab3417b6fd4456056">Rcpp::wrap_map</a> (const boost::unordered_map&lt; boost::tuple&lt; T1a, T1b, T1c &gt;, T2 &gt; v, std::string key, std::string name1, std::string name2, std::string name3)</td></tr>
-<tr class="separator:aac01f702ce85f27ab3417b6fd4456056"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca3f6d3512cc8c40f8424a3196cbcc66"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 &gt; </td></tr>
-<tr class="memitem:aca3f6d3512cc8c40f8424a3196cbcc66"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#aca3f6d3512cc8c40f8424a3196cbcc66">Rcpp::wrap_map</a> (const boost::unordered_map&lt; std::pair&lt; boost::tuple&lt; T1, T2, T3 &gt;, T4 &gt;, T5 &gt; v, std::string key, std::string name1, std::string name2)</td></tr>
-<tr class="separator:aca3f6d3512cc8c40f8424a3196cbcc66"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71f4104eb68b6038273581c0532f6510"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a71f4104eb68b6038273581c0532f6510">ssim::cMessagePred</a> (const <a class="el" href="a01076.html">ssim::Event</a> *e, boost::function&lt; bool(const cMessage *msg)&gt; pred)</td></tr>
-<tr class="separator:a71f4104eb68b6038273581c0532f6510"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ef35b49b12877b0197cecf0f0153993"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a4ef35b49b12877b0197cecf0f0153993">ssim::cMessageNamePred</a> (const <a class="el" href="a01076.html">ssim::Event</a> *e, const string s)</td></tr>
-<tr class="separator:a4ef35b49b12877b0197cecf0f0153993"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1147310fcfd832b0e699ca136f7b3691"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a1147310fcfd832b0e699ca136f7b3691">ssim::cMessageKindPred</a> (const <a class="el" href="a01076.html">ssim::Event</a> *e, const short k)</td></tr>
-<tr class="separator:a1147310fcfd832b0e699ca136f7b3691"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a02ac50a56e6e544509d8324feb84bc9d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a02ac50a56e6e544509d8324feb84bc9d">ssim::RemoveKind</a> (short kind)</td></tr>
-<tr class="memdesc:a02ac50a56e6e544509d8324feb84bc9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">RemoveKind is a function to remove messages with the given kind from the queue (NB: void)  <a href="a00078.html#a02ac50a56e6e544509d8324feb84bc9d">More...</a><br /></td></tr>
-<tr class="separator:a02ac50a56e6e544509d8324feb84bc9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a64ef5a9b487e7250188629e859b4df5e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a64ef5a9b487e7250188629e859b4df5e">ssim::RemoveName</a> (string name)</td></tr>
-<tr class="memdesc:a64ef5a9b487e7250188629e859b4df5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">RemoveName is a function to remove messages with the given name from the queue (NB: void)  <a href="a00078.html#a64ef5a9b487e7250188629e859b4df5e">More...</a><br /></td></tr>
-<tr class="separator:a64ef5a9b487e7250188629e859b4df5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af2e3f218e7c225a02d8a41a3e58d3134"><td class="memItemLeft" align="right" valign="top">Time&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#af2e3f218e7c225a02d8a41a3e58d3134">ssim::simTime</a> ()</td></tr>
-<tr class="memdesc:af2e3f218e7c225a02d8a41a3e58d3134"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a00078.html#af2e3f218e7c225a02d8a41a3e58d3134" title="simTime() function for OMNET++ API compatibility">simTime()</a> function for OMNET++ API compatibility  <a href="a00078.html#af2e3f218e7c225a02d8a41a3e58d3134">More...</a><br /></td></tr>
-<tr class="separator:af2e3f218e7c225a02d8a41a3e58d3134"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f5da079da642a3ab4bc28f4f307a9d1"><td class="memItemLeft" align="right" valign="top">Time&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a4f5da079da642a3ab4bc28f4f307a9d1">ssim::now</a> ()</td></tr>
-<tr class="memdesc:a4f5da079da642a3ab4bc28f4f307a9d1"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="a00078.html#a4f5da079da642a3ab4bc28f4f307a9d1" title="now() function for compatibility with C++SIM">now()</a> function for compatibility with C++SIM  <a href="a00078.html#a4f5da079da642a3ab4bc28f4f307a9d1">More...</a><br /></td></tr>
-<tr class="separator:a4f5da079da642a3ab4bc28f4f307a9d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5335eb8e11374534f54f91af6889c8f"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#aa5335eb8e11374534f54f91af6889c8f">ssim::rweibullHR</a> (double shape, double scale, double hr)</td></tr>
-<tr class="memdesc:aa5335eb8e11374534f54f91af6889c8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Random Weibull distribution for a given shape, scale and hazard ratio.  <a href="a00078.html#aa5335eb8e11374534f54f91af6889c8f">More...</a><br /></td></tr>
-<tr class="separator:aa5335eb8e11374534f54f91af6889c8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65d4b320e17111259724742cbb8bd004"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a65d4b320e17111259724742cbb8bd004">ssim::r_create_current_stream</a> ()</td></tr>
-<tr class="memdesc:a65d4b320e17111259724742cbb8bd004"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to create the current_stream. Used when initialising the microsimulation package in <a class="el" href="a00079.html">R</a>.  <a href="a00078.html#a65d4b320e17111259724742cbb8bd004">More...</a><br /></td></tr>
-<tr class="separator:a65d4b320e17111259724742cbb8bd004"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5da6fd167a9f5b9e5ec4666d24c3771"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#af5da6fd167a9f5b9e5ec4666d24c3771">ssim::r_remove_current_stream</a> ()</td></tr>
-<tr class="memdesc:af5da6fd167a9f5b9e5ec4666d24c3771"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to remove the current_stream. Used when finalising the microsimulation package in <a class="el" href="a00079.html">R</a>.  <a href="a00078.html#af5da6fd167a9f5b9e5ec4666d24c3771">More...</a><br /></td></tr>
-<tr class="separator:af5da6fd167a9f5b9e5ec4666d24c3771"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28ae2633f74ef7f8ed4ffd0552c2ae19"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a28ae2633f74ef7f8ed4ffd0552c2ae19">ssim::r_set_user_random_seed</a> (double *seed)</td></tr>
-<tr class="memdesc:a28ae2633f74ef7f8ed4ffd0552c2ae19"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to set the user random seed for the simulation.  <a href="a00078.html#a28ae2633f74ef7f8ed4ffd0552c2ae19">More...</a><br /></td></tr>
-<tr class="separator:a28ae2633f74ef7f8ed4ffd0552c2ae19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac54d5e04a1e55217c6706f84e20f0af1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#ac54d5e04a1e55217c6706f84e20f0af1">ssim::r_get_user_random_seed</a> (double *seed)</td></tr>
-<tr class="memdesc:ac54d5e04a1e55217c6706f84e20f0af1"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to set the user random seed for the simulation.  <a href="a00078.html#ac54d5e04a1e55217c6706f84e20f0af1">More...</a><br /></td></tr>
-<tr class="separator:ac54d5e04a1e55217c6706f84e20f0af1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f238ca839eccc289bfbc52c65645a3e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a6f238ca839eccc289bfbc52c65645a3e">ssim::r_next_rng_substream</a> ()</td></tr>
-<tr class="memdesc:a6f238ca839eccc289bfbc52c65645a3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to move to the next user random stream for the simulation.  <a href="a00078.html#a6f238ca839eccc289bfbc52c65645a3e">More...</a><br /></td></tr>
-<tr class="separator:a6f238ca839eccc289bfbc52c65645a3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d41a0abcee760467e36c4bf7b4f1e92"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a6d41a0abcee760467e36c4bf7b4f1e92">ssim::r_rng_advance_substream</a> (double *seed, int *n)</td></tr>
-<tr class="memdesc:a6d41a0abcee760467e36c4bf7b4f1e92"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility function to advance the random sub-stream n steps for a specified seed.  <a href="a00078.html#a6d41a0abcee760467e36c4bf7b4f1e92">More...</a><br /></td></tr>
-<tr class="separator:a6d41a0abcee760467e36c4bf7b4f1e92"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a92ea4368d680bc6f17e71e508139b720"><td class="memItemLeft" align="right" valign="top"><a class="el" href="a00011.html#a9400179c220f87a26543a8fce804ab03">void</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a92ea4368d680bc6f17e71e508139b720">ssim::test_rstream2</a> (double *x)</td></tr>
-<tr class="memdesc:a92ea4368d680bc6f17e71e508139b720"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple test of the random streams (with a stupid name)  <a href="a00078.html#a92ea4368d680bc6f17e71e508139b720">More...</a><br /></td></tr>
-<tr class="separator:a92ea4368d680bc6f17e71e508139b720"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a440a324691afecd012af46363a59b135"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#a440a324691afecd012af46363a59b135">ssim::discountedInterval</a> (double start, double end, double discountRate)</td></tr>
-<tr class="memdesc:a440a324691afecd012af46363a59b135"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple function to calculate the integral between the start and end times for (1+kappa)^(-u), where kappa is the discountRate (e.g. 0.03)  <a href="a00078.html#a440a324691afecd012af46363a59b135">More...</a><br /></td></tr>
-<tr class="separator:a440a324691afecd012af46363a59b135"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae340d82173ad44dfe8cebe82d8e686cd"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
-<tr class="memitem:ae340d82173ad44dfe8cebe82d8e686cd"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; std::vector&lt; T &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00078.html#ae340d82173ad44dfe8cebe82d8e686cd">ssim::transpose</a> (const std::vector&lt; std::vector&lt; T &gt; &gt; data)</td></tr>
-<tr class="memdesc:ae340d82173ad44dfe8cebe82d8e686cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to transpose a vector of vectors. This assumes that all inner vectors have the same size and allocates space for the complete result in advance. From <a href="http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors">http://stackoverflow.com/questions/6009782/how-to-pivot-a-vector-of-vectors</a>.  <a href="a00078.html#ae340d82173ad44dfe8cebe82d8e686cd">More...</a><br /></td></tr>
-<tr class="separator:ae340d82173ad44dfe8cebe82d8e686cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7f6030983b7f9a542d08a7ae5e3e0135"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 &gt; </td></tr>
-<tr class="memitem:a7f6030983b7f9a542d08a7ae5e3e0135"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a7f6030983b7f9a542d08a7ae5e3e0135">Rcpp::wrap</a> (const vector&lt; pair&lt; T1, T2 &gt; &gt; v)</td></tr>
-<tr class="separator:a7f6030983b7f9a542d08a7ae5e3e0135"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57b6df4424789c7919dce3ffcff41f8e"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 &gt; </td></tr>
-<tr class="memitem:a57b6df4424789c7919dce3ffcff41f8e"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a57b6df4424789c7919dce3ffcff41f8e">Rcpp::wrap_map</a> (const std::map&lt; std::pair&lt; boost::tuple&lt; T1, T2, T3 &gt;, T4 &gt;, T5 &gt; v, std::string name1, std::string name2)</td></tr>
-<tr class="separator:a57b6df4424789c7919dce3ffcff41f8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2fe0c3314121f8dd30467064e925ed32"><td class="memTemplParams" colspan="2">template&lt;class T1 , class T2 , class T3 , class T4 , class T5 &gt; </td></tr>
-<tr class="memitem:a2fe0c3314121f8dd30467064e925ed32"><td class="memTemplItemLeft" align="right" valign="top">SEXP&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00088.html#a2fe0c3314121f8dd30467064e925ed32">Rcpp::wrap_map</a> (const boost::unordered_map&lt; std::pair&lt; boost::tuple&lt; T1, T2, T3 &gt;, T4 &gt;, T5 &gt; ov, std::string name1, std::string name2)</td></tr>
-<tr class="separator:a2fe0c3314121f8dd30467064e925ed32"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3a430fb3f11743b39bc935e31763507"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00079.html#ab3a430fb3f11743b39bc935e31763507">R::rnormPos</a> (double mean, double sd)</td></tr>
-<tr class="memdesc:ab3a430fb3f11743b39bc935e31763507"><td class="mdescLeft">&#160;</td><td class="mdescRight">rnorm function constrained to be positive. This uses brute-force re-sampling rather than conditioning on the distribution function.  <a href="a00079.html#ab3a430fb3f11743b39bc935e31763507">More...</a><br /></td></tr>
-<tr class="separator:ab3a430fb3f11743b39bc935e31763507"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dab5b76e1f928f4060a98d555be8093"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00079.html#a0dab5b76e1f928f4060a98d555be8093">R::rllogis</a> (double shape, double scale)</td></tr>
-<tr class="memdesc:a0dab5b76e1f928f4060a98d555be8093"><td class="mdescLeft">&#160;</td><td class="mdescRight">rllogis function for a random covariate from a log-logistic distribution with shape and scale. S(t) = 1/(1+(t/scale)^shape).  <a href="a00079.html#a0dab5b76e1f928f4060a98d555be8093">More...</a><br /></td></tr>
-<tr class="separator:a0dab5b76e1f928f4060a98d555be8093"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af4a656a812736309337c13d792feb2b6"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00079.html#af4a656a812736309337c13d792feb2b6">R::rllogis_trunc</a> (double shape, double scale, double left)</td></tr>
-<tr class="memdesc:af4a656a812736309337c13d792feb2b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">rllogis_trunc function for a random covariate from a log-logistic distribution with shape and scale with minimum time left. S(t|t&gt;x)=S(t)/S(x) where S(t)=1/(1+(t/scale)^shape).  <a href="a00079.html#af4a656a812736309337c13d792feb2b6">More...</a><br /></td></tr>
-<tr class="separator:af4a656a812736309337c13d792feb2b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
-Variables</h2></td></tr>
-<tr class="memitem:aaadf0ab5ca8eb7c55bdb45b5a28fda91"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="a00078.html#aaadf0ab5ca8eb7c55bdb45b5a28fda91">ssim::counter_id</a> = 0</td></tr>
-<tr class="memdesc:aaadf0ab5ca8eb7c55bdb45b5a28fda91"><td class="mdescLeft">&#160;</td><td class="mdescRight">C++ wrapper class for the <a class="el" href="a01072.html">RngStream</a> library. set() sets the current <a class="el" href="a00079.html">R</a> random number stream to this stream. This is compliant with being a Boost random number generator.  <a href="a00078.html#aaadf0ab5ca8eb7c55bdb45b5a28fda91">More...</a><br /></td></tr>
-<tr class="separator:aaadf0ab5ca8eb7c55bdb45b5a28fda91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace31402f2a04dc9f7a5532066147ffa0"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:ace31402f2a04dc9f7a5532066147ffa0"><td class="memTemplItemLeft" align="right" valign="top">T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="a00056.html#ace31402f2a04dc9f7a5532066147ffa0">set_lower_bound</a> (set&lt; T, greater&lt; T &gt; &gt; aset, T value)</td></tr>
+<tr class="separator:ace31402f2a04dc9f7a5532066147ffa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><dl class="section author"><dt>Author</dt><dd>Mark Clements <a href="#" onclick="location.href='mai'+'lto:'+'mar'+'k.'+'cle'+'me'+'nts'+'@k'+'i.s'+'e'; return false;">mark.<span style="display: none;">.nosp@m.</span>clem<span style="display: none;">.nosp@m.</span>ents@<span style="display: none;">.nosp@m.</span>ki.s<span style="display: none;">.nosp@m.</span>e</a> </dd></dl>
-<dl class="section version"><dt>Version</dt><dd>1.0</dd></dl>
-<h1><a class="anchor" id="LICENSE"></a>
-LICENSE</h1>
-<p>This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.</p>
-<p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details at <a href="http://www.gnu.org/copyleft/gpl.html">http://www.gnu.org/copyleft/gpl.html</a></p>
-<h1><a class="anchor" id="DESCRIPTION"></a>
-DESCRIPTION</h1>
-<p>cMessage and cProcess classes, providing some compatability between SSIM and the OMNET++ API. This is specialised for use as an <a class="el" href="a00079.html">R</a> package.</p>
-<p>It also provides several utility classes: Means for statistical collection and Rpexp for piecewise constant exponential random number generation. It also provides a utility function <a class="el" href="a00078.html#aa5335eb8e11374534f54f91af6889c8f" title="Random Weibull distribution for a given shape, scale and hazard ratio.">rweibullHR()</a>. </p>
-
-<p class="definition">Definition in file <a class="el" href="a00056_source.html">microsimulation.h</a>.</p>
-</div><h2 class="groupheader">Macro Definition Documentation</h2>
-<a id="ab764f9304b41ac0316774d1d2d025dc0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab764f9304b41ac0316774d1d2d025dc0">&#9670;&nbsp;</a></span>WithRNG</h2>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="ace31402f2a04dc9f7a5532066147ffa0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace31402f2a04dc9f7a5532066147ffa0">&#9670;&nbsp;</a></span>set_lower_bound()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">#define WithRNG</td>
+          <td class="memname">T set_lower_bound </td>
           <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">rng, </td>
+          <td class="paramtype">set&lt; T, greater&lt; T &gt; &gt;&#160;</td>
+          <td class="paramname"><em>aset</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">expr&#160;</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
           <td>)</td>
-          <td></td><td>&#160;&#160;&#160;(rng-&gt;set(), expr)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>WithRNG is a macro for using the random number generator rng and then evaluating the expression expr. </p>
-
-<p class="definition">Definition at line <a class="el" href="a00056_source.html#l00180">180</a> of file <a class="el" href="a00056_source.html">microsimulation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="a00056_source.html#l00116">116</a> of file <a class="el" href="a00056_source.html">rcpp_table.h</a>.</p>
 
 </div>
 </div>
@@ -390,7 +175,7 @@ DESCRIPTION</h1>
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 17 2021 11:00:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 10:47:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

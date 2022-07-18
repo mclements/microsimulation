@@ -71,26 +71,26 @@ $(function() {
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &lt;iostream&gt;</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
 <div class="line"><a name="l00006"></a><span class="lineno"><a class="line" href="a00035.html#ae66f6b31b5ad750f1fe042a706a4e3d4">    6</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="a00035.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a>() {</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;  <a class="code" href="a00964.html">boost::rngstream</a> gen, gen2;</div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;  <a class="code" href="a00955.html">boost::rngstream</a> gen, gen2;</div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;  boost::uniform_01&lt;&gt; dist;</div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;  std::cout &lt;&lt; gen2 &lt;&lt; std::endl;</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;  std::cout &lt;&lt; <span class="stringliteral">&quot;Expected: 0.127011; observed: &quot;</span> &lt;&lt; dist(gen) &lt;&lt; std::endl;</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;  std::cout &lt;&lt; <span class="stringliteral">&quot;Expected: 0.759582; observed: &quot;</span> &lt;&lt; dist(gen2) &lt;&lt; std::endl;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;  gen.<a class="code" href="a01072.html#a64a7e00b2874826622e4b2fc3503e177">ResetNextSubstream</a>();</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;  gen.<a class="code" href="a01071.html#a64a7e00b2874826622e4b2fc3503e177">ResetNextSubstream</a>();</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;  std::cout &lt;&lt; <span class="stringliteral">&quot;Expected: 0.079399; observed: &quot;</span> &lt;&lt; dist(gen) &lt;&lt; std::endl;</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;  std::cout &lt;&lt; gen &lt;&lt; std::endl;</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;  <span class="keywordflow">return</span> 0;</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;}</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// R -q -e &quot;require(parallel); base=c(407L,rep(12345L,6)); .Random.seed=base; runif(2); .Random.seed=nextRNGStream(base); runif(2); .Random.seed=nextRNGSubStream(base); runif(2)&quot;</span></div>
 </div><!-- fragment --></div><!-- contents -->
+<div class="ttc" id="aa00955_html"><div class="ttname"><a href="a00955.html">boost::random::rngstream</a></div><div class="ttdef"><b>Definition:</b> <a href="a00032_source.html#l00057">rngstream-boost.hpp:57</a></div></div>
 <div class="ttc" id="aa00032_html"><div class="ttname"><a href="a00032.html">rngstream-boost.hpp</a></div></div>
+<div class="ttc" id="aa01071_html_a64a7e00b2874826622e4b2fc3503e177"><div class="ttname"><a href="a01071.html#a64a7e00b2874826622e4b2fc3503e177">ssim::RngStream::ResetNextSubstream</a></div><div class="ttdeci">void ResetNextSubstream()</div><div class="ttdef"><b>Definition:</b> <a href="a02935_source.html#l00381">RngStream.cpp:381</a></div></div>
 <div class="ttc" id="aa00035_html_ae66f6b31b5ad750f1fe042a706a4e3d4"><div class="ttname"><a href="a00035.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a></div><div class="ttdeci">int main()</div><div class="ttdef"><b>Definition:</b> <a href="a00035_source.html#l00006">rngstream-example.cpp:6</a></div></div>
-<div class="ttc" id="aa00964_html"><div class="ttname"><a href="a00964.html">boost::random::rngstream</a></div><div class="ttdef"><b>Definition:</b> <a href="a00032_source.html#l00057">rngstream-boost.hpp:57</a></div></div>
-<div class="ttc" id="aa01072_html_a64a7e00b2874826622e4b2fc3503e177"><div class="ttname"><a href="a01072.html#a64a7e00b2874826622e4b2fc3503e177">ssim::RngStream::ResetNextSubstream</a></div><div class="ttdeci">void ResetNextSubstream()</div><div class="ttdef"><b>Definition:</b> <a href="a00038_source.html#l00381">RngStream.cpp:381</a></div></div>
 <!-- HTML footer for doxygen 1.8.6-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 17 2021 11:00:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 18 2022 10:47:41 for Microsimulation API by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
