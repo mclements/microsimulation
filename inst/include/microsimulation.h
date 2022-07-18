@@ -236,33 +236,57 @@ public:
   // this does NOT include schedulePriority
 };
 
-  inline std::function<bool(const Event * e)>
-  cMessagePred(std::function<bool(const cMessage * msg)> pred) {
-    return [pred](const Event * e) {
-  	     const cMessage * msg = dynamic_cast<const cMessage *>(e);
-  	     return (msg != 0 && pred(msg));
-  	   };
+/**
+   @brief Cancel is a function to cancel messages who satisfy a predicate
+*/
+  inline void
+  Cancel(std::function<bool(const cMessage * msg)> pred) {
+    return Sim::ignore_event([pred](const Event * e) {
+			       const cMessage * msg = dynamic_cast<const cMessage *>(e);
+			       return (msg != 0 && pred(msg));
+			     });
   }
 
 /**
-   @brief RemoveKind is a function to remove messages with the given kind from the queue (NB: void)
+   @brief RemoveKind is a function to remove messages with the given kind from the queue
 */
   inline void RemoveKind(short kind) {
-    Sim::ignore_event(cMessagePred([kind](const cMessage * msg) {
-				      return msg->kind == kind;
-				    }));
+    Cancel([kind](const cMessage * msg) {
+	     return msg->kind == kind;
+	   });
+  }
+
+/**
+   @brief CancelKind is a function to remove messages with the given kind from the queue
+*/
+  inline void CancelKind(short kind) {
+    Cancel([kind](const cMessage * msg) {
+	     return msg->kind == kind;
+	   });
   }
 
  /**
-    @brief RemoveName is a function to remove messages with the given name from the queue (NB: void)
+    @brief RemoveName is a function to remove messages with the given name from the queue
  */
   inline void RemoveName(string name) {
-    Sim::ignore_event(cMessagePred([name](const cMessage * msg) {
-				      return msg->name == name;
-				    }));
+    Cancel([name](const cMessage * msg) {
+	     return msg->name == name;
+	   });
   }
-  inline void CancelEvents() {
-    Sim::ignore_event([](const Event * e) { return true; });
+ /**
+    @brief CancelName is a function to remove messages with the given name from the queue
+ */
+  inline void CancelName(string name) {
+    Cancel([name](const cMessage * msg) {
+	     return msg->name == name;
+	   });
+  }
+
+   /**
+      @brief CanceEvents is a function to remove messages from the queue
+   */
+inline void CancelEvents() {
+    Cancel([](const cMessage * msg) { return true; });
   }
 
 
@@ -315,26 +339,26 @@ public:
   // see also `void stop()`
   void initialize() { init(); previousEventTime = startTime; }
   Time startTime, previousEventTime;
-  void remove(std::function<bool(const cMessage * msg)> pred) {
-    Sim::ignore_event(cMessagePred([pred,this](const cMessage * msg) {
-				      return pred(msg) &&
-				       msg->process_id == this->pid();
-				   }));
+  void cancel(std::function<bool(const cMessage * msg)> pred) {
+    Cancel([pred,this](const cMessage * msg) {
+	     return pred(msg) &&
+	       msg->process_id == this->pid();
+	   });
   }
-  void remove_kind(short kind) {
-    remove([kind,this](const cMessage * msg) {
+  void cancel_kind(short kind) {
+    cancel([kind,this](const cMessage * msg) {
 	     return msg->kind == kind &&
 	       msg->process_id == this->pid();
 	   });
   }
-  void remove_name(string name) {
-    remove([name,this](const cMessage * msg) {
+  void cancel_name(string name) {
+    cancel([name,this](const cMessage * msg) {
 	     return msg->name == name &&
 	       msg->process_id == this->pid();
 	   });
   }
   void cancel_events() {
-    remove([this](const cMessage * msg) {
+    cancel([this](const cMessage * msg) {
 	     return msg->process_id == this->pid();
 	   });
   }
@@ -342,14 +366,6 @@ public:
     return previousEventTime;
   }
 };
-
-
-  inline void cancel_events() {
-    Sim::ignore_event(cMessagePred([](const cMessage * msg) {
-				      return true;
-				    }));
-  }
-
 
 /**
    @brief simtime_t typedef for OMNET++ API compatibility
