@@ -1,8 +1,0 @@
-var searchData=
-[
-  ['table_677',['Table',['../a01051.html#a6d72eb2c9056931036cebc7abc75595b',1,'Table::Table()'],['../a01051.html#aa4c72b237fbb6ca9a468ec7db924c6ad',1,'Table::Table(const DataFrame &amp;df, string s0, string s1, string s2, string s3, string s4, string s5)'],['../a01055.html#acaae7d439791346398fd9797b8196a51',1,'Table&lt; I0, I1, I2, I3, Outcome &gt;::Table()'],['../a01055.html#a2b2d7b91a8a7aedb01d719ce22849fef',1,'Table&lt; I0, I1, I2, I3, Outcome &gt;::Table(const DataFrame &amp;df, string s0, string s1, string s2, string s3, string s4)'],['../a01059.html#aea872d18da0264f49215b63b114eea71',1,'Table&lt; I0, I1, I2, Outcome &gt;::Table()'],['../a01059.html#a8b5795288c26de741fec8ff5cfc7a3e6',1,'Table&lt; I0, I1, I2, Outcome &gt;::Table(const DataFrame &amp;df, string s0, string s1, string s2, string s3)'],['../a01063.html#ae05e09d19d142f209bcec8349fb1db14',1,'Table&lt; I0, I1, Outcome &gt;::Table()'],['../a01063.html#a2090fae4db4a51c431f48c8cbb16ed2f',1,'Table&lt; I0, I1, Outcome &gt;::Table(const DataFrame &amp;df, string s0, string s1, string s2)'],['../a01067.html#a13348e95174aa63493f2cbdb1cc6b70c',1,'Table&lt; key_type, mapped_type &gt;::Table()'],['../a01067.html#a4be4e6890c8b1dfe9cf809b81a3690a4',1,'Table&lt; key_type, mapped_type &gt;::Table(const DataFrame &amp;df, string s0, string s1)']]],
-  ['test_5frstream2_678',['test_rstream2',['../a00069.html#a92ea4368d680bc6f17e71e508139b720',1,'ssim']]],
-  ['testrng_679',['testRng',['../a00005.html#a20690784c1f9b20f02926c9aa59b0e8b',1,'person-r-20121231.cc']]],
-  ['this_5fprocess_680',['this_process',['../a01091.html#acb256f555eb2b0ca93a542bcb495fb8b',1,'ssim::Sim']]],
-  ['transpose_681',['transpose',['../a00069.html#ae340d82173ad44dfe8cebe82d8e686cd',1,'ssim']]]
-];
