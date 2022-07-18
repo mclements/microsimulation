@@ -105,8 +105,7 @@ const Time		INIT_TIME = 0;
  *
  *  @see Sim::signal_event(),
  *       Sim::self_signal_event(),
- *       Process::process_event(const Event*),
- *       TProcess::wait_for_event(Time).
+ *       Process::process_event(const Event*)
  **/
 class Event {
  public:
@@ -471,41 +470,15 @@ public:
      *  \endcode
      *
      *  Notice that a simulation process correspond to a single
-     *  logical thread.  This means that Process::process_event() and
-     *  TProcess::main() are intended to process one event at a time.
+     *  logical thread.  This means that Process::process_event() is
+     *  intended to process one event at a time.
      *  Because of this chosen semantics, the use of
      *  advance_delay(Time) may result in the current process missing
      *  some events.  Referring to the above example, the overall
      *  duration of the execution step defined by
      *  SimpleProcess::process_event() is 15 time units.  Therefore, a
      *  SimpleProcess executing its process_event at time X would miss
-     *  every event scheduled for it between time X and X + 15.  A
-     *  semantically identical situation would occur for a sequential
-     *  process.  For example:
-     *
-     *  \code
-     *  class SomeTProcess : public TProcess {
-     *      //...
-     *      virtual void main() {
-     *          // ...
-     *          const Event * e;
-     *          e = wait_for_event();
-     *
-     *          // now suppose wait_for_event() returns a signal at time X
-     *          // and we do something with this signal...
-     *          // and this "something" costs us 20 time units
-     *          advance_delay(20);
-     *
-     *          // now, our virtual clock is X + 20, so we have missed 
-     *          // all the signals between X and X + 20
-     *          e = wait_for_signal();
-     *      }
-     *  };
-     *  \endcode
-     *
-     *  In this example, the process misses all the events signaled
-     *  within 20 time units after the first event.  This is because
-     *  the process is busy working on the first event.
+     *  every event scheduled for it between time X and X + 15.
      *
      *  The application may program a handler for missed events by
      *  programming and registering a SimErrorHandler object.
@@ -523,8 +496,7 @@ public:
      *  Process id of the process that is currently scheduled by the
      *  simulation.  This method can be used by a Process in \link
      *  Process::process_event(const Event *e) process_event\endlink
-     *  or by a TProcess in \link TProcess::main() main\endlink to
-     *  figure out its own process id.
+     *  to figure out its own process id.
      *
      *  Example:
      *  \code
