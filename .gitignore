@@ -16,3 +16,13 @@ microsimulation.Rcheck/
 inst/lib/libmicrosimulation.a
 *.dll
 src/R.h
+auto
+NAMESPACE_old
+README.4.vrb
+README.5.vrb
+README.aux
+README.bbl
+README.blg
+README.log
+README.out
+README.tex
