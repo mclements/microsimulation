@@ -42,7 +42,7 @@ void SimplePerson::handleMessage(const cMessage* msg) {
 
   case toOtherDeath: 
   case toCancerDeath: 
-    Sim::stop_simulation();
+    Sim::stop_process();
     break;
     
   case toCancer:

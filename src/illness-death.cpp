@@ -52,7 +52,7 @@ namespace illnessDeath {
     case toOtherDeath: 
     case toCancerDeath: 
       // reporting already completed: stop the simulation
-      Sim::stop_simulation();
+      Sim::stop_process();
       break;
       
     case toCancer:

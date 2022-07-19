@@ -50,7 +50,7 @@ namespace {
 
     case toOtherDeath:
     case toCancerDeath:
-      ssim::Sim::stop_simulation();
+      ssim::Sim::stop_process();
       break;
     
     case toCancer:
