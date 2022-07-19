@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-07-19 Tue 17:23 -->
+<!-- 2022-07-19 Tue 18:32 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Examples for the microsimulation package</title>
@@ -69,32 +69,33 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org772c63a">1. Introduction</a></li>
-<li><a href="#org9e391a8">2. Tick-tock model</a>
+<li><a href="#orgf84711c">1. Introduction</a></li>
+<li><a href="#org5149120">2. Tick-tock model</a>
 <ul>
-<li><a href="#org48fa890">2.1. R version</a></li>
-<li><a href="#orga997f4b">2.2. C++ version</a></li>
+<li><a href="#org2b17e24">2.1. R version</a></li>
+<li><a href="#orge5d8889">2.2. C++ version</a></li>
 </ul>
 </li>
-<li><a href="#org710f56e">3. Illness-death model</a>
+<li><a href="#orga95edeb">3. Illness-death model</a>
 <ul>
-<li><a href="#org96fa03a">3.1. Using R</a></li>
-<li><a href="#orga0053bd">3.2. Using C++</a></li>
+<li><a href="#org4f12808">3.1. R version</a></li>
+<li><a href="#orgaf3c9ff">3.2. C++ version</a></li>
 </ul>
 </li>
-<li><a href="#org1fafbf6">4. Reporting using a data-frame</a>
+<li><a href="#orgc92a565">4. Reporting using a data-frame</a>
 <ul>
-<li><a href="#orgeba8728">4.1. R</a></li>
-<li><a href="#org0b19d91">4.2. C++</a></li>
-<li><a href="#org7ab8641">4.3. C++ using an EventReport</a></li>
+<li><a href="#orgf298976">4.1. R version</a></li>
+<li><a href="#org4f18405">4.2. C++ version</a></li>
+<li><a href="#orgcbc2296">4.3. Benchmark comparing R and C++</a></li>
+<li><a href="#org4d4af72">4.4. C++ using an EventReport</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org772c63a" class="outline-2">
-<h2 id="org772c63a"><span class="section-number-2">1</span> Introduction</h2>
+<div id="outline-container-orgf84711c" class="outline-2">
+<h2 id="orgf84711c"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
 <li>Some examples in both R and C++.</li>
@@ -102,12 +103,19 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org9e391a8" class="outline-2">
-<h2 id="org9e391a8"><span class="section-number-2">2</span> Tick-tock model</h2>
+<div id="outline-container-org5149120" class="outline-2">
+<h2 id="org5149120"><span class="section-number-2">2</span> Tick-tock model</h2>
 <div class="outline-text-2" id="text-2">
+
+<div class="figure">
+<p><img src="tick_tock.png" alt="tick_tock.png" />
+</p>
 </div>
-<div id="outline-container-org48fa890" class="outline-3">
-<h3 id="org48fa890"><span class="section-number-3">2.1</span> R version</h3>
+</div>
+
+
+<div id="outline-container-org2b17e24" class="outline-3">
+<h3 id="org2b17e24"><span class="section-number-3">2.1</span> R version</h3>
 <div class="outline-text-3" id="text-2-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
@@ -159,12 +167,11 @@ Finished
 </div>
 </div>
 
-<div id="outline-container-orga997f4b" class="outline-3">
-<h3 id="orga997f4b"><span class="section-number-3">2.2</span> C++ version</h3>
+<div id="outline-container-orge5d8889" class="outline-3">
+<h3 id="orge5d8889"><span class="section-number-3">2.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-2-2">
 <div class="org-src-container">
-<pre class="src src-R"><span style="color: #008b8b;">library</span>(Rcpp)
-<span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
 sourceCpp(code=<span style="color: #8b2252;">"</span>
 <span style="color: #8b2252;">  // [[Rcpp::depends(microsimulation)]]</span>
 <span style="color: #8b2252;">  #include &lt;microsimulation.h&gt;</span>
@@ -233,12 +240,18 @@ Finished
 </div>
 
 
-<div id="outline-container-org710f56e" class="outline-2">
-<h2 id="org710f56e"><span class="section-number-2">3</span> Illness-death model</h2>
+<div id="outline-container-orga95edeb" class="outline-2">
+<h2 id="orga95edeb"><span class="section-number-2">3</span> Illness-death model</h2>
 <div class="outline-text-2" id="text-3">
+
+<div class="figure">
+<p><img src="illness_death.png" alt="illness_death.png" />
+</p>
 </div>
-<div id="outline-container-org96fa03a" class="outline-3">
-<h3 id="org96fa03a"><span class="section-number-3">3.1</span> Using R</h3>
+</div>
+
+<div id="outline-container-org4f12808" class="outline-3">
+<h3 id="org4f12808"><span class="section-number-3">3.1</span> R version</h3>
 <div class="outline-text-3" id="text-3-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
@@ -300,12 +313,11 @@ Time: 115.923108; event: death
 </div>
 
 
-<div id="outline-container-orga0053bd" class="outline-3">
-<h3 id="orga0053bd"><span class="section-number-3">3.2</span> Using C++</h3>
+<div id="outline-container-orgaf3c9ff" class="outline-3">
+<h3 id="orgaf3c9ff"><span class="section-number-3">3.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-3-2">
 <div class="org-src-container">
-<pre class="src src-R"><span style="color: #008b8b;">library</span>(Rcpp)
-<span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
 sourceCpp(code=<span style="color: #8b2252;">"</span>
 <span style="color: #8b2252;">  // [[Rcpp::depends(microsimulation)]]</span>
 <span style="color: #8b2252;">  #include &lt;microsimulation.h&gt;</span>
@@ -381,12 +393,19 @@ Time: 115.923108; event: death
 
 
 
-<div id="outline-container-org1fafbf6" class="outline-2">
-<h2 id="org1fafbf6"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
+<div id="outline-container-orgc92a565" class="outline-2">
+<h2 id="orgc92a565"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
 <div class="outline-text-2" id="text-4">
+
+<div class="figure">
+<p><img src="reporting.png" alt="reporting.png" />
+</p>
 </div>
-<div id="outline-container-orgeba8728" class="outline-3">
-<h3 id="orgeba8728"><span class="section-number-3">4.1</span> R</h3>
+</div>
+
+
+<div id="outline-container-orgf298976" class="outline-3">
+<h3 id="orgf298976"><span class="section-number-3">4.1</span> R version</h3>
 <div class="outline-text-3" id="text-4-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(ascii)
@@ -516,8 +535,8 @@ ascii(sim$report)
 </div>
 
 
-<div id="outline-container-org0b19d91" class="outline-3">
-<h3 id="org0b19d91"><span class="section-number-3">4.2</span> C++</h3>
+<div id="outline-container-org4f18405" class="outline-3">
+<h3 id="org4f18405"><span class="section-number-3">4.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-4-2">
 <div class="org-src-container">
 <pre class="src src-R">  sourceCpp(code = <span style="color: #8b2252;">"</span>
@@ -692,7 +711,12 @@ ascii(sim$report)
 </tr>
 </tbody>
 </table>
+</div>
+</div>
 
+<div id="outline-container-orgcbc2296" class="outline-3">
+<h3 id="orgcbc2296"><span class="section-number-3">4.3</span> Benchmark comparing R and C++</h3>
+<div class="outline-text-3" id="text-4-3">
 <div class="org-src-container">
 <pre class="src src-R">microbenchmark::microbenchmark({
     set.seed(12345)
@@ -775,11 +799,12 @@ times=100) |&gt; summary() |&gt; ascii()
 </div>
 </div>
 
-<div id="outline-container-org7ab8641" class="outline-3">
-<h3 id="org7ab8641"><span class="section-number-3">4.3</span> C++ using an EventReport</h3>
-<div class="outline-text-3" id="text-4-3">
+<div id="outline-container-org4d4af72" class="outline-3">
+<h3 id="org4d4af72"><span class="section-number-3">4.4</span> C++ using an EventReport</h3>
+<div class="outline-text-3" id="text-4-4">
 <div class="org-src-container">
-<pre class="src src-R">sourceCpp(code = <span style="color: #8b2252;">"</span>
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation)
+sourceCpp(code = <span style="color: #8b2252;">"</span>
 <span style="color: #8b2252;">// [[Rcpp::depends(microsimulation)]]</span>
 <span style="color: #8b2252;">#include &lt;microsimulation.h&gt;</span>
 <span style="color: #8b2252;">#include &lt;numeric&gt;</span>
@@ -791,15 +816,7 @@ times=100) |&gt; summary() |&gt; ascii()
 <span style="color: #8b2252;">public:</span>
 <span style="color: #8b2252;">  state_t state;</span>
 <span style="color: #8b2252;">  Report report;</span>
-<span style="color: #8b2252;">  SimplePerson() {</span>
-<span style="color: #8b2252;">    report.clear();</span>
-<span style="color: #8b2252;">    vector&lt;double&gt; ages;</span>
-<span style="color: #8b2252;">    for (double age=0.0; age&lt;=100.0; age+=10.0) {</span>
-<span style="color: #8b2252;">      ages.push_back(age);</span>
-<span style="color: #8b2252;">    }</span>
-<span style="color: #8b2252;">    ages.push_back(1.0e+6);</span>
-<span style="color: #8b2252;">    report.setPartition(ages);</span>
-<span style="color: #8b2252;">  }</span>
+<span style="color: #8b2252;">  SimplePerson() { }</span>
 <span style="color: #8b2252;">  void handleMessage(const ssim::cMessage*);</span>
 <span style="color: #8b2252;">  void init();</span>
 <span style="color: #8b2252;">};</span>
@@ -833,7 +850,7 @@ times=100) |&gt; summary() |&gt; ascii()
 <span style="color: #8b2252;">  } // switch</span>
 <span style="color: #8b2252;">} // handleMessage()</span>
 <span style="color: #8b2252;">// [[Rcpp::export]]</span>
-<span style="color: #8b2252;">SEXP callSimplePersonC(int n = 1000) {</span>
+<span style="color: #8b2252;">SEXP callSimplePersonC(int n = 10000) {</span>
 <span style="color: #8b2252;">  SimplePerson person;</span>
 <span style="color: #8b2252;">  for (int i = 0; i &lt; n; i++) {</span>
 <span style="color: #8b2252;">    ssim::Sim::create_process(&amp;person);</span>
@@ -866,7 +883,7 @@ lattice::xyplot(rate~age|Key+event, data=rates, type=<span style="color: #8b2252
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Mark Clements</p>
-<p class="date">Created: 2022-07-19 Tue 17:23</p>
+<p class="date">Created: 2022-07-19 Tue 18:32</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

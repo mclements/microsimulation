@@ -11,9 +11,23 @@
 
 * Tick-tock model
 
+#+BEGIN_SRC plantuml :file tick_tock.png :eval no
+skinparam monochrome true
+skinparam ActivityBackgroundColor #FFFFFF
+'skinparam shadowing false
+Tick -r-> [μ] Tock
+Tock -r-> [μ] Tick
+Tick -d-> [μ/10] Stop
+Tock -r-> [μ/10] Stop
+#+END_SRC
+
+#+RESULTS:
+[[file:tick_tock.png]]
+
+
 ** R version
 
-#+BEGIN_SRC R :session *R* :results output :exports both
+#+BEGIN_SRC R :session *R* :results output :exports both :eval no
 library(microsimulation, quietly=TRUE)
 tick_tock =
     setRefClass("tick_tock",
@@ -63,8 +77,7 @@ Finished
 
 ** C++ version
 
-#+BEGIN_SRC R :session *R* :results output :exports both
-library(Rcpp)
+#+BEGIN_SRC R :session *R* :results output :exports both :eval no
 library(microsimulation, quietly=TRUE)
 sourceCpp(code="
   // [[Rcpp::depends(microsimulation)]]
@@ -133,9 +146,22 @@ Finished
 
 * Illness-death model
 
+#+BEGIN_SRC plantuml :file illness_death.png :eval no
+skinparam monochrome true
+skinparam ActivityBackgroundColor #FFFFFF
+'skinparam shadowing false
+Healthy -r-> [onset] Illness
+Illness -r-> [recovered] Healthy
+Healthy -d-> [μ0] Death
+Illness -r-> [μ1] Death
+#+END_SRC
+
+#+RESULTS:
+[[file:illness_death.png]]
+
 ** R version
 
-#+BEGIN_SRC R :session *R* :results output :exports both
+#+BEGIN_SRC R :session *R* :results output :exports both :eval no
 library(microsimulation, quietly=TRUE)
 illness_death =
     setRefClass("illness_death",
@@ -195,8 +221,7 @@ Time: 115.923108; event: death
 
 ** C++ version
 
-#+BEGIN_SRC R :session *R* :results output :exports both
-library(Rcpp)
+#+BEGIN_SRC R :session *R* :results output :exports both :eval no
 library(microsimulation, quietly=TRUE)
 sourceCpp(code="
   // [[Rcpp::depends(microsimulation)]]
@@ -272,9 +297,23 @@ Time: 115.923108; event: death
 
 * Reporting using a data-frame
 
+#+BEGIN_SRC plantuml :file reporting.png :eval no
+skinparam monochrome true
+skinparam ActivityBackgroundColor #FFFFFF
+'skinparam shadowing false
+Healthy -r-> [onset] Cancer
+Healthy -r-> [μ0] OtherDeath
+Cancer -d-> [μ0] OtherDeath
+Cancer -r-> [μ1] CancerDeath
+#+END_SRC
+
+#+RESULTS:
+[[file:reporting.png]]
+
+
 ** R version
 
-#+BEGIN_SRC R :session *R* :results output raw :exports both
+#+BEGIN_SRC R :session *R* :results output raw :exports both :eval no
   library(ascii)
   options(asciiType="org")
   library(microsimulation, quietly=TRUE)
@@ -320,7 +359,7 @@ Time: 115.923108; event: death
 
 ** C++ version
 
-#+BEGIN_SRC R :session *R* :results output raw :exports both
+#+BEGIN_SRC R :session *R* :results output raw :exports both :eval no
   sourceCpp(code = "
   // [[Rcpp::depends(microsimulation)]]
   #include <microsimulation.h>
@@ -434,7 +473,7 @@ Time: 115.923108; event: death
 
 ** C++ using an EventReport
 
-#+BEGIN_SRC R :session *R* :results output graphics :exports both :file "rates.png"
+#+BEGIN_SRC R :session *R* :results output graphics :exports both :file "rates.png" :eval no
   library(microsimulation)
   sourceCpp(code = "
   // [[Rcpp::depends(microsimulation)]]

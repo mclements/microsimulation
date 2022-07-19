@@ -2,4 +2,6 @@
 
 #+options: html-postamble:nil
 
-For extensive Doxygen documentation, see [[file:html/index.html][here]].
+For extensive Doxygen documentation, see [[file:html/index.html][html/index.html]].
+
+For some further examples, see [[file:examples.html][examples.html]].
