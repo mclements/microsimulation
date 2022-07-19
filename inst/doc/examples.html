@@ -1,0 +1,873 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2022-07-19 Tue 17:23 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Examples for the microsimulation package</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Mark Clements" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2019 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Examples for the microsimulation package</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org772c63a">1. Introduction</a></li>
+<li><a href="#org9e391a8">2. Tick-tock model</a>
+<ul>
+<li><a href="#org48fa890">2.1. R version</a></li>
+<li><a href="#orga997f4b">2.2. C++ version</a></li>
+</ul>
+</li>
+<li><a href="#org710f56e">3. Illness-death model</a>
+<ul>
+<li><a href="#org96fa03a">3.1. Using R</a></li>
+<li><a href="#orga0053bd">3.2. Using C++</a></li>
+</ul>
+</li>
+<li><a href="#org1fafbf6">4. Reporting using a data-frame</a>
+<ul>
+<li><a href="#orgeba8728">4.1. R</a></li>
+<li><a href="#org0b19d91">4.2. C++</a></li>
+<li><a href="#org7ab8641">4.3. C++ using an EventReport</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org772c63a" class="outline-2">
+<h2 id="org772c63a"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<ul class="org-ul">
+<li>Some examples in both R and C++.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org9e391a8" class="outline-2">
+<h2 id="org9e391a8"><span class="section-number-2">2</span> Tick-tock model</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-org48fa890" class="outline-3">
+<h3 id="org48fa890"><span class="section-number-3">2.1</span> R version</h3>
+<div class="outline-text-3" id="text-2-1">
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+tick_tock =
+    setRefClass(<span style="color: #8b2252;">"tick_tock"</span>,
+                contains=<span style="color: #8b2252;">"BaseDiscreteEventSimulation"</span>,
+                methods=list(
+                    init = \() {
+                        cat(<span style="color: #8b2252;">"Started\n"</span>)
+                        scheduleAt(rexp(1,1), <span style="color: #8b2252;">"tick"</span>)
+                        scheduleAt(rexp(1,0.1), <span style="color: #8b2252;">"stop"</span>)
+                    },
+                    handleMessage = \(msg) {
+                        cat(sprintf(<span style="color: #8b2252;">"Time: %f; event: %s\n"</span>, now(), msg))
+                        <span style="color: #a020f0;">switch</span>(msg, 
+                               tick=scheduleAt(now()+rexp(1), <span style="color: #8b2252;">"tock"</span>),
+                               tock=scheduleAt(now()+rexp(1), <span style="color: #8b2252;">"tick"</span>),
+                               clear())
+                    },
+                    final = \() {cat(<span style="color: #8b2252;">"Finished\n"</span>); now()} ))
+set.seed(12345)
+sim = new(<span style="color: #8b2252;">"tick_tock"</span>)
+replicate(2, sim$run())
+</pre>
+</div>
+
+<pre class="example">
+Started
+Time: 0.441808; event: tick
+Time: 1.250275; event: tock
+Time: 1.268724; event: tick
+Time: 1.724134; event: tock
+Time: 1.748072; event: tick
+Time: 5.274728; event: stop
+Finished
+Started
+Time: 1.257961; event: tick
+Time: 3.075964; event: tock
+Time: 3.302451; event: tick
+Time: 3.749214; event: tock
+Time: 5.001675; event: tick
+Time: 5.398762; event: tock
+Time: 5.486878; event: tick
+Time: 7.209042; event: tock
+Time: 9.621881; event: stop
+Finished
+[1] 5.274728 9.621881
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orga997f4b" class="outline-3">
+<h3 id="orga997f4b"><span class="section-number-3">2.2</span> C++ version</h3>
+<div class="outline-text-3" id="text-2-2">
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(Rcpp)
+<span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+sourceCpp(code=<span style="color: #8b2252;">"</span>
+<span style="color: #8b2252;">  // [[Rcpp::depends(microsimulation)]]</span>
+<span style="color: #8b2252;">  #include &lt;microsimulation.h&gt;</span>
+<span style="color: #8b2252;">  using namespace ssim;</span>
+<span style="color: #8b2252;">  // define a process</span>
+<span style="color: #8b2252;">  class tick_tock : public cProcess</span>
+<span style="color: #8b2252;">  {</span>
+<span style="color: #8b2252;">  public:</span>
+<span style="color: #8b2252;">    double finish_time;</span>
+<span style="color: #8b2252;">    // initialise the simulation</span>
+<span style="color: #8b2252;">    void init() {</span>
+<span style="color: #8b2252;">      Rprintf(\"Started\\n\");</span>
+<span style="color: #8b2252;">      scheduleAt(R::rexp(1.0), \"tick\");</span>
+<span style="color: #8b2252;">      scheduleAt(R::rexp(10.0), \"stop\");</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    // handle the messages</span>
+<span style="color: #8b2252;">    void handleMessage(const cMessage* msg) {</span>
+<span style="color: #8b2252;">      Rprintf(\"Time: %f; event: %s\\n\", now(), msg-&gt;name.c_str());</span>
+<span style="color: #8b2252;">      msg-&gt;name == \"tick\" ? scheduleAt(now()+R::rexp(1.0), \"tock\") :</span>
+<span style="color: #8b2252;">        msg-&gt;name == \"tock\" ? scheduleAt(now()+R::rexp(1.0), \"tick\") :</span>
+<span style="color: #8b2252;">        Sim::stop_process();</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    void stop() {</span>
+<span style="color: #8b2252;">      finish_time = now();</span>
+<span style="color: #8b2252;">      Rprintf(\"Finished\\n\");</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">  };</span>
+<span style="color: #8b2252;">  // Exported function: Run the simulation once and return the finish time</span>
+<span style="color: #8b2252;">  // [[Rcpp::export]]</span>
+<span style="color: #8b2252;">  double call_tick_tock() {</span>
+<span style="color: #8b2252;">    tick_tock sim;</span>
+<span style="color: #8b2252;">    Sim::create_process(&amp;sim);</span>
+<span style="color: #8b2252;">    Sim::run_simulation();</span>
+<span style="color: #8b2252;">    Sim::clear();</span>
+<span style="color: #8b2252;">    return sim.finish_time;</span>
+<span style="color: #8b2252;">  }"</span>)
+set.seed(12345)
+replicate(2, call_tick_tock())
+</pre>
+</div>
+
+<pre class="example">
+Started
+Time: 0.441808; event: tick
+Time: 1.250275; event: tock
+Time: 1.268724; event: tick
+Time: 1.724134; event: tock
+Time: 1.748072; event: tick
+Time: 5.274728; event: stop
+Finished
+Started
+Time: 1.257961; event: tick
+Time: 3.075964; event: tock
+Time: 3.302451; event: tick
+Time: 3.749214; event: tock
+Time: 5.001675; event: tick
+Time: 5.398762; event: tock
+Time: 5.486878; event: tick
+Time: 7.209042; event: tock
+Time: 9.621881; event: stop
+Finished
+[1] 5.274728 9.621881
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org710f56e" class="outline-2">
+<h2 id="org710f56e"><span class="section-number-2">3</span> Illness-death model</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-org96fa03a" class="outline-3">
+<h3 id="org96fa03a"><span class="section-number-3">3.1</span> Using R</h3>
+<div class="outline-text-3" id="text-3-1">
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+illness_death =
+    setRefClass(<span style="color: #8b2252;">"illness_death"</span>,
+                contains=<span style="color: #8b2252;">"BaseDiscreteEventSimulation"</span>,
+                fields=list(utility=<span style="color: #8b2252;">"numeric"</span>, QALY=<span style="color: #8b2252;">"numeric"</span>),
+                methods=list(
+                    init = \() {
+                        cat(<span style="color: #8b2252;">"Individual:\n"</span>)
+                        QALY <span style="color: #008b8b;">&lt;&lt;-</span> 0.0
+                        toHealthy()
+                    },
+                    toHealthy = \() {
+                        utility <span style="color: #008b8b;">&lt;&lt;-</span> 0.95
+                        scheduleAt(now()+rexp(1,1/30.0), <span style="color: #8b2252;">"onset"</span>)
+                        scheduleAt(now()+rexp(1,1/60.0), <span style="color: #8b2252;">"death"</span>)
+                    },
+                    toIllness = \() {
+                        utility <span style="color: #008b8b;">&lt;&lt;-</span> 0.95*0.8
+                        scheduleAt(now()+rexp(1,1/5.0), <span style="color: #8b2252;">"recovered"</span>)
+                        scheduleAt(now()+rexp(1,1/10.0), <span style="color: #8b2252;">"death"</span>)
+                    },
+                    handleMessage = \(msg) {
+                        cat(sprintf(<span style="color: #8b2252;">"Time: %f; event: %s\n"</span>, now(), msg))
+                        QALY <span style="color: #008b8b;">&lt;&lt;-</span> QALY + (now() - previous()) * utility
+                        clear()
+                        <span style="color: #a020f0;">if</span> (msg == <span style="color: #8b2252;">"onset"</span>)
+                            toHealthy()
+                        <span style="color: #a020f0;">else</span> <span style="color: #a020f0;">if</span> (msg == <span style="color: #8b2252;">"recovered"</span>)
+                            toIllness()
+                        <span style="color: #a020f0;">else</span>
+                            clear()
+                    }))
+set.seed(12345)
+sim = new(<span style="color: #8b2252;">"illness_death"</span>)
+replicate(5, {sim$run(); sim$QALY})
+</pre>
+</div>
+
+<pre class="example">
+Individual:
+Time: 13.254234; event: onset
+Time: 14.361154; event: death
+Individual:
+Time: 1.436288; event: death
+Individual:
+Time: 75.477631; event: death
+Individual:
+Time: 28.865643; event: onset
+Time: 35.660268; event: onset
+Time: 59.485505; event: death
+Individual:
+Time: 2.643472; event: onset
+Time: 115.923108; event: death
+[1]  13.643096   1.364474  71.703750  56.511229 110.126952
+</pre>
+</div>
+</div>
+
+
+<div id="outline-container-orga0053bd" class="outline-3">
+<h3 id="orga0053bd"><span class="section-number-3">3.2</span> Using C++</h3>
+<div class="outline-text-3" id="text-3-2">
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(Rcpp)
+<span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+sourceCpp(code=<span style="color: #8b2252;">"</span>
+<span style="color: #8b2252;">  // [[Rcpp::depends(microsimulation)]]</span>
+<span style="color: #8b2252;">  #include &lt;microsimulation.h&gt;</span>
+<span style="color: #8b2252;">  using namespace ssim;</span>
+<span style="color: #8b2252;">  // define a process</span>
+<span style="color: #8b2252;">  class illness_death : public cProcess</span>
+<span style="color: #8b2252;">  {</span>
+<span style="color: #8b2252;">  public:</span>
+<span style="color: #8b2252;">    double QALY, utility;</span>
+<span style="color: #8b2252;">    // initialise the simulation</span>
+<span style="color: #8b2252;">    void init() {</span>
+<span style="color: #8b2252;">      Rprintf(\"Individual:\\n\");</span>
+<span style="color: #8b2252;">      QALY = 0.0;</span>
+<span style="color: #8b2252;">      this-&gt;toHealthy();</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    void toHealthy() {</span>
+<span style="color: #8b2252;">      utility = 0.95;</span>
+<span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(30.0), \"onset\");</span>
+<span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(60.0), \"death\");</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    void toIllness() {</span>
+<span style="color: #8b2252;">      utility = 0.95*0.8;</span>
+<span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(5.0), \"recovered\");</span>
+<span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(10.0), \"death\");</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    // handle the messages</span>
+<span style="color: #8b2252;">    void handleMessage(const cMessage* msg) {</span>
+<span style="color: #8b2252;">      Rprintf(\"Time: %f; event: %s\\n\", now(), msg-&gt;name.c_str());</span>
+<span style="color: #8b2252;">      QALY += (now() - previous()) * utility;</span>
+<span style="color: #8b2252;">      this-&gt;cancel_events(); // in this case, we cancel all of the competing events</span>
+<span style="color: #8b2252;">      if (msg-&gt;name == \"onset\")</span>
+<span style="color: #8b2252;">        toHealthy();</span>
+<span style="color: #8b2252;">      else if (msg-&gt;name == \"recovered\")</span>
+<span style="color: #8b2252;">        toIllness();</span>
+<span style="color: #8b2252;">      else</span>
+<span style="color: #8b2252;">        Sim::stop_process();</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">  };</span>
+<span style="color: #8b2252;">  // Exported function: Run the simulation once</span>
+<span style="color: #8b2252;">  // [[Rcpp::export]]</span>
+<span style="color: #8b2252;">  double call_illness_death() {</span>
+<span style="color: #8b2252;">    illness_death sim;</span>
+<span style="color: #8b2252;">    Sim::create_process(&amp;sim);</span>
+<span style="color: #8b2252;">    Sim::run_simulation();</span>
+<span style="color: #8b2252;">    Sim::clear();</span>
+<span style="color: #8b2252;">    return sim.QALY;</span>
+<span style="color: #8b2252;">  }"</span>)
+set.seed(12345)
+replicate(5, call_illness_death())
+</pre>
+</div>
+
+<pre class="example">
+Individual:
+Time: 13.254234; event: onset
+Time: 14.361154; event: death
+Individual:
+Time: 1.436288; event: death
+Individual:
+Time: 75.477631; event: death
+Individual:
+Time: 28.865643; event: onset
+Time: 35.660268; event: onset
+Time: 59.485505; event: death
+Individual:
+Time: 2.643472; event: onset
+Time: 115.923108; event: death
+[1]  13.643096   1.364474  71.703750  56.511229 110.126952
+</pre>
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-org1fafbf6" class="outline-2">
+<h2 id="org1fafbf6"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
+<div class="outline-text-2" id="text-4">
+</div>
+<div id="outline-container-orgeba8728" class="outline-3">
+<h3 id="orgeba8728"><span class="section-number-3">4.1</span> R</h3>
+<div class="outline-text-3" id="text-4-1">
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #008b8b;">library</span>(ascii)
+<span style="color: #008b8b;">options</span>(asciiType=<span style="color: #8b2252;">"org"</span>)
+<span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
+simple_person =
+  setRefClass(<span style="color: #8b2252;">"simple_person"</span>,
+              contains=<span style="color: #8b2252;">"BaseDiscreteEventSimulation"</span>,
+              fields=list(id=<span style="color: #8b2252;">"numeric"</span>, state=<span style="color: #8b2252;">"character"</span>, report=<span style="color: #8b2252;">"data.frame"</span>),
+              methods=list(
+                  initialize = \() {id <span style="color: #008b8b;">&lt;&lt;-</span> -1L},
+                  init = \() {
+                      id <span style="color: #008b8b;">&lt;&lt;-</span> id + 1L
+                      state <span style="color: #008b8b;">&lt;&lt;-</span> <span style="color: #8b2252;">"Healthy"</span>
+                      scheduleAt(rweibull(1,8,85), <span style="color: #8b2252;">"toOtherDeath"</span>)
+                      scheduleAt(rweibull(1,3,90), <span style="color: #8b2252;">"toCancer"</span>)
+                  },
+                  handleMessage = \(msg) {
+                      report <span style="color: #008b8b;">&lt;&lt;-</span> dplyr::bind_rows(report,
+                                           data.frame(id=id, startTime=previous(),
+                                                      endTime=now(), state=state, event=msg))
+                      <span style="color: #a020f0;">if</span> (msg == <span style="color: #8b2252;">"toCancer"</span>) {
+                          state <span style="color: #008b8b;">&lt;&lt;-</span> <span style="color: #8b2252;">"Cancer"</span>
+                          <span style="color: #a020f0;">if</span> (runif(1)&lt;0.5)
+                              scheduleAt(now()+rweibull(1,2,10), <span style="color: #8b2252;">"toCancerDeath"</span>)
+                      } <span style="color: #a020f0;">else</span> clear()
+                  }))
+set.seed(12345)
+sim = new(<span style="color: #8b2252;">"simple_person"</span>)
+<span style="color: #a020f0;">for</span> (i <span style="color: #a020f0;">in</span> 1:5) sim$run()
+ascii(sim$report)
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">&#xa0;</th>
+<th scope="col" class="org-right">id</th>
+<th scope="col" class="org-right">startTime</th>
+<th scope="col" class="org-right">endTime</th>
+<th scope="col" class="org-left">state</th>
+<th scope="col" class="org-left">event</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">0.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">45.90</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toCancer</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-right">0.00</td>
+<td class="org-right">45.90</td>
+<td class="org-right">73.92</td>
+<td class="org-left">Cancer</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-right">1.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">65.27</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-right">2.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">91.44</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-right">3.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">61.42</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toCancer</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-right">3.00</td>
+<td class="org-right">61.42</td>
+<td class="org-right">80.92</td>
+<td class="org-left">Cancer</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-right">4.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">98.92</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div id="outline-container-org0b19d91" class="outline-3">
+<h3 id="org0b19d91"><span class="section-number-3">4.2</span> C++</h3>
+<div class="outline-text-3" id="text-4-2">
+<div class="org-src-container">
+<pre class="src src-R">  sourceCpp(code = <span style="color: #8b2252;">"</span>
+<span style="color: #8b2252;">  // [[Rcpp::depends(microsimulation)]]</span>
+<span style="color: #8b2252;">  #include &lt;microsimulation.h&gt;</span>
+<span style="color: #8b2252;">  // utility to make a factor</span>
+<span style="color: #8b2252;">  Rcpp::IntegerVector make_factor(std::vector&lt;int&gt; v, Rcpp::CharacterVector levels) {</span>
+<span style="color: #8b2252;">    Rcpp::IntegerVector f(v.size());</span>
+<span style="color: #8b2252;">    std::transform(v.begin(), v.end(), f.begin(), [](int i) {return 1+i; });</span>
+<span style="color: #8b2252;">    f.attr(\"class\") = \"factor\";</span>
+<span style="color: #8b2252;">    f.attr(\"levels\") = levels;</span>
+<span style="color: #8b2252;">    return f;</span>
+<span style="color: #8b2252;">  }</span>
+<span style="color: #8b2252;">  enum state_t {Healthy,Cancer,Death};</span>
+<span style="color: #8b2252;">  enum event_t {toOtherDeath, toCancer, toCancerDeath};</span>
+<span style="color: #8b2252;">  class SimplePerson : public ssim::cProcess</span>
+<span style="color: #8b2252;">  {</span>
+<span style="color: #8b2252;">  public:</span>
+<span style="color: #8b2252;">    int id;</span>
+<span style="color: #8b2252;">    state_t state;</span>
+<span style="color: #8b2252;">    std::vector&lt;double&gt; startTimes, endTimes;</span>
+<span style="color: #8b2252;">    std::vector&lt;int&gt; states, events, ids;</span>
+<span style="color: #8b2252;">    SimplePerson() : id(-1) {};</span>
+<span style="color: #8b2252;">    void handleMessage(const ssim::cMessage*);</span>
+<span style="color: #8b2252;">    void init();</span>
+<span style="color: #8b2252;">  };</span>
+<span style="color: #8b2252;">  /**</span>
+<span style="color: #8b2252;">      Initialise a simulation run for an individual</span>
+<span style="color: #8b2252;">  */</span>
+<span style="color: #8b2252;">  void SimplePerson::init() {</span>
+<span style="color: #8b2252;">    id++;</span>
+<span style="color: #8b2252;">    state = Healthy;</span>
+<span style="color: #8b2252;">    double tm = R::rweibull(8.0,85.0);</span>
+<span style="color: #8b2252;">    this-&gt;scheduleAt(tm,toOtherDeath);</span>
+<span style="color: #8b2252;">    this-&gt;scheduleAt(R::rweibull(3.0,90.0),toCancer);</span>
+<span style="color: #8b2252;">  }</span>
+<span style="color: #8b2252;">  /**</span>
+<span style="color: #8b2252;">      Handle receiving self-messages</span>
+<span style="color: #8b2252;">  */</span>
+<span style="color: #8b2252;">  void SimplePerson::handleMessage(const ssim::cMessage* msg) {</span>
+<span style="color: #8b2252;">    ids.push_back(id);</span>
+<span style="color: #8b2252;">    startTimes.push_back(this-&gt;previous());</span>
+<span style="color: #8b2252;">    endTimes.push_back(ssim::now());</span>
+<span style="color: #8b2252;">    states.push_back(state);</span>
+<span style="color: #8b2252;">    events.push_back(msg-&gt;kind);</span>
+<span style="color: #8b2252;">    switch(msg-&gt;kind) {</span>
+<span style="color: #8b2252;">    case toOtherDeath:</span>
+<span style="color: #8b2252;">    case toCancerDeath:</span>
+<span style="color: #8b2252;">      ssim::Sim::stop_process();</span>
+<span style="color: #8b2252;">      break;</span>
+<span style="color: #8b2252;">    case toCancer:</span>
+<span style="color: #8b2252;">      state = Cancer;</span>
+<span style="color: #8b2252;">      if (R::runif(0.0,1.0) &lt; 0.5)</span>
+<span style="color: #8b2252;">        this-&gt;scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);</span>
+<span style="color: #8b2252;">      break;</span>
+<span style="color: #8b2252;">    default:</span>
+<span style="color: #8b2252;">      REprintf(\"No valid kind of event\\n\");</span>
+<span style="color: #8b2252;">      break;</span>
+<span style="color: #8b2252;">    } // switch</span>
+<span style="color: #8b2252;">  } // handleMessage()</span>
+<span style="color: #8b2252;">  // [[Rcpp::export]]</span>
+<span style="color: #8b2252;">  Rcpp::DataFrame callSimplePersonB(int n = 5) {</span>
+<span style="color: #8b2252;">    SimplePerson person;</span>
+<span style="color: #8b2252;">    for (int i = 0; i &lt; n; i++) {</span>
+<span style="color: #8b2252;">      ssim::Sim::create_process(&amp;person);</span>
+<span style="color: #8b2252;">      ssim::Sim::run_simulation();</span>
+<span style="color: #8b2252;">      ssim::Sim::clear();</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    Rcpp::DataFrame df;</span>
+<span style="color: #8b2252;">    df.push_back(person.ids,\"id\");</span>
+<span style="color: #8b2252;">    df.push_back(person.startTimes,\"startTime\");</span>
+<span style="color: #8b2252;">    df.push_back(person.endTimes,\"endTime\");</span>
+<span style="color: #8b2252;">    df.push_back(make_factor(person.states,{\"Healthy\",\"Ill\",\"Dead\"}), \"state\");</span>
+<span style="color: #8b2252;">    df.push_back(make_factor(person.events,{\"toOtherDeath\", \"toCancer\", \"toCancerDeath\"}), </span>
+<span style="color: #8b2252;">                 \"event\");</span>
+<span style="color: #8b2252;">    return Rcpp::wrap(df);</span>
+<span style="color: #8b2252;">  }</span>
+<span style="color: #8b2252;">"</span>)
+  set.seed(12345)
+  callSimplePersonB() |&gt; ascii()
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">&#xa0;</th>
+<th scope="col" class="org-right">id</th>
+<th scope="col" class="org-right">startTime</th>
+<th scope="col" class="org-right">endTime</th>
+<th scope="col" class="org-left">state</th>
+<th scope="col" class="org-left">event</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">0.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">45.90</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toCancer</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-right">0.00</td>
+<td class="org-right">45.90</td>
+<td class="org-right">73.92</td>
+<td class="org-left">Ill</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-right">1.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">65.27</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-right">2.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">91.44</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-right">3.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">61.42</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toCancer</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-right">3.00</td>
+<td class="org-right">61.42</td>
+<td class="org-right">80.92</td>
+<td class="org-left">Ill</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-right">4.00</td>
+<td class="org-right">0.00</td>
+<td class="org-right">98.92</td>
+<td class="org-left">Healthy</td>
+<td class="org-left">toOtherDeath</td>
+</tr>
+</tbody>
+</table>
+
+<div class="org-src-container">
+<pre class="src src-R">microbenchmark::microbenchmark({
+    set.seed(12345)
+    sim = new(<span style="color: #8b2252;">"simple_person"</span>)
+    <span style="color: #a020f0;">for</span> (i <span style="color: #a020f0;">in</span> 1:100) sim$run()
+}, {
+    set.seed(12345)
+    callSimplePersonB(100)
+},
+times=100) |&gt; summary() |&gt; ascii()
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">&#xa0;</th>
+<th scope="col" class="org-left">expr</th>
+<th scope="col" class="org-right">min</th>
+<th scope="col" class="org-right">lq</th>
+<th scope="col" class="org-right">mean</th>
+<th scope="col" class="org-right">median</th>
+<th scope="col" class="org-right">uq</th>
+<th scope="col" class="org-right">max</th>
+<th scope="col" class="org-right">neval</th>
+<th scope="col" class="org-left">cld</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">{     set.seed(12345)     sim = new("simple<sub>person</sub>")     for (i in 1:100) sim$run() }</td>
+<td class="org-right">103633.14</td>
+<td class="org-right">105178.55</td>
+<td class="org-right">107210.69</td>
+<td class="org-right">106973.50</td>
+<td class="org-right">108041.16</td>
+<td class="org-right">123989.27</td>
+<td class="org-right">100.00</td>
+<td class="org-left">b</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">{     set.seed(12345)     callSimplePersonB(100) }</td>
+<td class="org-right">999.64</td>
+<td class="org-right">1041.84</td>
+<td class="org-right">1112.25</td>
+<td class="org-right">1081.29</td>
+<td class="org-right">1117.74</td>
+<td class="org-right">3342.04</td>
+<td class="org-right">100.00</td>
+<td class="org-left">a</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-org7ab8641" class="outline-3">
+<h3 id="org7ab8641"><span class="section-number-3">4.3</span> C++ using an EventReport</h3>
+<div class="outline-text-3" id="text-4-3">
+<div class="org-src-container">
+<pre class="src src-R">sourceCpp(code = <span style="color: #8b2252;">"</span>
+<span style="color: #8b2252;">// [[Rcpp::depends(microsimulation)]]</span>
+<span style="color: #8b2252;">#include &lt;microsimulation.h&gt;</span>
+<span style="color: #8b2252;">#include &lt;numeric&gt;</span>
+<span style="color: #8b2252;">enum state_t {Healthy,Cancer,Death};</span>
+<span style="color: #8b2252;">enum event_t {toOtherDeath, toCancer, toCancerDeath};</span>
+<span style="color: #8b2252;">using Report = ssim::EventReport&lt;short,short,double&gt;;</span>
+<span style="color: #8b2252;">class SimplePerson : public ssim::cProcess</span>
+<span style="color: #8b2252;">{</span>
+<span style="color: #8b2252;">public:</span>
+<span style="color: #8b2252;">  state_t state;</span>
+<span style="color: #8b2252;">  Report report;</span>
+<span style="color: #8b2252;">  SimplePerson() {</span>
+<span style="color: #8b2252;">    report.clear();</span>
+<span style="color: #8b2252;">    vector&lt;double&gt; ages;</span>
+<span style="color: #8b2252;">    for (double age=0.0; age&lt;=100.0; age+=10.0) {</span>
+<span style="color: #8b2252;">      ages.push_back(age);</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    ages.push_back(1.0e+6);</span>
+<span style="color: #8b2252;">    report.setPartition(ages);</span>
+<span style="color: #8b2252;">  }</span>
+<span style="color: #8b2252;">  void handleMessage(const ssim::cMessage*);</span>
+<span style="color: #8b2252;">  void init();</span>
+<span style="color: #8b2252;">};</span>
+<span style="color: #8b2252;">/**</span>
+<span style="color: #8b2252;">    Initialise a simulation run for an individual</span>
+<span style="color: #8b2252;">*/</span>
+<span style="color: #8b2252;">void SimplePerson::init() {</span>
+<span style="color: #8b2252;">  state = Healthy;</span>
+<span style="color: #8b2252;">  double tm = R::rweibull(8.0,85.0);</span>
+<span style="color: #8b2252;">  this-&gt;scheduleAt(tm,toOtherDeath);</span>
+<span style="color: #8b2252;">  this-&gt;scheduleAt(R::rweibull(3.0,90.0),toCancer);</span>
+<span style="color: #8b2252;">}</span>
+<span style="color: #8b2252;">/**</span>
+<span style="color: #8b2252;">    Handle receiving self-messages</span>
+<span style="color: #8b2252;">*/</span>
+<span style="color: #8b2252;">void SimplePerson::handleMessage(const ssim::cMessage* msg) {</span>
+<span style="color: #8b2252;">  report.add(state,msg-&gt;kind,previous(),ssim::now());</span>
+<span style="color: #8b2252;">  switch(msg-&gt;kind) {</span>
+<span style="color: #8b2252;">  case toOtherDeath:</span>
+<span style="color: #8b2252;">  case toCancerDeath:</span>
+<span style="color: #8b2252;">    ssim::Sim::stop_process();</span>
+<span style="color: #8b2252;">    break;</span>
+<span style="color: #8b2252;">  case toCancer:</span>
+<span style="color: #8b2252;">    state = Cancer;</span>
+<span style="color: #8b2252;">    if (R::runif(0.0,1.0) &lt; 0.5)</span>
+<span style="color: #8b2252;">      this-&gt;scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);</span>
+<span style="color: #8b2252;">    break;</span>
+<span style="color: #8b2252;">  default:</span>
+<span style="color: #8b2252;">    REprintf(\"No valid kind of event\\n\");</span>
+<span style="color: #8b2252;">    break;</span>
+<span style="color: #8b2252;">  } // switch</span>
+<span style="color: #8b2252;">} // handleMessage()</span>
+<span style="color: #8b2252;">// [[Rcpp::export]]</span>
+<span style="color: #8b2252;">SEXP callSimplePersonC(int n = 1000) {</span>
+<span style="color: #8b2252;">  SimplePerson person;</span>
+<span style="color: #8b2252;">  for (int i = 0; i &lt; n; i++) {</span>
+<span style="color: #8b2252;">    ssim::Sim::create_process(&amp;person);</span>
+<span style="color: #8b2252;">    ssim::Sim::run_simulation();</span>
+<span style="color: #8b2252;">    ssim::Sim::clear();</span>
+<span style="color: #8b2252;">  }</span>
+<span style="color: #8b2252;">  return person.report.wrap();</span>
+<span style="color: #8b2252;">}</span>
+<span style="color: #8b2252;">"</span>)
+make_factor = <span style="color: #a020f0;">function</span>(x, labels)
+    factor(as.integer(x)+1L,labels=labels)
+set.seed(12345)
+report = callSimplePersonC()
+rates = with(report, merge(pt,events,all.x=<span style="color: #228b22;">TRUE</span>) |&gt;
+                     transform(rate=ifelse(is.na(number),0,number)/pt)) |&gt;
+    transform(Key=make_factor(Key,c(<span style="color: #8b2252;">"Healthy"</span>,<span style="color: #8b2252;">"Cancer"</span>)),
+              event=make_factor(event,c(<span style="color: #8b2252;">"toOtherDeath"</span>, <span style="color: #8b2252;">"toCancer"</span>, <span style="color: #8b2252;">"toCancerDeath"</span>)))
+lattice::xyplot(rate~age|Key+event, data=rates, type=<span style="color: #8b2252;">"l"</span>)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="rates.png" alt="rates.png" />
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Mark Clements</p>
+<p class="date">Created: 2022-07-19 Tue 17:23</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
