@@ -661,6 +661,7 @@ inline double discountedInterval(double start, double end, double discountRate) 
    EventReport(Utility discountRate = 0.0, bool outputUtilities = true, int size = 1, Time startReportAge = Time(0), bool indiv = false) :
      discountRate(discountRate), outputUtilities(outputUtilities), startReportAge(startReportAge), id(0), indiv(indiv) {
    _vector.resize(size);
+   setPartition(startReportAge);
  }
  void resize(int size) {
    _vector.resize(size);
@@ -668,7 +669,8 @@ inline double discountedInterval(double start, double end, double discountRate) 
  void setPartition(const vector<Time> v) {
    copy(v.begin(), v.end(), inserter(_partition, _partition.begin()));
   }
- void setPartition(const Time start, const Time finish, const Time delta,
+ void setPartition(const Time start = 0.0, const Time finish = 100.0,
+		   const Time delta = 1.0,
 		   const Time maxTime = Time(1.0e100)) {
    _partition.clear();
    for (Time t=start; t<=finish; t+=delta) _partition.insert(t);
