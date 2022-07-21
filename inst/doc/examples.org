@@ -4,12 +4,16 @@
 #+author: Mark Clements
 
 # +options: toc:nil
+#+latex_header: \usepackage[margin=2.54cm]{geometry}
 
 * Introduction
 
 - Some examples in both R and C++.
 
+
 * Tick-tock model
+
+- This simple model includes three states and three transitions:
 
 #+BEGIN_SRC plantuml :file tick_tock.png :eval no
 skinparam monochrome true
@@ -21,11 +25,20 @@ Tick -d-> [μ/10] Stop
 Tock -r-> [μ/10] Stop
 #+END_SRC
 
+#+attr_latex: :width 4cm
 #+RESULTS:
 [[file:tick_tock.png]]
 
 
 ** R version
+
+- In this implementation, we model only for the events, where the states are implied by the transitions. Note that there are no simulation attributes. 
+- Initially, a message is printed, and ="tick"= and ="stop"= events are scheduled.
+- For each message or event:
+  + A description of the event is printed
+  + The response is defined in terms of ="tick"= \rightarrow ="tock"=, ="tock"= \rightarrow ="tick"= and ="stop"= \rightarrow =clear()=.
+- Finally, we print a message and return the final time.
+- To run this, we set the seed, get a new class instance, and =run()= the class twice.
 
 #+BEGIN_SRC R :session *R* :results output :exports both :eval no
 library(microsimulation, quietly=TRUE)
@@ -76,6 +89,17 @@ Finished
 #+end_example
 
 ** C++ version
+
+- For the C++ code, we first show that the Rcpp and C++ code depends on the =microsimulation= package.
+- For brevity, we use the =ssim= namespace.
+- We define a class =tick_tock= that inherits from the =cProcess= class.
+- We define a class field for the =finish_time=.
+- We initialise the simulation using the =init()= function. In this case, we print out a message and schedule the ="tick"= and ="stop"= events.
+- We handle each message or event by (a) printing a message for the event and (b) then schedule other events depending on the message =name=, which is a =std::string=.
+- At the end of the process, we call the =stop()= method, which copies the final time to =finish_time= and print a message.
+- We export the =call_tick_tock= function from C++ to C for calling from R. This function defines the =sim= process as an instance of =tick_tock=, inserts the process into the simulation using =create_process=, runs the simulation, clears the simulation queue, and returns =finish_time=.
+- In R, we compile the function using the =sourceCpp= function, set the random seed, and call =call_tick_tock= function twice.
+- The C++ model has the same output as the R version.
 
 #+BEGIN_SRC R :session *R* :results output :exports both :eval no
 library(microsimulation, quietly=TRUE)
@@ -144,7 +168,7 @@ Finished
 #+end_example
 
 
-* Illness-death model
+* Illness-death model with costs and QALYs
 
 #+BEGIN_SRC plantuml :file illness_death.png :eval no
 skinparam monochrome true
@@ -156,6 +180,7 @@ Healthy -d-> [μ0] Death
 Illness -r-> [μ1] Death
 #+END_SRC
 
+#+attr_latex: :width 4cm
 #+RESULTS:
 [[file:illness_death.png]]
 
@@ -166,26 +191,33 @@ library(microsimulation, quietly=TRUE)
 illness_death =
     setRefClass("illness_death",
                 contains="BaseDiscreteEventSimulation",
-                fields=list(utility="numeric", QALY="numeric"),
+                fields=list(utility="numeric", QALY="numeric",
+                            cost="numeric", cumulative_costs="numeric",
+                            debug="logical"),
                 methods=list(
+                    initialize = \(debug=TRUE) {debug <<- debug},
                     init = \() {
-                        cat("Individual:\n")
-                        QALY <<- 0.0
+                        if (debug) cat("Individual:\n")
+                        cumulative_costs <<- QALY <<- 0.0
                         toHealthy()
                     },
                     toHealthy = \() {
                         utility <<- 0.95
+                        cost <<- 1000
                         scheduleAt(now()+rexp(1,1/30.0), "onset")
                         scheduleAt(now()+rexp(1,1/60.0), "death")
                     },
                     toIllness = \() {
                         utility <<- 0.95*0.8
+                        cost <<- 10000
                         scheduleAt(now()+rexp(1,1/5.0), "recovered")
                         scheduleAt(now()+rexp(1,1/10.0), "death")
                     },
                     handleMessage = \(msg) {
-                        cat(sprintf("Time: %f; event: %s\n", now(), msg))
-                        QALY <<- QALY + (now() - previous()) * utility
+                        if (debug) cat(sprintf("Time: %f; event: %s\n", now(), msg))
+                        QALY <<- QALY + discountedInterval(utility, previous(), now(), 0.03)
+                        cumulative_costs <<- cumulative_costs +
+                            discountedInterval(cost, previous(), now(), 0.03)
                         clear()
                         if (msg == "onset")
                             toHealthy()
@@ -196,7 +228,8 @@ illness_death =
                     }))
 set.seed(12345)
 sim = new("illness_death")
-replicate(5, {sim$run(); sim$QALY})
+replicate(5, {sim$run(); c(sim$QALY, sim$cumulative_costs)}) |>
+    t() |> data.frame() |> "names<-"(c("QALY","cumulative_cost"))
 #+END_SRC
 
 #+RESULTS:
@@ -215,9 +248,13 @@ Time: 59.485505; event: death
 Individual:
 Time: 2.643472; event: onset
 Time: 115.923108; event: death
-[1]  13.643096   1.364474  71.703750  56.511229 110.126952
+       QALY cumulative_cost
+1 11.117066       11702.175
+2  1.335915        1406.227
+3 28.686987       30196.829
+4 26.600625       28000.658
+5 31.094833       32731.403
 #+end_example
-
 
 ** C++ version
 
@@ -231,27 +268,32 @@ sourceCpp(code="
   class illness_death : public cProcess
   {
   public:
-    double QALY, utility;
+    double QALY, utility, cumulative_costs, cost;
+    bool debug;
+    std::map<std::string,std::vector<double>> report;
     // initialise the simulation
     void init() {
-      Rprintf(\"Individual:\\n\");
-      QALY = 0.0;
+      if (debug) Rprintf(\"Individual:\\n\");
+      cumulative_costs = QALY = 0.0;
       this->toHealthy();
     }
     void toHealthy() {
       utility = 0.95;
+      cost = 1000.0;
       this->scheduleAt(now()+R::rexp(30.0), \"onset\");
       this->scheduleAt(now()+R::rexp(60.0), \"death\");
     }
     void toIllness() {
       utility = 0.95*0.8;
+      cost = 10000.0;
       this->scheduleAt(now()+R::rexp(5.0), \"recovered\");
       this->scheduleAt(now()+R::rexp(10.0), \"death\");
     }
     // handle the messages
     void handleMessage(const cMessage* msg) {
-      Rprintf(\"Time: %f; event: %s\\n\", now(), msg->name.c_str());
-      QALY += (now() - previous()) * utility;
+      if (debug) Rprintf(\"Time: %f; event: %s\\n\", now(), msg->name.c_str());
+      QALY += discountedInterval(utility, previous(), now(), 0.03);
+      cumulative_costs += discountedInterval(cost, previous(), now(), 0.03);
       this->cancel_events(); // in this case, we cancel all of the competing events
       if (msg->name == \"onset\")
         toHealthy();
@@ -260,18 +302,25 @@ sourceCpp(code="
       else
         Sim::stop_process();
     }
+    void stop() {
+      report[\"QALY\"].push_back(QALY);
+      report[\"cumulative_costs\"].push_back(cumulative_costs);
+    }
   };
   // Exported function: Run the simulation once
   // [[Rcpp::export]]
-  double call_illness_death() {
+  Rcpp::DataFrame call_illness_death(int n = 5, bool debug = true) {
     illness_death sim;
-    Sim::create_process(&sim);
-    Sim::run_simulation();
-    Sim::clear();
-    return sim.QALY;
+    sim.debug = debug;
+    for (int i=0; i<n; i++) {
+      Sim::create_process(&sim);
+      Sim::run_simulation();
+      Sim::clear();
+    }
+    return wrap(sim.report);
   }")
 set.seed(12345)
-replicate(5, call_illness_death())
+call_illness_death()
 #+END_SRC
 
 #+RESULTS:
@@ -290,9 +339,36 @@ Time: 59.485505; event: death
 Individual:
 Time: 2.643472; event: onset
 Time: 115.923108; event: death
-[1]  13.643096   1.364474  71.703750  56.511229 110.126952
+       QALY cumulative_costs
+1 11.117066        11702.175
+2  1.335915         1406.227
+3 28.686987        30196.829
+4 26.600625        28000.658
+5 31.094833        32731.403
 #+end_example
 
+** Benchmark comparing R and C++
+
+#+BEGIN_SRC R :session *R* :results output :exports both :eval no
+  microbenchmark::microbenchmark({
+      set.seed(12345)
+      sim = new("illness_death", debug=FALSE)
+      for (i in 1:100) sim$run()
+  }, {
+      set.seed(12345)
+      call_illness_death(100, debug=FALSE)
+  },
+  times=100)
+#+end_src
+
+#+RESULTS:
+: Unit: microseconds
+:                                                                                                  expr
+:  {     set.seed(12345)     sim = new("illness_death", debug = FALSE)     for (i in 1:100) sim$run() }
+:                                    {     set.seed(12345)     call_illness_death(100, debug = FALSE) }
+:        min         lq       mean     median        uq        max neval cld
+:  82603.413 83735.2110 86391.8281 84988.7705 86449.842 185751.227   100   b
+:    425.731   440.7475   502.4519   467.3505   540.629   1403.868   100  a
 
 
 * Reporting using a data-frame
@@ -307,6 +383,7 @@ Cancer -d-> [μ0] OtherDeath
 Cancer -r-> [μ1] CancerDeath
 #+END_SRC
 
+#+attr_latex: :width 6cm
 #+RESULTS:
 [[file:reporting.png]]
 
@@ -355,7 +432,6 @@ Cancer -r-> [μ1] CancerDeath
 | 5 | 3.00 |      0.00 |   61.42 | Healthy | toCancer     |
 | 6 | 3.00 |     61.42 |   80.92 | Cancer  | toOtherDeath |
 | 7 | 4.00 |      0.00 |   98.92 | Healthy | toOtherDeath |
-
 
 ** C++ version
 
@@ -468,8 +544,8 @@ Cancer -r-> [μ1] CancerDeath
 #+RESULTS:
 |   | expr                                                                                  |       min |        lq |      mean |    median |        uq |       max |  neval | cld |
 |---+---------------------------------------------------------------------------------------+-----------+-----------+-----------+-----------+-----------+-----------+--------+-----|
-| 1 | {     set.seed(12345)     sim = new("simple_person")     for (i in 1:100) sim$run() } | 103633.14 | 105178.55 | 107210.69 | 106973.50 | 108041.16 | 123989.27 | 100.00 | b   |
-| 2 | {     set.seed(12345)     callSimplePersonB(100) }                                    |    999.64 |   1041.84 |   1112.25 |   1081.29 |   1117.74 |   3342.04 | 100.00 | a   |
+| 1 | {     set.seed(12345)     sim = new("simple_person")     for (i in 1:100) sim$run() } | 102370.65 | 103720.92 | 105976.17 | 104420.24 | 106384.88 | 201976.89 | 100.00 | b   |
+| 2 | {     set.seed(12345)     callSimplePersonB(100) }                                    |    970.70 |   1010.23 |   1095.95 |   1061.87 |   1082.77 |   3269.92 | 100.00 | a   |
 
 ** C++ using an EventReport
 
@@ -535,12 +611,13 @@ Cancer -r-> [μ1] CancerDeath
       factor(as.integer(x)+1L,labels=labels)
   set.seed(12345)
   report = callSimplePersonC()
-  rates = with(report, merge(pt,events,all.x=TRUE) |>
-                       transform(rate=ifelse(is.na(number),0,number)/pt)) |>
-      transform(Key=make_factor(Key,c("Healthy","Cancer")),
+  rates = with(report, merge(pt,events,all.x=TRUE)) |>
+      transform(rate=ifelse(is.na(number),0,number)/pt,
+                Key=make_factor(Key,c("Healthy","Cancer")),
                 event=make_factor(event,c("toOtherDeath", "toCancer", "toCancerDeath")))
   lattice::xyplot(rate~age|Key+event, data=rates, type="l")
 #+END_SRC
 
+#+attr_latex: :width 8cm
 #+RESULTS:
 [[file:rates.png]]

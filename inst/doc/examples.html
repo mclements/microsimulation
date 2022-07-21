@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-07-19 Tue 18:32 -->
+<!-- 2022-07-21 Thu 12:15 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Examples for the microsimulation package</title>
@@ -69,33 +69,34 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgf84711c">1. Introduction</a></li>
-<li><a href="#org5149120">2. Tick-tock model</a>
+<li><a href="#org9a128e3">1. Introduction</a></li>
+<li><a href="#org45b6ef2">2. Tick-tock model</a>
 <ul>
-<li><a href="#org2b17e24">2.1. R version</a></li>
-<li><a href="#orge5d8889">2.2. C++ version</a></li>
+<li><a href="#org0067fa6">2.1. R version</a></li>
+<li><a href="#org4461581">2.2. C++ version</a></li>
 </ul>
 </li>
-<li><a href="#orga95edeb">3. Illness-death model</a>
+<li><a href="#org7f519ca">3. Illness-death model with costs and QALYs</a>
 <ul>
-<li><a href="#org4f12808">3.1. R version</a></li>
-<li><a href="#orgaf3c9ff">3.2. C++ version</a></li>
+<li><a href="#orgdceec90">3.1. R version</a></li>
+<li><a href="#org38254f3">3.2. C++ version</a></li>
+<li><a href="#org7845e2f">3.3. Benchmark comparing R and C++</a></li>
 </ul>
 </li>
-<li><a href="#orgc92a565">4. Reporting using a data-frame</a>
+<li><a href="#org2ad7d45">4. Reporting using a data-frame</a>
 <ul>
-<li><a href="#orgf298976">4.1. R version</a></li>
-<li><a href="#org4f18405">4.2. C++ version</a></li>
-<li><a href="#orgcbc2296">4.3. Benchmark comparing R and C++</a></li>
-<li><a href="#org4d4af72">4.4. C++ using an EventReport</a></li>
+<li><a href="#org39e82d2">4.1. R version</a></li>
+<li><a href="#orgb95de59">4.2. C++ version</a></li>
+<li><a href="#org83ac7cc">4.3. Benchmark comparing R and C++</a></li>
+<li><a href="#orgd2a6bdf">4.4. C++ using an EventReport</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orgf84711c" class="outline-2">
-<h2 id="orgf84711c"><span class="section-number-2">1</span> Introduction</h2>
+<div id="outline-container-org9a128e3" class="outline-2">
+<h2 id="org9a128e3"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
 <li>Some examples in both R and C++.</li>
@@ -103,9 +104,14 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org5149120" class="outline-2">
-<h2 id="org5149120"><span class="section-number-2">2</span> Tick-tock model</h2>
+
+<div id="outline-container-org45b6ef2" class="outline-2">
+<h2 id="org45b6ef2"><span class="section-number-2">2</span> Tick-tock model</h2>
 <div class="outline-text-2" id="text-2">
+<ul class="org-ul">
+<li>This simple model includes three states and three transitions:</li>
+</ul>
+
 
 <div class="figure">
 <p><img src="tick_tock.png" alt="tick_tock.png" />
@@ -114,9 +120,21 @@ for the JavaScript code in this tag.
 </div>
 
 
-<div id="outline-container-org2b17e24" class="outline-3">
-<h3 id="org2b17e24"><span class="section-number-3">2.1</span> R version</h3>
+<div id="outline-container-org0067fa6" class="outline-3">
+<h3 id="org0067fa6"><span class="section-number-3">2.1</span> R version</h3>
 <div class="outline-text-3" id="text-2-1">
+<ul class="org-ul">
+<li>In this implementation, we model only for the events, where the states are implied by the transitions. Note that there are no simulation attributes.</li>
+<li>Initially, a message is printed, and <code>"tick"</code> and <code>"stop"</code> events are scheduled.</li>
+<li>For each message or event:
+<ul class="org-ul">
+<li>A description of the event is printed</li>
+<li>The response is defined in terms of <code>"tick"</code> &rarr; <code>"tock"</code>, <code>"tock"</code> &rarr; <code>"tick"</code> and <code>"stop"</code> &rarr; <code>clear()</code>.</li>
+</ul></li>
+<li>Finally, we print a message and return the final time.</li>
+<li>To run this, we set the seed, get a new class instance, and <code>run()</code> the class twice.</li>
+</ul>
+
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
 tick_tock =
@@ -167,9 +185,22 @@ Finished
 </div>
 </div>
 
-<div id="outline-container-orge5d8889" class="outline-3">
-<h3 id="orge5d8889"><span class="section-number-3">2.2</span> C++ version</h3>
+<div id="outline-container-org4461581" class="outline-3">
+<h3 id="org4461581"><span class="section-number-3">2.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-2-2">
+<ul class="org-ul">
+<li>For the C++ code, we first show that the Rcpp and C++ code depends on the <code>microsimulation</code> package.</li>
+<li>For brevity, we use the <code>ssim</code> namespace.</li>
+<li>We define a class <code>tick_tock</code> that inherits from the <code>cProcess</code> class.</li>
+<li>We define a class field for the <code>finish_time</code>.</li>
+<li>We initialise the simulation using the <code>init()</code> function. In this case, we print out a message and schedule the <code>"tick"</code> and <code>"stop"</code> events.</li>
+<li>We handle each message or event by (a) printing a message for the event and (b) then schedule other events depending on the message <code>name</code>, which is a <code>std::string</code>.</li>
+<li>At the end of the process, we call the <code>stop()</code> method, which copies the final time to <code>finish_time</code> and print a message.</li>
+<li>We export the <code>call_tick_tock</code> function from C++ to C for calling from R. This function defines the <code>sim</code> process as an instance of <code>tick_tock</code>, inserts the process into the simulation using <code>create_process</code>, runs the simulation, clears the simulation queue, and returns <code>finish_time</code>.</li>
+<li>In R, we compile the function using the <code>sourceCpp</code> function, set the random seed, and call <code>call_tick_tock</code> function twice.</li>
+<li>The C++ model has the same output as the R version.</li>
+</ul>
+
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
 sourceCpp(code=<span style="color: #8b2252;">"</span>
@@ -240,8 +271,8 @@ Finished
 </div>
 
 
-<div id="outline-container-orga95edeb" class="outline-2">
-<h2 id="orga95edeb"><span class="section-number-2">3</span> Illness-death model</h2>
+<div id="outline-container-org7f519ca" class="outline-2">
+<h2 id="org7f519ca"><span class="section-number-2">3</span> Illness-death model with costs and QALYs</h2>
 <div class="outline-text-2" id="text-3">
 
 <div class="figure">
@@ -250,34 +281,41 @@ Finished
 </div>
 </div>
 
-<div id="outline-container-org4f12808" class="outline-3">
-<h3 id="org4f12808"><span class="section-number-3">3.1</span> R version</h3>
+<div id="outline-container-orgdceec90" class="outline-3">
+<h3 id="orgdceec90"><span class="section-number-3">3.1</span> R version</h3>
 <div class="outline-text-3" id="text-3-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
 illness_death =
     setRefClass(<span style="color: #8b2252;">"illness_death"</span>,
                 contains=<span style="color: #8b2252;">"BaseDiscreteEventSimulation"</span>,
-                fields=list(utility=<span style="color: #8b2252;">"numeric"</span>, QALY=<span style="color: #8b2252;">"numeric"</span>),
+                fields=list(utility=<span style="color: #8b2252;">"numeric"</span>, QALY=<span style="color: #8b2252;">"numeric"</span>,
+                            cost=<span style="color: #8b2252;">"numeric"</span>, cumulative_costs=<span style="color: #8b2252;">"numeric"</span>,
+                            debug=<span style="color: #8b2252;">"logical"</span>),
                 methods=list(
+                    initialize = \(debug=<span style="color: #228b22;">TRUE</span>) {debug <span style="color: #008b8b;">&lt;&lt;-</span> debug},
                     init = \() {
-                        cat(<span style="color: #8b2252;">"Individual:\n"</span>)
-                        QALY <span style="color: #008b8b;">&lt;&lt;-</span> 0.0
+                        <span style="color: #a020f0;">if</span> (debug) cat(<span style="color: #8b2252;">"Individual:\n"</span>)
+                        cumulative_costs <span style="color: #008b8b;">&lt;&lt;-</span> QALY <span style="color: #008b8b;">&lt;&lt;-</span> 0.0
                         toHealthy()
                     },
                     toHealthy = \() {
                         utility <span style="color: #008b8b;">&lt;&lt;-</span> 0.95
+                        cost <span style="color: #008b8b;">&lt;&lt;-</span> 1000
                         scheduleAt(now()+rexp(1,1/30.0), <span style="color: #8b2252;">"onset"</span>)
                         scheduleAt(now()+rexp(1,1/60.0), <span style="color: #8b2252;">"death"</span>)
                     },
                     toIllness = \() {
                         utility <span style="color: #008b8b;">&lt;&lt;-</span> 0.95*0.8
+                        cost <span style="color: #008b8b;">&lt;&lt;-</span> 10000
                         scheduleAt(now()+rexp(1,1/5.0), <span style="color: #8b2252;">"recovered"</span>)
                         scheduleAt(now()+rexp(1,1/10.0), <span style="color: #8b2252;">"death"</span>)
                     },
                     handleMessage = \(msg) {
-                        cat(sprintf(<span style="color: #8b2252;">"Time: %f; event: %s\n"</span>, now(), msg))
-                        QALY <span style="color: #008b8b;">&lt;&lt;-</span> QALY + (now() - previous()) * utility
+                        <span style="color: #a020f0;">if</span> (debug) cat(sprintf(<span style="color: #8b2252;">"Time: %f; event: %s\n"</span>, now(), msg))
+                        QALY <span style="color: #008b8b;">&lt;&lt;-</span> QALY + discountedInterval(utility, previous(), now(), 0.03)
+                        cumulative_costs <span style="color: #008b8b;">&lt;&lt;-</span> cumulative_costs +
+                            discountedInterval(cost, previous(), now(), 0.03)
                         clear()
                         <span style="color: #a020f0;">if</span> (msg == <span style="color: #8b2252;">"onset"</span>)
                             toHealthy()
@@ -288,7 +326,8 @@ illness_death =
                     }))
 set.seed(12345)
 sim = new(<span style="color: #8b2252;">"illness_death"</span>)
-replicate(5, {sim$run(); sim$QALY})
+replicate(5, {sim$run(); c(sim$QALY, sim$cumulative_costs)}) |&gt;
+    t() |&gt; data.frame() |&gt; <span style="color: #8b2252;">"names&lt;-"</span>(c(<span style="color: #8b2252;">"QALY"</span>,<span style="color: #8b2252;">"cumulative_cost"</span>))
 </pre>
 </div>
 
@@ -307,14 +346,18 @@ Time: 59.485505; event: death
 Individual:
 Time: 2.643472; event: onset
 Time: 115.923108; event: death
-[1]  13.643096   1.364474  71.703750  56.511229 110.126952
+       QALY cumulative_cost
+1 11.117066       11702.175
+2  1.335915        1406.227
+3 28.686987       30196.829
+4 26.600625       28000.658
+5 31.094833       32731.403
 </pre>
 </div>
 </div>
 
-
-<div id="outline-container-orgaf3c9ff" class="outline-3">
-<h3 id="orgaf3c9ff"><span class="section-number-3">3.2</span> C++ version</h3>
+<div id="outline-container-org38254f3" class="outline-3">
+<h3 id="org38254f3"><span class="section-number-3">3.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-3-2">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
@@ -326,27 +369,32 @@ sourceCpp(code=<span style="color: #8b2252;">"</span>
 <span style="color: #8b2252;">  class illness_death : public cProcess</span>
 <span style="color: #8b2252;">  {</span>
 <span style="color: #8b2252;">  public:</span>
-<span style="color: #8b2252;">    double QALY, utility;</span>
+<span style="color: #8b2252;">    double QALY, utility, cumulative_costs, cost;</span>
+<span style="color: #8b2252;">    bool debug;</span>
+<span style="color: #8b2252;">    std::map&lt;std::string,std::vector&lt;double&gt;&gt; report;</span>
 <span style="color: #8b2252;">    // initialise the simulation</span>
 <span style="color: #8b2252;">    void init() {</span>
-<span style="color: #8b2252;">      Rprintf(\"Individual:\\n\");</span>
-<span style="color: #8b2252;">      QALY = 0.0;</span>
+<span style="color: #8b2252;">      if (debug) Rprintf(\"Individual:\\n\");</span>
+<span style="color: #8b2252;">      cumulative_costs = QALY = 0.0;</span>
 <span style="color: #8b2252;">      this-&gt;toHealthy();</span>
 <span style="color: #8b2252;">    }</span>
 <span style="color: #8b2252;">    void toHealthy() {</span>
 <span style="color: #8b2252;">      utility = 0.95;</span>
+<span style="color: #8b2252;">      cost = 1000.0;</span>
 <span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(30.0), \"onset\");</span>
 <span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(60.0), \"death\");</span>
 <span style="color: #8b2252;">    }</span>
 <span style="color: #8b2252;">    void toIllness() {</span>
 <span style="color: #8b2252;">      utility = 0.95*0.8;</span>
+<span style="color: #8b2252;">      cost = 10000.0;</span>
 <span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(5.0), \"recovered\");</span>
 <span style="color: #8b2252;">      this-&gt;scheduleAt(now()+R::rexp(10.0), \"death\");</span>
 <span style="color: #8b2252;">    }</span>
 <span style="color: #8b2252;">    // handle the messages</span>
 <span style="color: #8b2252;">    void handleMessage(const cMessage* msg) {</span>
-<span style="color: #8b2252;">      Rprintf(\"Time: %f; event: %s\\n\", now(), msg-&gt;name.c_str());</span>
-<span style="color: #8b2252;">      QALY += (now() - previous()) * utility;</span>
+<span style="color: #8b2252;">      if (debug) Rprintf(\"Time: %f; event: %s\\n\", now(), msg-&gt;name.c_str());</span>
+<span style="color: #8b2252;">      QALY += discountedInterval(utility, previous(), now(), 0.03);</span>
+<span style="color: #8b2252;">      cumulative_costs += discountedInterval(cost, previous(), now(), 0.03);</span>
 <span style="color: #8b2252;">      this-&gt;cancel_events(); // in this case, we cancel all of the competing events</span>
 <span style="color: #8b2252;">      if (msg-&gt;name == \"onset\")</span>
 <span style="color: #8b2252;">        toHealthy();</span>
@@ -355,18 +403,25 @@ sourceCpp(code=<span style="color: #8b2252;">"</span>
 <span style="color: #8b2252;">      else</span>
 <span style="color: #8b2252;">        Sim::stop_process();</span>
 <span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    void stop() {</span>
+<span style="color: #8b2252;">      report[\"QALY\"].push_back(QALY);</span>
+<span style="color: #8b2252;">      report[\"cumulative_costs\"].push_back(cumulative_costs);</span>
+<span style="color: #8b2252;">    }</span>
 <span style="color: #8b2252;">  };</span>
 <span style="color: #8b2252;">  // Exported function: Run the simulation once</span>
 <span style="color: #8b2252;">  // [[Rcpp::export]]</span>
-<span style="color: #8b2252;">  double call_illness_death() {</span>
+<span style="color: #8b2252;">  Rcpp::DataFrame call_illness_death(int n = 5, bool debug = true) {</span>
 <span style="color: #8b2252;">    illness_death sim;</span>
-<span style="color: #8b2252;">    Sim::create_process(&amp;sim);</span>
-<span style="color: #8b2252;">    Sim::run_simulation();</span>
-<span style="color: #8b2252;">    Sim::clear();</span>
-<span style="color: #8b2252;">    return sim.QALY;</span>
+<span style="color: #8b2252;">    sim.debug = debug;</span>
+<span style="color: #8b2252;">    for (int i=0; i&lt;n; i++) {</span>
+<span style="color: #8b2252;">      Sim::create_process(&amp;sim);</span>
+<span style="color: #8b2252;">      Sim::run_simulation();</span>
+<span style="color: #8b2252;">      Sim::clear();</span>
+<span style="color: #8b2252;">    }</span>
+<span style="color: #8b2252;">    return wrap(sim.report);</span>
 <span style="color: #8b2252;">  }"</span>)
 set.seed(12345)
-replicate(5, call_illness_death())
+call_illness_death()
 </pre>
 </div>
 
@@ -385,16 +440,49 @@ Time: 59.485505; event: death
 Individual:
 Time: 2.643472; event: onset
 Time: 115.923108; event: death
-[1]  13.643096   1.364474  71.703750  56.511229 110.126952
+       QALY cumulative_costs
+1 11.117066        11702.175
+2  1.335915         1406.227
+3 28.686987        30196.829
+4 26.600625        28000.658
+5 31.094833        32731.403
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org7845e2f" class="outline-3">
+<h3 id="org7845e2f"><span class="section-number-3">3.3</span> Benchmark comparing R and C++</h3>
+<div class="outline-text-3" id="text-3-3">
+<div class="org-src-container">
+<pre class="src src-R">microbenchmark::microbenchmark({
+    set.seed(12345)
+    sim = new(<span style="color: #8b2252;">"illness_death"</span>, debug=<span style="color: #228b22;">FALSE</span>)
+    <span style="color: #a020f0;">for</span> (i <span style="color: #a020f0;">in</span> 1:100) sim$run()
+}, {
+    set.seed(12345)
+    call_illness_death(100, debug=<span style="color: #228b22;">FALSE</span>)
+},
+times=100)
+</pre>
+</div>
+
+<pre class="example">
+Unit: microseconds
+                                                                                                 expr
+ {     set.seed(12345)     sim = new("illness_death", debug = FALSE)     for (i in 1:100) sim$run() }
+                                   {     set.seed(12345)     call_illness_death(100, debug = FALSE) }
+       min         lq       mean     median        uq        max neval cld
+ 82603.413 83735.2110 86391.8281 84988.7705 86449.842 185751.227   100   b
+   425.731   440.7475   502.4519   467.3505   540.629   1403.868   100  a
+
 </pre>
 </div>
 </div>
 </div>
 
 
-
-<div id="outline-container-orgc92a565" class="outline-2">
-<h2 id="orgc92a565"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
+<div id="outline-container-org2ad7d45" class="outline-2">
+<h2 id="org2ad7d45"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
 <div class="outline-text-2" id="text-4">
 
 <div class="figure">
@@ -404,8 +492,8 @@ Time: 115.923108; event: death
 </div>
 
 
-<div id="outline-container-orgf298976" class="outline-3">
-<h3 id="orgf298976"><span class="section-number-3">4.1</span> R version</h3>
+<div id="outline-container-org39e82d2" class="outline-3">
+<h3 id="org39e82d2"><span class="section-number-3">4.1</span> R version</h3>
 <div class="outline-text-3" id="text-4-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(ascii)
@@ -534,9 +622,8 @@ ascii(sim$report)
 </div>
 </div>
 
-
-<div id="outline-container-org4f18405" class="outline-3">
-<h3 id="org4f18405"><span class="section-number-3">4.2</span> C++ version</h3>
+<div id="outline-container-orgb95de59" class="outline-3">
+<h3 id="orgb95de59"><span class="section-number-3">4.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-4-2">
 <div class="org-src-container">
 <pre class="src src-R">  sourceCpp(code = <span style="color: #8b2252;">"</span>
@@ -714,8 +801,8 @@ ascii(sim$report)
 </div>
 </div>
 
-<div id="outline-container-orgcbc2296" class="outline-3">
-<h3 id="orgcbc2296"><span class="section-number-3">4.3</span> Benchmark comparing R and C++</h3>
+<div id="outline-container-org83ac7cc" class="outline-3">
+<h3 id="org83ac7cc"><span class="section-number-3">4.3</span> Benchmark comparing R and C++</h3>
 <div class="outline-text-3" id="text-4-3">
 <div class="org-src-container">
 <pre class="src src-R">microbenchmark::microbenchmark({
@@ -772,12 +859,12 @@ times=100) |&gt; summary() |&gt; ascii()
 <tr>
 <td class="org-right">1</td>
 <td class="org-left">{     set.seed(12345)     sim = new("simple<sub>person</sub>")     for (i in 1:100) sim$run() }</td>
-<td class="org-right">103633.14</td>
-<td class="org-right">105178.55</td>
-<td class="org-right">107210.69</td>
-<td class="org-right">106973.50</td>
-<td class="org-right">108041.16</td>
-<td class="org-right">123989.27</td>
+<td class="org-right">102370.65</td>
+<td class="org-right">103720.92</td>
+<td class="org-right">105976.17</td>
+<td class="org-right">104420.24</td>
+<td class="org-right">106384.88</td>
+<td class="org-right">201976.89</td>
 <td class="org-right">100.00</td>
 <td class="org-left">b</td>
 </tr>
@@ -785,12 +872,12 @@ times=100) |&gt; summary() |&gt; ascii()
 <tr>
 <td class="org-right">2</td>
 <td class="org-left">{     set.seed(12345)     callSimplePersonB(100) }</td>
-<td class="org-right">999.64</td>
-<td class="org-right">1041.84</td>
-<td class="org-right">1112.25</td>
-<td class="org-right">1081.29</td>
-<td class="org-right">1117.74</td>
-<td class="org-right">3342.04</td>
+<td class="org-right">970.70</td>
+<td class="org-right">1010.23</td>
+<td class="org-right">1095.95</td>
+<td class="org-right">1061.87</td>
+<td class="org-right">1082.77</td>
+<td class="org-right">3269.92</td>
 <td class="org-right">100.00</td>
 <td class="org-left">a</td>
 </tr>
@@ -799,8 +886,8 @@ times=100) |&gt; summary() |&gt; ascii()
 </div>
 </div>
 
-<div id="outline-container-org4d4af72" class="outline-3">
-<h3 id="org4d4af72"><span class="section-number-3">4.4</span> C++ using an EventReport</h3>
+<div id="outline-container-orgd2a6bdf" class="outline-3">
+<h3 id="orgd2a6bdf"><span class="section-number-3">4.4</span> C++ using an EventReport</h3>
 <div class="outline-text-3" id="text-4-4">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation)
@@ -864,9 +951,9 @@ make_factor = <span style="color: #a020f0;">function</span>(x, labels)
     factor(as.integer(x)+1L,labels=labels)
 set.seed(12345)
 report = callSimplePersonC()
-rates = with(report, merge(pt,events,all.x=<span style="color: #228b22;">TRUE</span>) |&gt;
-                     transform(rate=ifelse(is.na(number),0,number)/pt)) |&gt;
-    transform(Key=make_factor(Key,c(<span style="color: #8b2252;">"Healthy"</span>,<span style="color: #8b2252;">"Cancer"</span>)),
+rates = with(report, merge(pt,events,all.x=<span style="color: #228b22;">TRUE</span>)) |&gt;
+    transform(rate=ifelse(is.na(number),0,number)/pt,
+              Key=make_factor(Key,c(<span style="color: #8b2252;">"Healthy"</span>,<span style="color: #8b2252;">"Cancer"</span>)),
               event=make_factor(event,c(<span style="color: #8b2252;">"toOtherDeath"</span>, <span style="color: #8b2252;">"toCancer"</span>, <span style="color: #8b2252;">"toCancerDeath"</span>)))
 lattice::xyplot(rate~age|Key+event, data=rates, type=<span style="color: #8b2252;">"l"</span>)
 </pre>
@@ -883,7 +970,7 @@ lattice::xyplot(rate~age|Key+event, data=rates, type=<span style="color: #8b2252
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Mark Clements</p>
-<p class="date">Created: 2022-07-19 Tue 18:32</p>
+<p class="date">Created: 2022-07-21 Thu 12:15</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
