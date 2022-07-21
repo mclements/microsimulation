@@ -619,10 +619,25 @@ inline double discountedInterval(double start, double end, double discountRate) 
 }
 
   /**
+      @brief Simple function to calculate the integral between the start and end times
+      for y*(1+kappa)^(-u), where kappa is the discountRate (e.g. 0.03)
+  */
+  inline double discountedInterval(double y, double start, double end, double discountRate) {
+    if (discountRate == 0.0) return y*(end - start);
+  else return y*(pow(1.0+discountRate,-start) - pow(1.0+discountRate,-end)) / log(1.0+discountRate);
+}
+
+  /**
      @brief Simple function to calculate 1/(1+discountRate)^(time)
   */
   inline double discountedPoint(double time, double discountRate) {
     return discountRate <= 0.0 ? 1.0 : pow(1.0+discountRate,-time);
+  }
+  /**
+     @brief Simple function to calculate y/(1+discountRate)^(time)
+  */
+  inline double discountedPoint(double y, double time, double discountRate) {
+    return discountRate <= 0.0 ? y : y*pow(1.0+discountRate,-time);
   }
 
 
