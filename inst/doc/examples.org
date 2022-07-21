@@ -529,7 +529,7 @@ Cancer -r-> [μ1] CancerDeath
 
 ** Benchmark comparing R and C++
 
-#+BEGIN_SRC R :session *R* :results output raw :exports both :eval no
+#+BEGIN_SRC R :session *R* :results output :exports both :eval no
   microbenchmark::microbenchmark({
       set.seed(12345)
       sim = new("simple_person")
@@ -538,14 +538,17 @@ Cancer -r-> [μ1] CancerDeath
       set.seed(12345)
       callSimplePersonB(100)
   },
-  times=100) |> summary() |> ascii()
+  times=100)
 #+end_src
 
 #+RESULTS:
-|   | expr                                                                                  |       min |        lq |      mean |    median |        uq |       max |  neval | cld |
-|---+---------------------------------------------------------------------------------------+-----------+-----------+-----------+-----------+-----------+-----------+--------+-----|
-| 1 | {     set.seed(12345)     sim = new("simple_person")     for (i in 1:100) sim$run() } | 102370.65 | 103720.92 | 105976.17 | 104420.24 | 106384.88 | 201976.89 | 100.00 | b   |
-| 2 | {     set.seed(12345)     callSimplePersonB(100) }                                    |    970.70 |   1010.23 |   1095.95 |   1061.87 |   1082.77 |   3269.92 | 100.00 | a   |
+: Unit: microseconds
+:                                                                                   expr
+:  {     set.seed(12345)     sim = new("simple_person")     for (i in 1:100) sim$run() }
+:                                     {     set.seed(12345)     callSimplePersonB(100) }
+:        min         lq       mean     median         uq       max neval cld
+:  101463.25 155514.482 154314.723 161605.478 164635.320 272736.54   100   b
+:     990.42   1531.789   1535.401   1596.302   1680.697   1823.16   100  a
 
 ** C++ using an EventReport
 
@@ -554,8 +557,7 @@ Cancer -r-> [μ1] CancerDeath
   sourceCpp(code = "
   // [[Rcpp::depends(microsimulation)]]
   #include <microsimulation.h>
-  #include <numeric>
-  enum state_t {Healthy,Cancer,Death};
+  enum state_t {Healthy,Cancer};
   enum event_t {toOtherDeath, toCancer, toCancerDeath};
   using Report = ssim::EventReport<short,short,double>;
   class SimplePerson : public ssim::cProcess
