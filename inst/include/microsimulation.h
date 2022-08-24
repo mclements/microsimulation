@@ -176,6 +176,7 @@ namespace Rcpp {
 #include <siena/ssim.h>
 #include <RngStream.h>
 #include <rcpp_table.h>
+#include <gsm.h>
 
 #include <string>
 #include <algorithm>

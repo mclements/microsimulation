@@ -1,6 +1,18 @@
 ## try(detach("package:microsimulation", unload=TRUE))
 ## library(microsimulation)
 
+## test gsm_design code
+library(microsimulation)
+library(rstpm2)
+newdata = data.frame(hormon=1)
+object <- stpm2(Surv(rectime,censrec==1)~hormon,data=brcancer,df=1)
+(design <- rstpm2::gsm_design(object, newdata))
+replicate(10,.Call("test_read_gsm",design, PACKAGE="microsimulation"))
+system.time(replicate(1e3,.Call("test_read_gsm",design, PACKAGE="microsimulation")))
+.Call("test_read_gsm", head(design,-1), PACKAGE="microsimulation") # intentional error: malformed design
+
+
+
 ## testing pqueue
 library(microsimulation)
 pq = pqueue()
