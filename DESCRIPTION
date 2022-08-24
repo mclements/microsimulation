@@ -14,10 +14,10 @@ License: GPL (>= 3)
 Depends: Rcpp (>= 0.10.2), methods
 Imports: parallel, grDevices, ascii
 Suggests: testthat
-LinkingTo: Rcpp
+LinkingTo: Rcpp, RcppArmadillo
 SystemRequirements: C++11
 LazyData: true
 URL: https://github.com/mclements/microsimulation
 BugReports: https://github.com/mclements/microsimulation/issues
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
