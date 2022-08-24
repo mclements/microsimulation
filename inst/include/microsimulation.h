@@ -167,7 +167,7 @@ namespace Rcpp {
 
 } // namespace Rcpp
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <R.h>
 #include <Rmath.h>
 #include <Rdefines.h>
