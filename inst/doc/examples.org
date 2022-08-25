@@ -6,6 +6,11 @@
 # +options: toc:nil
 #+latex_header: \usepackage[margin=2.54cm]{geometry}
 
+#+BEGIN_SRC R :session *R* :results none :exports none :eval yes
+  library(ascii)
+  options(asciiType="org")
+#+end_src  
+
 * Introduction
 
 - Some examples in both R and C++.
@@ -66,6 +71,12 @@ replicate(2, sim$run())
 
 #+RESULTS:
 #+begin_example
+
+Attaching package: ‘microsimulation’
+
+The following object is masked from ‘package:Rcpp’:
+
+    LdFlags
 Started
 Time: 0.441808; event: tick
 Time: 1.250275; event: tock
@@ -349,7 +360,7 @@ Time: 115.923108; event: death
 
 ** Benchmark comparing R and C++
 
-#+BEGIN_SRC R :session *R* :results output :exports both :eval no
+#+BEGIN_SRC R :session *R* :results output wrap :exports both :eval no
   microbenchmark::microbenchmark({
       set.seed(12345)
       sim = new("illness_death", debug=FALSE)
@@ -358,17 +369,18 @@ Time: 115.923108; event: death
       set.seed(12345)
       call_illness_death(100, debug=FALSE)
   },
-  times=100)
+  times=100) |> ascii()
 #+end_src
 
 #+RESULTS:
-: Unit: microseconds
-:                                                                                                  expr
-:  {     set.seed(12345)     sim = new("illness_death", debug = FALSE)     for (i in 1:100) sim$run() }
-:                                    {     set.seed(12345)     call_illness_death(100, debug = FALSE) }
-:        min         lq       mean     median        uq        max neval cld
-:  82603.413 83735.2110 86391.8281 84988.7705 86449.842 185751.227   100   b
-:    425.731   440.7475   502.4519   467.3505   540.629   1403.868   100  a
+:RESULTS:
+| Unit: microseconds |
+
+|   | expr                                                                                                 | min      | lq       | mean      | median    | uq        | max       | neval  | cld |
+|---+------------------------------------------------------------------------------------------------------+----------+----------+-----------+-----------+-----------+-----------+--------+-----|
+| 1 | {     set.seed(12345)     sim = new("illness_death", debug = FALSE)     for (i in 1:100) sim$run() } | 81610.48 | 85125.80 | 111311.62 | 117356.17 | 132919.92 | 248876.28 | 100.00 | b   |
+| 2 | {     set.seed(12345)     call_illness_death(100, debug = FALSE) }                                   | 426.57   | 544.48   | 655.30    | 690.66    | 809.72    | 859.15    | 100.00 | a   |
+:END:
 
 
 * Reporting using a data-frame
@@ -390,7 +402,7 @@ Cancer -r-> [μ1] CancerDeath
 
 ** R version
 
-#+BEGIN_SRC R :session *R* :results output raw :exports both :eval no
+#+BEGIN_SRC R :session *R* :results output wrap :exports both :eval no
   library(ascii)
   options(asciiType="org")
   library(microsimulation, quietly=TRUE)
@@ -423,6 +435,7 @@ Cancer -r-> [μ1] CancerDeath
 #+END_SRC
 
 #+RESULTS:
+:RESULTS:
 |   |   id | startTime | endTime | state   | event        |
 |---+------+-----------+---------+---------+--------------|
 | 1 | 0.00 |      0.00 |   45.90 | Healthy | toCancer     |
@@ -432,10 +445,12 @@ Cancer -r-> [μ1] CancerDeath
 | 5 | 3.00 |      0.00 |   61.42 | Healthy | toCancer     |
 | 6 | 3.00 |     61.42 |   80.92 | Cancer  | toOtherDeath |
 | 7 | 4.00 |      0.00 |   98.92 | Healthy | toOtherDeath |
+:END:
+
 
 ** C++ version
 
-#+BEGIN_SRC R :session *R* :results output raw :exports both :eval no
+#+BEGIN_SRC R :session *R* :results output wrap :exports both :eval no
   sourceCpp(code = "
   // [[Rcpp::depends(microsimulation)]]
   #include <microsimulation.h>
@@ -517,6 +532,7 @@ Cancer -r-> [μ1] CancerDeath
 #+END_SRC
 
 #+RESULTS:
+:RESULTS:
 |   |   id | startTime | endTime | state   | event        |
 |---+------+-----------+---------+---------+--------------|
 | 1 | 0.00 |      0.00 |   45.90 | Healthy | toCancer     |
@@ -526,10 +542,12 @@ Cancer -r-> [μ1] CancerDeath
 | 5 | 3.00 |      0.00 |   61.42 | Healthy | toCancer     |
 | 6 | 3.00 |     61.42 |   80.92 | Ill     | toOtherDeath |
 | 7 | 4.00 |      0.00 |   98.92 | Healthy | toOtherDeath |
+:END:
+
 
 ** Benchmark comparing R and C++
 
-#+BEGIN_SRC R :session *R* :results output :exports both :eval no
+#+BEGIN_SRC R :session *R* :results output wrap :exports both :eval no
   microbenchmark::microbenchmark({
       set.seed(12345)
       sim = new("simple_person")
@@ -538,17 +556,20 @@ Cancer -r-> [μ1] CancerDeath
       set.seed(12345)
       callSimplePersonB(100)
   },
-  times=100)
-#+end_src
+  times=10) |> ascii()
+#+END_SRC
 
 #+RESULTS:
-: Unit: microseconds
-:                                                                                   expr
-:  {     set.seed(12345)     sim = new("simple_person")     for (i in 1:100) sim$run() }
-:                                     {     set.seed(12345)     callSimplePersonB(100) }
-:        min         lq       mean     median         uq       max neval cld
-:  101463.25 155514.482 154314.723 161605.478 164635.320 272736.54   100   b
-:     990.42   1531.789   1535.401   1596.302   1680.697   1823.16   100  a
+:RESULTS:
+| Unit: milliseconds |
+
+|   | expr                                                                                  | min    | lq     | mean   | median | uq     | max    | neval | cld |
+|---+---------------------------------------------------------------------------------------+--------+--------+--------+--------+--------+--------+-------+-----|
+| 1 | {     set.seed(12345)     sim = new("simple_person")     for (i in 1:100) sim$run() } | 106.92 | 107.73 | 109.16 | 108.31 | 108.66 | 114.07 | 10.00 | b   |
+| 2 | {     set.seed(12345)     callSimplePersonB(100) }                                    | 1.03   | 1.09   | 1.20   | 1.13   | 1.26   | 1.66   | 10.00 | a   |
+:END:
+
+
 
 ** C++ using an EventReport
 
@@ -623,3 +644,5 @@ Cancer -r-> [μ1] CancerDeath
 #+attr_latex: :width 8cm
 #+RESULTS:
 [[file:rates.png]]
+
+
