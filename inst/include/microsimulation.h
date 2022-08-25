@@ -505,16 +505,22 @@ public:
       }
     }
   }
- /* Rpexp(vector<double> hin, vector<double> tin) : h(hin), t(tin) { */
- /*    n = h.size(); */
- /*    H.resize(n); */
- /*    H[0] = 0.0; */
- /*    if (n>1) { */
- /*      for(i=1;i<n;i++) { */
- /* 	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1]; */
- /*      } */
- /*    } */
- /*  } */
+  Rpexp(SEXP hin_, SEXP tin_) {
+    Rcpp::NumericVector hin = Rcpp::as<Rcpp::NumericVector>(hin_);
+    Rcpp::NumericVector tin = Rcpp::as<Rcpp::NumericVector>(tin_);
+    int i;
+    n = hin.size();
+    H.resize(n);
+    t.resize(n);
+    h.resize(n);
+    H[0]=0.0; h[0]=hin[0]; t[0]=tin[0];
+    if (n>1) {
+      for(i=1;i<n;i++) {
+	h[i]=hin[i]; t[i]=tin[i];
+	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1];
+      }
+    }
+  }
   double rand(double u, double from = 0.0) {
     double v = 0.0, H0 = 0.0, tstar = 0.0;
     int i = 0, i0 = 0;
@@ -527,7 +533,6 @@ public:
     tstar = t[i]+(v-H[i])/h[i];
     return tstar;
   }
-
  private:
   vector<double> H, h, t;
   int n;
