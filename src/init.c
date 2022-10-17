@@ -9,11 +9,11 @@
 
 /* .C calls */
 extern void r_get_user_random_seed(void *);
-extern void r_next_rng_substream();
+extern void r_next_rng_substream(void);
 extern void r_rng_advance_substream(void *, void *);
 extern void r_set_user_random_seed(void *);
-extern void r_create_current_stream();
-extern void r_remove_current_stream();
+extern void r_create_current_stream(void);
+extern void r_remove_current_stream(void);
 
 /* .Call calls */
 extern SEXP callCalibrationSimulation(SEXP);

@@ -1,6 +1,394 @@
 ## try(detach("package:microsimulation", unload=TRUE))
 ## library(microsimulation)
 
+## rpexp implementations
+library(msm)
+#' Random numbers using piecewise exponential distributions
+#'
+#' @details This implementation departs from msm::rpexp in several
+#'     ways. First, it does not require t to start from 0. Second, it
+#'     allows for delayed entry. Third, it uses a single exponential
+#'     covariate and solves for the cumulative hazard using
+#'     findInterval, which is typically faster than msm::rpexp.
+#' @param n number of random numbers
+#' @param rate numeric vector of rates per unit time for each time interval
+#' @param t numeric vector for the start of each time interval
+#' @param start numeric scalar for delayed entry time
+#' @return numeric vector with random times. If the last interval has a zero rate, then a random time may be Inf.
+#' @examples
+#' set.seed(12345)
+#' rpexp2(10, rate=1:3, t = 0:2)
+#' rpexp2(10, rate=1:3, t = 1:3) # allows for t>0
+#' rpexp2(10, rate=0:2, t = 0:2) # allows for rate=0
+#' rpexp2(10, rate=c(0.5,0.5,0), t = 0:2) # includes Infs
+#' rpexp2(10, rate=1:3, t = 1:3, start=1.7) # allows for delayed entry
+#' rpexp2(10, rate=0:2, t = 1:3, start=4) # allows for delayed entry after last time
+#' @importFrom stats rexp
+#' @export 
+rpexp2 <- function (n = 1, rate = 1, t = 0, start = min(t)) 
+{
+    if (length(t) != length(rate)) 
+        stop("length of t must be equal to length of rate")
+    if (length(start) != 1)
+        stop("current implementation only allows for start of length 1")
+    if (start < min(t))
+        stop("start is less then t[1]")
+    if (is.unsorted(t)) 
+        stop("t should be in increasing order")
+    if (n == 0) 
+        return(numeric(0))
+    if (length(n) > 1) 
+        n <- length(n)
+    if (length(rate) == 1 || start > max(t)) 
+        return(start + rexp(n, tail(rate,1)))
+    if (start > min(t)) {
+        index <- which(t > start)
+        t <- c(start,t[index])
+        rate <- rate[c(index[1]-1,index)]
+    }
+    H <- c(0,cumsum(head(rate,-1)*diff(t)))
+    e <- stats::rexp(n)
+    i <- findInterval(e,H)
+    return(t[i]+(e-H[i])/rate[i])
+}
+
+library(msm)
+set.seed(12345)
+rpexp(1, rate=1:3, t = 0:2)
+rpexp(1, rate=1:3, t = 1:3)
+rpexp(1, rate=0:2, t = 0:2)
+rpexp(1, rate=c(0.01,0), t = 0:1)
+rpexp(1, rate=1:3, t = 0:2, start=1.7)
+rpexp(1, rate=0:2, t = 0:2, start=4)
+
+
+plot(density(rpexp2(1e4, rate=1:3, t = 0:2), from=1))
+plot(density(rpexp2(1e4, rate=1:3, t = 1:3, start=1.7), from=1))
+
+library(microbenchmark)
+microbenchmark(rpexp(1, rate=rep(0.2,11), t = 0:10),
+               rpexp2(1, rate=rep(0.2,11), t = 0:10))
+microbenchmark(rpexp(1e3, rate=rep(0.2,11), t = 0:10),
+               rpexp2(1e3, rate=rep(0.2,11), t = 0:10))
+microbenchmark(rpexp(1, rate=rep(0.02,101), t = 0:100),
+               rpexp2(1, rate=rep(0.02,101), t = 0:100))
+microbenchmark(rpexp(1e3, rate=rep(0.02,101), t = 0:100),
+               rpexp2(1e3, rate=rep(0.02,101), t = 0:100))
+
+set.seed(12345)
+y = rpexp(1e5, rate=rep(0.02,100), t = 0:99)
+y2 = rpexp2(1e5, rate=rep(0.02,100), t = 0:99)
+plot(density(y,from=0))
+lines(density(y2,from=0),col=2)
+
+set.seed(12345)
+k = 1e4
+system.time(replicate(1e2, rpexp(1, rate=rep(1/k,k+1), t = 0:k)))
+system.time(replicate(1e2, rpexp2(1, rate=rep(1/k,k+1), t = 0:k)))
+
+system.time(replicate(1e3, rpexp(1, rate=rep(0.02,100), t=0:99)))
+system.time(replicate(1e3, rpexp2(1, rate=rep(0.02,100), t=0:99)))
+system.time(rpexp(1e6, rate=rep(0.02,100), t = 0:99))
+system.time(rpexp2(1e6, rate=rep(0.02,100), t = 0:99))
+
+
+## immortal time bias (Suissa et al 2008)
+Bias1 = function(k=1,p=0.5,alpha=1) (k*(1-p)/(k+p))^alpha
+Bias2 = function(k=1,p=0.5,alpha=1) (k/(k+p))^alpha
+p = seq(1e-5,1-1e-5,length=301)
+par(mfrow=c(2,2))
+matplot(p, cbind(Bias1(k=0.1,p,alpha=1),Bias1(k=1,p,alpha=1),Bias1(k=10,p,alpha=1)),
+        lty=1, col=1:3, type="l", main="alpha=1", ylab="Ratio of rate ratios")
+matplot(p, cbind(Bias1(k=0.1,p,alpha=0.5),Bias1(k=1,p,alpha=0.5),Bias1(k=10,p,alpha=0.5)),
+        lty=1, col=1:3, type="l", main="alpha=0.5", ylab="Ratio of rate ratios")
+matplot(p, cbind(Bias1(k=0.1,p,alpha=2),Bias1(k=1,p,alpha=2),Bias1(k=10,p,alpha=2)),
+        lty=1, col=1:3, type="l", main="alpha=2", ylab="Ratio of rate ratios")
+plot(0:1, 0:1, type="n", axes=FALSE)
+legend("topleft", legend=c("k=0.1","k=1","k=10"), lty=1, col=1:3)
+##
+par(mfrow=c(2,2))
+matplot(p, cbind(Bias2(k=0.1,p,alpha=1),Bias2(k=1,p,alpha=1),Bias2(k=10,p,alpha=1)),
+        lty=1, col=1:3, type="l", main="alpha=1", ylab="Ratio of rate ratios")
+matplot(p, cbind(Bias2(k=0.1,p,alpha=0.5),Bias2(k=1,p,alpha=0.5),Bias2(k=10,p,alpha=0.5)),
+        lty=1, col=1:3, type="l", main="alpha=0.5", ylab="Ratio of rate ratios")
+matplot(p, cbind(Bias2(k=0.1,p,alpha=2),Bias2(k=1,p,alpha=2),Bias2(k=10,p,alpha=2)),
+        lty=1, col=1:3, type="l", main="alpha=2", ylab="Ratio of rate ratios")
+plot(0:1, 0:1, type="n", axes=FALSE)
+legend("topleft", legend=c("k=0.1","k=1","k=10"), lty=1, col=1:3)
+
+library(devtools)
+install_github("mclements/rstpm2", ref="develop")
+install_github("mclements/microsimulation")
+
+## test survreg_design
+library(survival)
+library(rstpm2)
+x=seq(0,2500,len=301)
+
+## TODO
+## pllogis and qllogis local implementations (avoids eha dependency)
+## simulate.survreg in C++ :)
+## simulate.flexsurv
+## simulate.aftreg
+## simulate.aft
+## simulate.X where X=?
+
+#' Simulate event times from a flexsurvreg object
+#' @param object flexsurvreg object
+#' @param nsim number of simulations per row in newdata
+#' @param seed random number seed
+#' @param newdata data-frame for defining the covariates for the simulations. Required.
+#' @param t0 delayed entry time. Defaults to NULL (which assumes that t0=0)
+#' @param ... other arguments (not currently used)
+#' @return vector of event times with nsim repeats per row in newdata
+#' @importFrom stats simulate
+#' @rdname simulate
+#' @export
+#' @examples
+#' fit <- flexsurvreg(formula = Surv(futime, fustat) ~ rx, data = ovarian, dist="weibull")
+#' fit2 <- flexsurvspline(formula = Surv(futime, fustat) ~ rx, data = ovarian, k=3)
+#' nd = data.frame(rx=1:2)
+#' simulate(fit, seed=1002, newdata=nd)
+#' simulate(fit, seed=1002, newdata=nd, t0=500)
+#' simulate(fit2, nsim=3, seed=1002, newdata=nd)
+#' simulate(fit2, nsim=3, seed=1002, newdata=nd, t0=c(500,1000))
+simulate.flexsurvreg =
+    function(object, nsim=1, seed=NULL, newdata, t0=NULL, ...) {
+        stopifnot(is.data.frame(newdata))
+        if (!is.null(seed)) set.seed(seed)
+        nd = nrow(newdata)
+        n = nd*nsim
+        if (!is.null(t0)) {
+            stopifnot(length(t0) %in% c(1, nd))
+            if (length(t0)==1) t0=rep(t0,nd)
+            S0 = summary(object, newdata=newdata,
+                         type="survival", t=t0,
+                         cross=FALSE, ci=FALSE, se=FALSE, tidy=TRUE)$est
+            F0 = 1-S0
+            F0 = rep(F0, each=nsim)
+        } else F0 = rep(0,n)
+        U = runif(n, F0, 1)
+        newdata = newdata[rep(1:nd, each=nsim), , drop=FALSE]
+        summary(object, newdata=newdata, 
+                type="quantile", quantiles=U,
+                cross=FALSE, ci=FALSE, se=FALSE, tidy=TRUE)$est
+    }
+
+plot(survfit(Surv(futime, fustat) ~ rx, data = ovarian), col=1:2)
+
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+d = newdata=data.frame(hormon=rep(0:1,each=2000), censrec=1)
+d$rectime = simulate(fit, newdata=d)
+lines(survfit(Surv(rectime,censrec==1)~hormon,data=d), col=5:6, lty=1)
+
+fit <- gsm(formula = Surv(futime, fustat) ~ 1, data = ovarian, dist="gengamma")
+fit2 <- gsm(formula = Surv(futime, fustat) ~ 1, data = ovarian, df=3)
+nd = data.frame(rx=1:2)
+simulate(fit, seed=1002, newdata=nd)
+simulate(fit, seed=1002, newdata=nd, t0=10000)
+simulate(fit2, nsim=3, seed=1002, newdata=nd)
+simulate(fit2, nsim=3, seed=1002, newdata=nd, t0=10000)
+
+
+
+survreg_model = function(object, newdata) {
+    lp = predict(object, newdata=newdata, type="lp")
+    n = length(lp)
+    list(dist = object$dist,
+         a = switch(object$dist,
+                    weibull=rep(1/object$scale,n),
+                    loglogistic=rep(1/object$scale,n),
+                    exponential=exp(-lp),
+                    lp),
+         b = switch(object$dist,
+                    weibull=exp(lp),
+                    loglogistic=exp(lp),
+                    rep(object$scale,n)))
+}
+
+simulate.survreg = function(object, nsim=1, seed=NULL, newdata, t0=NULL, ...) {
+    stopifnot(inherits(object, "survreg"),
+              is.list(newdata))
+    if (!is.null(seed)) set.seed(seed)
+    lp = predict(object, newdata=newdata, type="lp")
+    lp = lp[rep(1:length(lp), each=nsim)]
+    n = length(lp)
+    if (!is.null(strata <- attr(object$terms, "specials")$strata)) {
+        scale = object$scale[eval(attr(object$terms,"variables")[[strata+1]], newdata)]
+        scale = rep(scale, each=nsim)
+    }
+    else scale = rep(object$scale,n)
+    ## local functions for log-logistic (see eha or flexsurv packages for full functions)
+    qll = function(p, shape, scale) scale*(1/p-1)^(1/shape)
+    pll = function(x, shape, scale) 1-1/(1+(x/scale)^shape)
+    pfun = function(t) {
+        switch(object$dist,
+               weibull=pweibull(t, 1/scale, exp(lp)),
+               loglogistic=pll(t, 1/scale, exp(lp)),
+               exponential=pexp(t, exp(-lp)),
+               gaussian=pnorm(t, lp, scale),
+               logistic=plogis(t, lp, scale),
+               lognormal=plnorm(t, lp, scale),
+               stop("dist not matched"))
+    }        
+    qfun = function(u) {
+        switch(object$dist,
+               weibull=qweibull(u, 1/scale, exp(lp)),
+               loglogistic=qll(u, 1/scale, exp(lp)),
+               exponential=qexp(u, exp(-lp)),
+               gaussian=qnorm(u, lp, scale),
+               logistic=qlogis(u, lp, scale),
+               lognormal=qlnorm(u, lp, scale),
+               stop("dist not matched"))
+    }        
+    if (!is.null(t0)) {
+        stopifnot(length(t0) %in% c(1, length(newdata[[1]])))
+        if (length(t0)==1) t0=rep(t0,n)
+        else t0 = rep(t0,each=nsim)
+        F0 = pfun(t0)
+    } else F0 = rep(0,n)
+    qfun(1-(runif(n, F0, 1)-F0)) # transform to get the same values as r* functions
+}
+
+#' Simulate event times from a survreg object
+#' @param object survreg object
+#' @param nsim number of simulations per row in newdata
+#' @param seed random number seed
+#' @param newdata data-frame for defining the covariates for the simulations. Required.
+#' @param t0 delayed entry time. Defaults to NULL (which assumes that t0=0)
+#' @param ... other arguments (not currently used)
+#' @return vector of event times with nsim repeats per row in newdata
+#' @importFrom stats simulate predict
+#' @rdname simulate
+#' @export
+#' @examples
+#' library(survival)
+#' fit <- survreg(Surv(time, status) ~ ph.ecog + age + sex + strata(sex),
+#'                data = lung)
+#' nd = transform(expand.grid(ph.ecog=0:1, sex=1:2), age=60)
+#' simulate(fit, seed=1002, newdata=nd)
+#' simulate(fit, seed=1002, newdata=nd, t0=500)
+simulate.survreg = function(object, nsim=1, seed=NULL, newdata, t0=NULL, ...) {
+    stopifnot(inherits(object, "survreg"),
+              is.list(newdata))
+    if (!is.null(seed)) set.seed(seed)
+    lp = predict(object, newdata=newdata, type="lp")
+    lp = lp[rep(1:length(lp), each=nsim)]
+    n = length(lp)
+    if (!is.null(strata <- attr(object$terms, "specials")$strata)) {
+        scale = object$scale[eval(attr(object$terms,"variables")[[strata+1]], newdata)]
+        scale = rep(scale, each=nsim)
+    }
+    else scale = rep(object$scale,n)
+    if (is.character(object$dist)) 
+        dd <- survreg.distributions[[object$dist]]
+    else dd <- object$dist
+    if (is.null(dd$itrans)) {
+        trans <- function(x) x
+        itrans <- function(x) x
+    }
+    else {
+        trans <- dd$trans
+        itrans <- dd$itrans
+    }
+    if (!is.null(dd$dist)) 
+        dd <- survreg.distributions[[dd$dist]]
+    if (!is.null(t0)) {
+        stopifnot(length(t0) %in% c(1, length(newdata[[1]])))
+        if (length(t0)==1) t0=rep(t0,n)
+        else t0 = rep(t0,each=nsim)
+        F0 = dd$density((trans(t0)-lp)/scale,object$parm)[,1]
+    } else F0 = rep(0,n)
+    itrans(lp+scale*dd$quantile(1-(runif(n, F0, 1)-F0), object$parm))
+}
+
+library(rstpm2)
+x=seq(0,2500,len=301)
+nd = expand.grid(hormon=0:1,x4a=0:1)
+## fit = survreg(Surv(rectime,censrec==1)~hormon+strata(x4a)+x4a,data=brcancer,dist="weibull")
+fit = survreg(Surv(rectime,censrec==1)~hormon+x4a,data=brcancer,dist="weibull")
+plot(survfit(Surv(rectime,censrec==1)~hormon+x4a,data=brcancer), col=1:4, lty=1)
+d = newdata=data.frame(hormon=rep(0:1,each=5000), x4a=rep(0:1, 5000), censrec=1)
+d$rectime = simulate(fit, newdata=d)
+lines(survfit(Surv(rectime,censrec==1)~hormon+x4a,data=d), col=1:4, lty=2)
+
+simulate(fit, newdata=nd[1,])
+simulate(fit, nsim=3, newdata=nd)
+simulate(fit, newdata=nd[1,], t0=2000)
+simulate(fit, nsim=3, newdata=nd, t0=2000)
+
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="weibull")
+simulate(fit, seed=1002, newdata=data.frame(hormon=0:1))
+simulate(fit, seed=1002, newdata=data.frame(hormon=0:1)) -
+    simulate.survreg.2(fit, seed=1002, newdata=data.frame(hormon=0:1))
+simulate(fit, nsim=10,seed=1002, newdata=data.frame(hormon=0:1), t0=c(10000,12000))
+simulate(fit, seed=1002, newdata=data.frame(hormon=0:1), t0=10000)
+
+
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="weibull")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+lines(x,pweibull(x,1/fit$scale,exp(lp[1]),lower.tail=FALSE),col=3)
+lines(x,pweibull(x,1/fit$scale,exp(lp[2]),lower.tail=FALSE),col=4)
+d = newdata=data.frame(hormon=rep(0:1,each=5000), censrec=1)
+d$rectime = simulate(fit, newdata=d)
+lines(survfit(Surv(rectime,censrec==1)~hormon,data=d), col=5:6, lty=1)
+
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="lognormal")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+lines(x,plnorm(x,lp[1],fit$scale,lower.tail=FALSE),col=3)
+lines(x,plnorm(x,lp[2],fit$scale,lower.tail=FALSE),col=4)
+
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="logistic")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+lines(x,plogis(x,lp[1],fit$scale,lower.tail=FALSE),col=3)
+lines(x,plogis(x,lp[2],fit$scale,lower.tail=FALSE),col=4)
+
+library(eha)
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="loglogistic")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+lines(x,pllogis(x,1/fit$scale,exp(lp[1]),lower.tail=FALSE),col=3)
+lines(x,pllogis(x,1/fit$scale,exp(lp[2]),lower.tail=FALSE),col=4)
+
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="gaussian")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+lines(x,pnorm(x,lp[1],fit$scale,lower.tail=FALSE),col=3)
+lines(x,pnorm(x,lp[2],fit$scale,lower.tail=FALSE),col=4)
+
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=brcancer,dist="exponential")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=brcancer), col=1:2, lty=1)
+lines(x,pexp(x,exp(-lp[1]),lower.tail=FALSE),col=3)
+lines(x,pexp(x,exp(-lp[2]),lower.tail=FALSE),col=4)
+
+
+library(survival)
+d = transform(data.frame(hormon=rep(0:1,each=5000), censrec=1),
+              rectime=rnorm(length(hormon), hormon, 1))
+x2 = seq(-4,4,len=301)
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=d,dist="gaussian")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=d), col=1:2, lty=1)
+lines(x2,pnorm(x2,lp[1],fit$scale,lower.tail=FALSE),col=3)
+lines(x2,pnorm(x2,lp[2],fit$scale,lower.tail=FALSE),col=4)
+
+library(survival)
+d = transform(data.frame(hormon=rep(0:1,each=5000), censrec=1),
+              rectime=rlogis(length(hormon), hormon, 1))
+x2 = seq(-4,4,len=301)
+fit = survreg(Surv(rectime,censrec==1)~hormon,data=d,dist="logistic")
+lp = predict(fit, newdata=data.frame(hormon=0:1), type="lp")
+plot(survfit(Surv(rectime,censrec==1)~hormon,data=d), col=1:2, lty=1)
+lines(x2,plogis(x2,lp[1],fit$scale,lower.tail=FALSE),col=3)
+lines(x2,plogis(x2,lp[2],fit$scale,lower.tail=FALSE),col=4)
+
+
+
+
 ## test gsm_design
 grep_call = function(name,x) {
     local_function = function(x)
@@ -105,12 +493,17 @@ gsm_design = function(object, newdata, inflate=100) {
 }
 library(rstpm2)
 library(microsimulation)
-object <- gsm(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3,tvc=list(hormon=2))
-object <- gsm(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3)
+object <- stpm2(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3,tvc=list(hormon=2))
+## object <- stpm2(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3)
 newdata = data.frame(hormon=0:1)
 inflate = 100
 (design <- gsm_design(object,newdata))
 replicate(10,.Call("test_read_gsm", design, PACKAGE="microsimulation"))
+
+simulate(object, newdata=data.frame(hormon=1),t0=10000)
+system.time(simulate(object, nsim=1000, newdata=data.frame(hormon=1)))
+design <- gsm_design(object,newdata)
+system.time(replicate(1000,.Call("test_read_gsm", design, PACKAGE="microsimulation")))
 
 library(survival)
 object <- gsm(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3,tvc=list(hormon=2))
