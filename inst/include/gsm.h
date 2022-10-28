@@ -29,7 +29,7 @@ namespace ssim {
     gsm(Rcpp::List list);
     double eta(double y);
     double operator()(double y);
-    double rand(double tentry=0.0, int index = 0);
+    double rand(double tentry=0.0, int index = 0, double scale=10.0);
   };
 
 }

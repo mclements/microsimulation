@@ -22,11 +22,12 @@ namespace ssim {
   double gsm::operator()(double y) {
     return eta(y) - target;
   }
-  double gsm::rand(double tentry, int index) {
+  double gsm::rand(double tentry, int index, double scale) {
+    Rcpp::RNGScope rngScope;
     using std::log;
     double u = R::runif(0.0,1.0);
-    double ymin = tentry == 0.0 ? (log_time ? log(tmin) : tmin) : (log_time ? log(tentry) : tentry);
-    double ymax = log_time ? log(tmax) : tmax;
+    double ymin = tentry == 0.0 ? (log_time ? log(tmin/scale) : tmin/scale) : (log_time ? log(tentry) : tentry);
+    double ymax = log_time ? log(tmax*scale) : tmax*scale;
     this->index = index;
     target = (tentry==0.0 ? link(u) : link(u*linkinv(eta(ymin))));
     double root = std::get<0>(R_zeroin2_functor_ptr<gsm>(ymin, ymax, this, 1.0e-8, 100));
@@ -69,10 +70,11 @@ namespace ssim {
 
   gsm::gsm(SEXP args) : gsm(Rcpp::as<Rcpp::List>(args)) { }
   
-  RcppExport SEXP test_read_gsm(SEXP args) {
+  RcppExport SEXP test_read_gsm(SEXP gsm_args, SEXP start_args) {
     Rcpp::RNGScope rngScope;
-    gsm gsm1(args);
-    return Rcpp::wrap(gsm1.rand());
+    double start = Rcpp::as<double>(start_args);
+    gsm gsm1(gsm_args);
+    return Rcpp::wrap(gsm1.rand(start));
   }
   
 } // namespace ssim
