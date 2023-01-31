@@ -188,6 +188,7 @@ param = within(param,
 ##
 sourceCpp(code="
   // [[Rcpp::depends(BH)]]
+  // [[Rcpp::depends(RcppArmadillo)]]
   // [[Rcpp::depends(microsimulation)]]
   #include <microsimulation.h>
   enum state_t {Healthy, Sick, Sicker, Dead};
