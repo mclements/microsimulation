@@ -498,7 +498,14 @@ object <- stpm2(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3,tvc=list(horm
 newdata = data.frame(hormon=0:1)
 inflate = 100
 (design <- gsm_design(object,newdata))
-replicate(10,.Call("test_read_gsm", design, PACKAGE="microsimulation"))
+system.time(replicate(100,.Call("test_read_gsm", design, PACKAGE="microsimulation")))
+system.time(replicate(100,simulate(object, newdata=newdata)))
+## 
+set.seed(12345)
+.Call("test_read_gsm", design, PACKAGE="microsimulation")
+set.seed(12345)
+simulate(object, newdata=newdata[1,,drop=FALSE])
+
 
 simulate(object, newdata=data.frame(hormon=1),t0=10000)
 system.time(simulate(object, nsim=1000, newdata=data.frame(hormon=1)))
