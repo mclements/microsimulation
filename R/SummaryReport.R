@@ -73,7 +73,7 @@ rbind.SummaryReport <- function(...) {
 
 #' ascii output from a SummaryReport
 #'
-#' @param object a SummaryReport object
+#' @param x a SummaryReport object
 #' @param include.rownames logical for whether to include rownames (default=FALSE)
 #' @param include.colnames logical for whether to include colnames (default=TRUE)
 #' @param header logical for whether to include the header (default=TRUE)
@@ -82,10 +82,10 @@ rbind.SummaryReport <- function(...) {
 #' @return ascii object
 #' @rdname SummaryReport
 #' @export
-ascii.SummaryReport <- function(object,include.rownames=FALSE,include.colnames=TRUE,header=TRUE,
+ascii.SummaryReport <- function(x,include.rownames=FALSE,include.colnames=TRUE,header=TRUE,
                                 digits=c(0,3,2,2,4,4),...) {
     if (requireNamespace("ascii")) {
-        with(summary(object),
+        with(summary(x),
              ascii(c("n"=n,"Discount rate"=discountRate,"Cost"=Ecosts,"(se)"=se.Ecosts,"QALYs"=QALE,
                      "(se)"=se.QALE),
                    include.rownames, include.colnames, header=header, digits=digits, ...))
@@ -133,7 +133,7 @@ ICER.SummaryReport = function(object1, object2, ...) {
 
 #' ascii output from a ICER.SummaryReport object
 #'
-#' @param object an ICER.SummaryReport object
+#' @param x an ICER.SummaryReport object
 #' @param include.rownames logical for whether to include rownames (default=FALSE)
 #' @param include.colnames logical for whether to include colnames (default=TRUE)
 #' @param header logical for whether to include the header (default=TRUE)
@@ -147,13 +147,13 @@ ICER.SummaryReport = function(object1, object2, ...) {
 #' @rdname SummaryReport
 #' @export
 ascii.ICER.SummaryReport <-
-    function(object,include.rownames=TRUE,include.colnames=TRUE,header=TRUE,
+    function(x,include.rownames=TRUE,include.colnames=TRUE,header=TRUE,
              digits=c(1,1,3,3,1,1,3,3,1),
              rownames=c("Reference","Treatment"),
              colnames=c("Costs","(se)","QALYs","(se)","Costs","(se)","QALYs","(se)","ICER"),
              tgroup=c("Total","Incremental"),n.tgroup=c(4,5),...) {
         if (requireNamespace("ascii")) {
-            m <- with(object,
+            m <- with(x,
                       matrix(c(s1$Ecosts,s1$se.Ecosts,s1$QALE,s1$se.QALE,NA,NA,NA,NA,NA,
                                s2$Ecosts,s2$se.Ecosts,s2$QALE,s2$se.QALE,dCosts,se.dCosts,
                                dQALE, se.dQALE, ICER),2,byrow=TRUE))

@@ -19,7 +19,7 @@
 \method{rbind}{SummaryReport}(...)
 
 \method{ascii}{SummaryReport}(
-  object,
+  x,
   include.rownames = FALSE,
   include.colnames = TRUE,
   header = TRUE,
@@ -30,7 +30,7 @@
 \method{ICER}{SummaryReport}(object1, object2, ...)
 
 \method{ascii}{ICER.SummaryReport}(
-  object,
+  x,
   include.rownames = TRUE,
   include.colnames = TRUE,
   header = TRUE,
@@ -44,11 +44,11 @@
 )
 }
 \arguments{
-\item{object}{an ICER.SummaryReport object}
+\item{object}{SummaryReport object}
 
 \item{...}{other arguments to pass to ascii}
 
-\item{x}{SummaryReport object}
+\item{x}{an ICER.SummaryReport object}
 
 \item{include.rownames}{logical for whether to include rownames (default=FALSE)}
 
