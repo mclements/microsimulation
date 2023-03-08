@@ -26,6 +26,10 @@ namespace ssim {
     Rcpp::RNGScope rngScope;
     using std::log;
     double u = R::runif(0.0,1.0);
+    return randU(u, tentry, index, scale);
+  }
+  double gsm::randU(double u, double tentry, int index, double scale) {
+    using std::log;
     double ymin = tentry == 0.0 ? (log_time ? log(tmin/scale) : tmin/scale) : (log_time ? log(tentry) : tentry);
     double ymax = log_time ? log(tmax*scale) : tmax*scale;
     this->index = index;
