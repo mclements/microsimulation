@@ -1,5 +1,5 @@
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
-# (setq org-html-validation-link nil) ;; local /usr/share/emacs/26.3/lisp/org/ox-html.el.gz: http://validate -> https://validate
+# (setq org-html-validation-link nil) ;; /usr/share/emacs/27.1/lisp/org/ox-html.el.gz
 
 #+title: Examples for the microsimulation package
 #+author: Mark Clements

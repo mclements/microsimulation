@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2022-10-18 Tue 10:35 -->
+<!-- 2023-03-08 Wed 10:42 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Examples for the microsimulation package</title>
@@ -20,7 +20,7 @@
 @licstart  The following is the entire license notice for the
 JavaScript code in this tag.
 
-Copyright (C) 2012-2019 Free Software Foundation, Inc.
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
 
 The JavaScript code in this tag is free software: you can
 redistribute it and/or modify it under the terms of the GNU
@@ -69,34 +69,34 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org24b9c98">1. Introduction</a></li>
-<li><a href="#org6c4eb63">2. Tick-tock model</a>
+<li><a href="#orgdd7d6a3">1. Introduction</a></li>
+<li><a href="#org0ea05ed">2. Tick-tock model</a>
 <ul>
-<li><a href="#orgcf25990">2.1. R version</a></li>
-<li><a href="#orge68cb3d">2.2. C++ version</a></li>
+<li><a href="#org7e138c0">2.1. R version</a></li>
+<li><a href="#org3e3485e">2.2. C++ version</a></li>
 </ul>
 </li>
-<li><a href="#orgf01eade">3. Illness-death model with costs and QALYs</a>
+<li><a href="#org4004928">3. Illness-death model with costs and QALYs</a>
 <ul>
-<li><a href="#org40e7040">3.1. R version</a></li>
-<li><a href="#orgd707c8c">3.2. C++ version</a></li>
-<li><a href="#orgcf4d872">3.3. Benchmark comparing R and C++</a></li>
+<li><a href="#org745b6f4">3.1. R version</a></li>
+<li><a href="#orgd085a2e">3.2. C++ version</a></li>
+<li><a href="#org1c89e14">3.3. Benchmark comparing R and C++</a></li>
 </ul>
 </li>
-<li><a href="#org741bf42">4. Reporting using a data-frame</a>
+<li><a href="#orgba574ca">4. Reporting using a data-frame</a>
 <ul>
-<li><a href="#orga2cc100">4.1. R version</a></li>
-<li><a href="#org6010e81">4.2. C++ version</a></li>
-<li><a href="#org90d9674">4.3. Benchmark comparing R and C++</a></li>
-<li><a href="#org0ba2666">4.4. C++ using an EventReport</a></li>
+<li><a href="#org57a6d4b">4.1. R version</a></li>
+<li><a href="#org90596ce">4.2. C++ version</a></li>
+<li><a href="#org5d49dcc">4.3. Benchmark comparing R and C++</a></li>
+<li><a href="#org846146a">4.4. C++ using an EventReport</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org24b9c98" class="outline-2">
-<h2 id="org24b9c98"><span class="section-number-2">1</span> Introduction</h2>
+<div id="outline-container-orgdd7d6a3" class="outline-2">
+<h2 id="orgdd7d6a3"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
 <li>Some examples in both R and C++.</li>
@@ -105,8 +105,8 @@ for the JavaScript code in this tag.
 </div>
 
 
-<div id="outline-container-org6c4eb63" class="outline-2">
-<h2 id="org6c4eb63"><span class="section-number-2">2</span> Tick-tock model</h2>
+<div id="outline-container-org0ea05ed" class="outline-2">
+<h2 id="org0ea05ed"><span class="section-number-2">2</span> Tick-tock model</h2>
 <div class="outline-text-2" id="text-2">
 <ul class="org-ul">
 <li>This simple model includes three states and three transitions:</li>
@@ -120,8 +120,8 @@ for the JavaScript code in this tag.
 </div>
 
 
-<div id="outline-container-orgcf25990" class="outline-3">
-<h3 id="orgcf25990"><span class="section-number-3">2.1</span> R version</h3>
+<div id="outline-container-org7e138c0" class="outline-3">
+<h3 id="org7e138c0"><span class="section-number-3">2.1</span> R version</h3>
 <div class="outline-text-3" id="text-2-1">
 <ul class="org-ul">
 <li>In this implementation, we model only for the events, where the states are implied by the transitions. Note that there are no simulation attributes.</li>
@@ -191,8 +191,8 @@ Finished
 </div>
 </div>
 
-<div id="outline-container-orge68cb3d" class="outline-3">
-<h3 id="orge68cb3d"><span class="section-number-3">2.2</span> C++ version</h3>
+<div id="outline-container-org3e3485e" class="outline-3">
+<h3 id="org3e3485e"><span class="section-number-3">2.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-2-2">
 <ul class="org-ul">
 <li>For the C++ code, we first show that the Rcpp and C++ code depends on the <code>microsimulation</code> package.</li>
@@ -277,8 +277,8 @@ Finished
 </div>
 
 
-<div id="outline-container-orgf01eade" class="outline-2">
-<h2 id="orgf01eade"><span class="section-number-2">3</span> Illness-death model with costs and QALYs</h2>
+<div id="outline-container-org4004928" class="outline-2">
+<h2 id="org4004928"><span class="section-number-2">3</span> Illness-death model with costs and QALYs</h2>
 <div class="outline-text-2" id="text-3">
 
 <div class="figure">
@@ -287,8 +287,8 @@ Finished
 </div>
 </div>
 
-<div id="outline-container-org40e7040" class="outline-3">
-<h3 id="org40e7040"><span class="section-number-3">3.1</span> R version</h3>
+<div id="outline-container-org745b6f4" class="outline-3">
+<h3 id="org745b6f4"><span class="section-number-3">3.1</span> R version</h3>
 <div class="outline-text-3" id="text-3-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
@@ -362,8 +362,8 @@ Time: 115.923108; event: death
 </div>
 </div>
 
-<div id="outline-container-orgd707c8c" class="outline-3">
-<h3 id="orgd707c8c"><span class="section-number-3">3.2</span> C++ version</h3>
+<div id="outline-container-orgd085a2e" class="outline-3">
+<h3 id="orgd085a2e"><span class="section-number-3">3.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-3-2">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation, quietly=<span style="color: #228b22;">TRUE</span>)
@@ -456,8 +456,8 @@ Time: 115.923108; event: death
 </div>
 </div>
 
-<div id="outline-container-orgcf4d872" class="outline-3">
-<h3 id="orgcf4d872"><span class="section-number-3">3.3</span> Benchmark comparing R and C++</h3>
+<div id="outline-container-org1c89e14" class="outline-3">
+<h3 id="org1c89e14"><span class="section-number-3">3.3</span> Benchmark comparing R and C++</h3>
 <div class="outline-text-3" id="text-3-3">
 <div class="org-src-container">
 <pre class="src src-R">microbenchmark::microbenchmark({
@@ -556,8 +556,8 @@ times=100) |&gt; ascii()
 </div>
 
 
-<div id="outline-container-org741bf42" class="outline-2">
-<h2 id="org741bf42"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
+<div id="outline-container-orgba574ca" class="outline-2">
+<h2 id="orgba574ca"><span class="section-number-2">4</span> Reporting using a data-frame</h2>
 <div class="outline-text-2" id="text-4">
 
 <div class="figure">
@@ -567,8 +567,8 @@ times=100) |&gt; ascii()
 </div>
 
 
-<div id="outline-container-orga2cc100" class="outline-3">
-<h3 id="orga2cc100"><span class="section-number-3">4.1</span> R version</h3>
+<div id="outline-container-org57a6d4b" class="outline-3">
+<h3 id="org57a6d4b"><span class="section-number-3">4.1</span> R version</h3>
 <div class="outline-text-3" id="text-4-1">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(ascii)
@@ -698,8 +698,8 @@ ascii(sim$report)
 </div>
 
 
-<div id="outline-container-org6010e81" class="outline-3">
-<h3 id="org6010e81"><span class="section-number-3">4.2</span> C++ version</h3>
+<div id="outline-container-org90596ce" class="outline-3">
+<h3 id="org90596ce"><span class="section-number-3">4.2</span> C++ version</h3>
 <div class="outline-text-3" id="text-4-2">
 <div class="org-src-container">
 <pre class="src src-R">  sourceCpp(code = <span style="color: #8b2252;">"</span>
@@ -878,8 +878,8 @@ ascii(sim$report)
 </div>
 
 
-<div id="outline-container-org90d9674" class="outline-3">
-<h3 id="org90d9674"><span class="section-number-3">4.3</span> Benchmark comparing R and C++</h3>
+<div id="outline-container-org5d49dcc" class="outline-3">
+<h3 id="org5d49dcc"><span class="section-number-3">4.3</span> Benchmark comparing R and C++</h3>
 <div class="outline-text-3" id="text-4-3">
 <div class="org-src-container">
 <pre class="src src-R">microbenchmark::microbenchmark({
@@ -978,8 +978,8 @@ times=10) |&gt; ascii()
 
 
 
-<div id="outline-container-org0ba2666" class="outline-3">
-<h3 id="org0ba2666"><span class="section-number-3">4.4</span> C++ using an EventReport</h3>
+<div id="outline-container-org846146a" class="outline-3">
+<h3 id="org846146a"><span class="section-number-3">4.4</span> C++ using an EventReport</h3>
 <div class="outline-text-3" id="text-4-4">
 <div class="org-src-container">
 <pre class="src src-R"><span style="color: #008b8b;">library</span>(microsimulation)
@@ -1061,8 +1061,7 @@ lattice::xyplot(rate~age|Key+event, data=rates, type=<span style="color: #8b2252
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Mark Clements</p>
-<p class="date">Created: 2022-10-18 Tue 10:35</p>
-<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+<p class="date">Created: 2023-03-08 Wed 10:42</p>
 </div>
 </body>
 </html>
