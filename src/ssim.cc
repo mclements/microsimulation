@@ -58,7 +58,7 @@ struct Action {
 	: time(t), type(at), pid(p), event(e) {};
 
     bool operator < (const Action & a) const throw() {
-	return time < a.time;
+      return time < a.time || (time == a.time && event->priority < a.event->priority);
     }
 };
 

@@ -212,14 +212,17 @@ using std::greater;
 class cMessage : public ssim::Event {
 public:
   cMessage(const short k = -1, const string n = "", const ProcessId process_id = -1,
-	   const ProcessId sender_process_id = -1) :
-    kind(k), name(n), sendingTime(-1.0), timestamp(0), process_id(process_id),
-    sender_process_id(sender_process_id) { }
+	   const ProcessId sender_process_id = -1, const short priority = 0) :
+    ssim::Event(), kind(k), name(n), sendingTime(-1.0), timestamp(0), process_id(process_id),
+    sender_process_id(sender_process_id) {
+    this->priority = priority;
+  }
   // currently no setters (keep it lightweight?)
   short getKind() { return kind; }
   string getName() { return name; }
   Time getTimestamp() { return timestamp; }
   Time getSendingTime() {return sendingTime; }
+  short getSchedulePriority() {return priority; }
   short kind;
   string name;
   Time sendingTime, timestamp;
@@ -233,7 +236,6 @@ public:
     string str = stringStream.str();
     return str;
   }
-  // this does NOT include schedulePriority
 };
 
 /**
@@ -329,46 +331,48 @@ public:
       @brief schedules at time t a message msg to the current process.
       Adds the sendingTime, process_id and sender_process_id to the message.
    */
-  virtual void scheduleAt(Time t, cMessage * msg) { // virtual or not?
+  virtual void scheduleAt(Time t, cMessage * msg, short priority=0) { // virtual or not?
     msg->timestamp = t;
     msg->sendingTime = Sim::clock();
     msg->process_id = msg->sender_process_id = pid();
+    msg->priority = priority;
     Sim::self_signal_event(msg, t - Sim::clock());
   }
   /**
       @brief schedules at time t a message msg with a specific name to the current process.
    */
-  virtual void scheduleAt(Time t, string name) {
-    scheduleAt(t, new cMessage(-1,name));
+  virtual void scheduleAt(Time t, string name, short priority=0) {
+    scheduleAt(t, new cMessage(-1,name), priority);
   }
   /**
       @brief schedules at time t a message msg with a specific kind to the current process.
    */
-  virtual void scheduleAt(Time t, short k) {
-    scheduleAt(t, new cMessage(k,""));
+  virtual void scheduleAt(Time t, short k, short priority=0) {
+    scheduleAt(t, new cMessage(k,""), priority);
   }
   /**
       @brief send to a given process at time t a message msg.
       Adds the sendingTime, process_id and sender_process_id to the message.
    */
-  virtual void send(ProcessId process_id, Time t, cMessage * msg) { // virtual or not?
+  virtual void send(ProcessId process_id, Time t, cMessage * msg, short priority=0) { // virtual or not?
     msg->timestamp = t;
     msg->process_id = process_id;
     msg->sender_process_id = pid();
     msg->sendingTime = Sim::clock();
+    msg->priority = priority;
     Sim::signal_event(process_id, msg, t - Sim::clock());
   }
   /**
       @brief sends to a given process at time t a message msg with a specific name.
    */
-  virtual void send(ProcessId process_id, Time t, string name) {
-    send(process_id, t, new cMessage(-1,name));
+  virtual void send(ProcessId process_id, Time t, string name, short priority=0) {
+    send(process_id, t, new cMessage(-1,name), priority);
   }
   /**
       @brief sends to a given process at time t a message msg with a specific kind.
    */
-  virtual void send(ProcessId process_id, Time t, short kind) {
-    send(process_id, t, new cMessage(kind,""));
+  virtual void send(ProcessId process_id, Time t, short kind, short priority=0) {
+    send(process_id, t, new cMessage(kind,""), priority);
   }
   /**
       @brief Given a predicate, remove the messages for this process.

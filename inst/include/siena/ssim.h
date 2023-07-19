@@ -81,7 +81,9 @@ const Time		INIT_TIME = 0;
 /** @brief basic event in the simulation.
  *
  *  This base class represents a piece of information or a signal
- *  exchanged between two processes through the simulator.  Every
+ *  exchanged between two processes through the simulator.  Includes
+ *  a schedule priority (lower value = higher priority) for ordering
+ *  multiple events with the same event times. Every
  *  simulated event must inherit from this class.  For example:
  *
  *  \code
@@ -105,9 +107,10 @@ const Time		INIT_TIME = 0;
  **/
 class Event {
  public:
-			Event(): refcount(0) {};
+  Event(): priority(0), refcount(0) {};
     virtual		~Event() {};
     virtual std::string str() const { return "(event)"; };
+    short priority;
 
  private:
     mutable unsigned refcount;

@@ -1,8 +1,8 @@
 Package: microsimulation
 Type: Package
 Title: Discrete Event Simulation in R and C++, with Tools for Cost-Effectiveness Analysis
-Version: 1.4.2
-Date: 2023-03-08
+Version: 1.4.3
+Date: 2023-07-19
 Authors@R: c(person("Mark", "Clements", role=c("aut","cre","cph"),email="mark.clements@ki.se"),
   	   person("Alexandra", "Jauhiainen", role="aut"),
 	   person("Andreas", "Karlsson", role="aut"),

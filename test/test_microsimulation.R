@@ -1,6 +1,44 @@
 ## try(detach("package:microsimulation", unload=TRUE))
 ## library(microsimulation)
 
+## A simple process to check the new priority implementation (version >= 1.4.3)
+library(microsimulation)
+library(Rcpp)
+sourceCpp(code="
+  // [[Rcpp::depends(RcppArmadillo)]]
+  // [[Rcpp::depends(microsimulation)]]
+  #include <microsimulation.h>
+  enum event_t {toA, toB, toC, toD};
+  class Aprocess : public ssim::cProcess
+  {
+  public:
+    Aprocess() : ssim::cProcess() { }
+    void init(); // to be specified
+    void handleMessage(const ssim::cMessage* msg); // to be specified
+  };
+  void Aprocess::init() {
+    scheduleAt(10.0,toC,1);
+    scheduleAt(10.0,toB);
+    scheduleAt(10.0,toA,-1);
+    scheduleAt(10.0,toD,2);
+  }
+  /**
+      Handle receiving self-messages
+  */
+  void Aprocess::handleMessage(const ssim::cMessage* msg) {
+    Rprintf(\"kind: %i, priority: %i, previous: %f, now: %f\\n\",
+                       msg->kind, msg->priority, this->previousEventTime, ssim::now());
+  }
+  //[[Rcpp::export]]
+  void runSimulation() {
+    Aprocess process;
+    ssim::Sim::create_process(&process);
+    ssim::Sim::run_simulation();
+    ssim::Sim::clear();
+  }
+")
+runSimulation()
+
 ## rpexp implementations
 library(msm)
 #' Random numbers using piecewise exponential distributions
