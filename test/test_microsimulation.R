@@ -597,6 +597,7 @@ sourceCpp(code="
     SimplePerson(Rcpp::List param, ssim::gsm gsm1) : param(param), gsm1(gsm1) {
       id = -1;
       report.clear();
+      report.resize(param(\"n\"));
       report.setPartition(0.0,100.0,param(\"partitionBy\"));
       report.setDiscountRate(param(\"discountRate\"));
     }
@@ -618,7 +619,7 @@ sourceCpp(code="
       Handle receiving self-messages
   */
   void SimplePerson::handleMessage(const ssim::cMessage* msg) {
-    report.add(state, msg->kind, this->previous(), ssim::now(), utility);
+    report.add(state, msg->kind, this->previous(), ssim::now(), id);
     switch(msg->kind) {
     case toOtherDeath:
     case toCancerDeath:
@@ -627,13 +628,13 @@ sourceCpp(code="
     case toCancer:
       state = Cancer;
       utility = 0.8;
-      report.addPointCost(state, ssim::now(), 15000.0);
+      report.addPointCost(state, 15000.0, id);
       scheduleAt(ssim::now() + 2.0, toCancerManagement);
       if (R::runif(0.0,1.0) < 0.5)
-	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
+      scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
       break;
     case toCancerManagement:
-      report.addPointCost(state, ssim::now(), 1000.0);
+      report.addPointCost(state, 1000.0, id);
       scheduleAt(ssim::now() + 2.0, toCancerManagement);
       break;
     default:
@@ -668,7 +669,7 @@ library(rstpm2)
 fit <- stpm2(Surv(t,censrec==1)~hormon,data=transform(brcancer,t=rectime/365),df=1)
 fit_design = gsm_design(fit, data.frame(hormon=1))
 set.seed(12345)
-sim1 <- simulations(fit_design, 1e4, partitionBy=20)
+sim1 <- simulations(fit_design, 10, partitionBy=20, discountRate=0)
 sim1
 ##
 within(lapply(sim1,I), { LE <- sum(pt$pt)/n
@@ -851,13 +852,13 @@ sourceCpp(code="
     case toCancer:
       state = Cancer;
       utility = 0.8;
-      report.addPointCost(state, ssim::now(), 15000.0);
+      report.addPointCost(state, 15000.0);
       scheduleAt(ssim::now() + 2.0, toCancerManagement);
       if (R::runif(0.0,1.0) < 0.5)
 	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
       break;
     case toCancerManagement:
-      report.addPointCost(state, ssim::now(), 1000.0);
+      report.addPointCost(state, 1000.0);
       scheduleAt(ssim::now() + 2.0, toCancerManagement);
       break;
     default:
@@ -947,13 +948,13 @@ sourceCpp(code="
     case toCancer:
       state = Cancer;
       utility = 0.8;
-      report.addPointCost(state, ssim::now(), 15000.0);
+      report.addPointCost(state, 15000.0);
       scheduleAt(ssim::now() + 2.0, toCancerManagement);
       if (R::runif(0.0,1.0) < 0.5)
 	scheduleAt(ssim::now() + R::rweibull(2.0,10.0), toCancerDeath);
       break;
     case toCancerManagement:
-      report.addPointCost(state, ssim::now(), 1000.0);
+      report.addPointCost(state, 1000.0);
       scheduleAt(ssim::now() + 2.0, toCancerManagement);
       break;
     default:
