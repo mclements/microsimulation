@@ -19,8 +19,15 @@ namespace ssim {
 	eta += terms[i].x(index) * arma::sum(terms[i].ns1.eval(y,0) % terms[i].gamma);
     return eta;
   }
+  double gsm::eta0(double y) {
+    double eta = etap0(index);
+    for (size_t i=0; i<terms.size(); i++)
+      if (terms[i].x(index) != 0.0)
+	eta += terms[i].x(index) * arma::sum(terms[i].ns1.eval(y,0) % terms[i].gamma);
+    return eta;
+  }
   double gsm::operator()(double y) {
-    return eta(y) - target;
+    return ((log_time ? exp(y) : y) < t0) ? (eta(y) - target) : (eta0(y) - target0);
   }
   double gsm::rand(double tentry, int index, double scale) {
     Rcpp::RNGScope rngScope;
@@ -33,7 +40,19 @@ namespace ssim {
     double ymin = tentry == 0.0 ? (log_time ? log(tmin/scale) : tmin/scale) : (log_time ? log(tentry) : tentry);
     double ymax = log_time ? log(tmax*scale) : tmax*scale;
     this->index = index;
-    target = (tentry==0.0 ? link(u) : link(u*linkinv(eta(ymin))));
+    this->target = (tentry==0.0 ? link(u) : link(u*linkinv(eta(ymin))));
+    this->target0 = 0.0; // not used
+    double root = std::get<0>(R_zeroin2_functor_ptr<gsm>(ymin, ymax, this, 1.0e-8, 100));
+    return log_time ? std::exp(root) : root;
+  }
+  double gsm::randU0(double u, int index, double scale) {
+    using std::log;
+    double ymin = log_time ? log(tmin/scale) : tmin/scale;
+    double ymax = log_time ? log(tmax*scale) : tmax*scale;
+    this->index = index;
+    this->target = link(u); // solution for time<t0
+    this->target0 = link(u*linkinv(eta0(log_time ? log(t0) : t0)) /
+			 linkinv(eta(log_time ? log(t0) : t0))); // solution for time>=t0
     double root = std::get<0>(R_zeroin2_functor_ptr<gsm>(ymin, ymax, this, 1.0e-8, 100));
     return log_time ? std::exp(root) : root;
   }
@@ -47,6 +66,7 @@ namespace ssim {
       double inflate = as<double>(list("inflate"));
       tmin = tmin/inflate; tmax = tmax*inflate;
       etap = as<arma::vec>(list("etap"));
+      etap0 = as<arma::vec>(list("etap0"));
       List lterms = as<List>(list("terms"));
       for (int i=0; i<lterms.size(); i++) {
 	List lterm = as<List>(lterms(i));
@@ -63,7 +83,9 @@ namespace ssim {
       }
       log_time = as<bool>(list("log_time"));
       target = 0.0;
+      target0 = 0.0;
       index = 0;
+      t0 = as<double>(list("t0"));
       if (link_name == "PH") link_type = PH;
     } catch(std::exception &ex) {	
       forward_exception_to_r(ex);

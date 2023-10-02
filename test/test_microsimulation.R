@@ -1,6 +1,173 @@
 ## try(detach("package:microsimulation", unload=TRUE))
 ## library(microsimulation)
 
+## How to simulate from an rstpm2 object with X=0 after t0 years?
+library(rstpm2)
+library(microsimulation)
+library(Rcpp)
+fit <- stpm2(Surv(rectime,censrec==1)~hormon,data=brcancer,df=3)
+design = gsm_design(fit, newdata=data.frame(hormon=1), t0=1000, newdata0=data.frame(hormon=0))
+
+sourceCpp(code="
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::depends(microsimulation)]]
+#include <microsimulation.h>
+// [[Rcpp::export]]
+double test(ssim::gsm m) {
+return m.randU0(R::runif(0.0,1.0));
+}
+")
+set.seed(12345)
+test(design)
+
+set.seed(12345)
+a=test(gsm_design(fit, newdata=data.frame(hormon=1), t0=1, newdata0=data.frame(hormon=0)))
+set.seed(12345)
+b=test(gsm_design(fit, newdata=data.frame(hormon=1), t0=10, newdata0=data.frame(hormon=0)))
+a-b
+
+set.seed(12345)
+a=test(gsm_design(fit, newdata=data.frame(hormon=1), t0=1.0e-8, newdata0=data.frame(hormon=0)))
+set.seed(12345)
+b=test(gsm_design(fit, newdata=data.frame(hormon=1), t0=1, newdata0=data.frame(hormon=0)))
+c(a,b)
+
+
+set.seed(12345)
+simulate(fit, newdata=data.frame(hormon=1))
+
+
+
+#' @param t0 time after which covariates are set to zero (see unexposed)
+#' @param unexposed function that takes the newdata and sets covariates to zero
+simulate.stpm3 <-
+function (object, nsim = 1, seed = NULL, newdata = NULL, lower = 1e-06, 
+          upper = 1e+05, t0=NULL, unexposed = NULL,
+          start = NULL, ...) 
+{
+    if (!is.null(t0) && !is.null(start))
+        stop("Not implemented for change in effect and left truncation")
+    if (!is.null(t0) && is.null(unexposed))
+        stop("unexposed function not defined but t0 is non-null")
+    if (!is.null(seed)) 
+        set.seed(seed)
+    if (is.null(newdata)) 
+        newdata = as.data.frame(object@data)
+    n = nsim * nrow(newdata)
+    if (!is.null(start)) {
+        newdatap = newdata
+        newdatap[[object@timeVar]] = start
+        Sentry = predict(object, newdata = newdatap)
+        if (length(start) == 1) 
+            lower = rep(start, n)
+        else if (length(start) == nrow(newdata)) 
+            lower = rep(start, each = nsim)
+        else if (length(start == n)) 
+            lower = start
+        else lower = rep(lower, n)
+    }
+    else {
+        Sentry = 1
+        lower = rep(lower, n)
+    }
+    if (!is.null(t0)) {
+        newdatap = newdata
+        newdatap[[object@timeVar]] = t0
+        S1 = predict(object, newdata = newdatap) # factual exposure to t0
+        newdatap = unexposed(newdatap)
+        S0 = predict(object, newdata = newdatap) # counterfactual exposure to t0
+    }
+    newdata = newdata[rep(1:nrow(newdata), each = nsim), , drop = FALSE]
+    if (!is.null(t0))
+        newdata0 = unexposed(newdata)
+    U <- runif(n)
+    objective <- if (is.null(t0))
+                     function(time) {
+                         newdata[[object@timeVar]] <- time
+                         predict(object, newdata = newdata)/Sentry - U
+                     } else function(time) {
+                         newdata[[object@timeVar]] <- time
+                         newdata0[[object@timeVar]] <- time
+                         ifelse(time<t0,
+                                predict(object, newdata = newdata) - U,
+                                predict(object, newdata=newdata0)*S1/S0 - U)
+                     }
+    vuniroot(objective, lower = rep(lower, length = n), upper = rep(upper, 
+        length = n), tol = 1e-10, n = n)$root
+}
+set.seed(12345)
+simulate.stpm3(fit, newdata=data.frame(hormon=1))
+set.seed(12345)
+simulate.stpm3(fit, newdata=data.frame(hormon=1),
+               t0=1000, unexposed=function(data) transform(data, hormon=0))
+
+#' @param t0 time after which covariates are set to zero (see unexposed)
+#' @param newdata0 newdata with covariates set to zero
+simulate.stpm3 <-
+function (object, nsim = 1, seed = NULL, newdata = NULL, lower = 1e-06, 
+          upper = 1e+05, t0=NULL, newdata0 = NULL,
+          start = NULL, ...) 
+{
+    if (!is.null(t0) && !is.null(start))
+        stop("Not implemented for change in effect and left truncation")
+    if (!is.null(t0) && is.null(newdata0))
+        stop("newdata0 not defined but t0 is non-null")
+    if (!is.null(t0))
+        stopifnot(nrow(newdata) == nrow(newdata0))
+    if (!is.null(seed)) 
+        set.seed(seed)
+    if (is.null(newdata)) 
+        newdata = as.data.frame(object@data)
+    n = nsim * nrow(newdata)
+    if (!is.null(start)) {
+        newdatap = newdata
+        newdatap[[object@timeVar]] = start
+        Sentry = predict(object, newdata = newdatap)
+        if (length(start) == 1) 
+            lower = rep(start, n)
+        else if (length(start) == nrow(newdata)) 
+            lower = rep(start, each = nsim)
+        else if (length(start == n)) 
+            lower = start
+        else lower = rep(lower, n)
+    }
+    else {
+        Sentry = 1
+        lower = rep(lower, n)
+    }
+    if (!is.null(t0)) {
+        newdatap = newdata
+        newdatap[[object@timeVar]] = t0
+        S1 = predict(object, newdata = newdatap) # factual exposure to t0
+        newdatap = newdata0
+        newdatap[[object@timeVar]] = t0
+        S0 = predict(object, newdata = newdatap) # counterfactual exposure to t0
+    }
+    newdata = newdata[rep(1:nrow(newdata), each = nsim), , drop = FALSE]
+    if (!is.null(t0))
+        newdata0 = newdata0[rep(1:nrow(newdata0), each = nsim), , drop = FALSE]
+    U <- runif(n)
+    objective <- if (is.null(t0))
+                     function(time) {
+                         newdata[[object@timeVar]] <- time
+                         predict(object, newdata = newdata)/Sentry - U
+                     } else function(time) {
+                         newdata[[object@timeVar]] <- time
+                         newdata0[[object@timeVar]] <- time
+                         ifelse(time<t0,
+                                predict(object, newdata = newdata) - U,
+                                predict(object, newdata=newdata0)*S1/S0 - U)
+                     }
+    vuniroot(objective, lower = rep(lower, length = n), upper = rep(upper, 
+        length = n), tol = 1e-10, n = n)$root
+}
+set.seed(12345)
+simulate.stpm3(fit, newdata=data.frame(hormon=1))
+set.seed(12345)
+simulate.stpm3(fit, newdata=data.frame(hormon=1),
+               t0=1000, newdata0 = data.frame(hormon=0))
+
+
 ## A simple process to check the new priority implementation (version >= 1.4.3)
 library(microsimulation)
 library(Rcpp)
