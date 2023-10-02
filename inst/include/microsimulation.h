@@ -1073,6 +1073,14 @@ inline double discountedInterval(double start, double end, double discountRate) 
      _table[it->first] += it->second;
    }
  }
+   // // This class is currently only suitable for point costs:(
+   // void setCost(const State state, const Cost cost) {
+   //   _cost = cost;
+   // }
+   void addPointCost(const State state, const Time time, const Cost cost, const int index = 0) {
+     add(state, time, cost, index);
+   }
+   // note that this is equivalent to SummaryReport::addPointCost() with state information
    void add(const State state, const Time time, const Cost cost, const int index = 0 /* deprecated argument */) {
    Time time_lhs = * _partition.lower_bound(time);
    Cost c = discountedCost(time,cost);
