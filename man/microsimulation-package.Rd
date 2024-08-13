@@ -18,7 +18,7 @@ Discrete event simulations in both R and C++ with Tools for Cost-Effectiveness A
 \url{https://github.com/mclements/microsimulation}
 }
 \seealso{
-\code{\link{Rcpp}}
+\code{\link[Rcpp]{sourceCpp}}
 }
 \author{
 Mark Clements \email{mark.clements@ki.se}

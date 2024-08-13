@@ -19,4 +19,4 @@ LazyData: true
 URL: https://github.com/mclements/microsimulation
 BugReports: https://github.com/mclements/microsimulation/issues
 Encoding: UTF-8
-RoxygenNote: 7.2.1
+RoxygenNote: 7.3.2

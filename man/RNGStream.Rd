@@ -26,12 +26,12 @@ list of class \code{RNGStream} with components:
 \describe{
 \item{resetRNGkind}{function to reset to the previous RNG and seed}
 \item{seed}{function to return the current seed}
-\item{open}{function to use the current seed}
-\item{close}{function to make the current seed equal to .Random.seed}
-\item{resetStream}{function to move back to start of stream}
-\item{resetSubStream}{function to move back to start of sub-stream}
-\item{nextSubStream}{function to move to next sub-stream}
-\item{nextStream}{function to move to next stream}
+item{open}{function to use the current seed}
+item{close}{function to make the current seed equal to .Random.seed}
+item{resetStream}{function to move back to start of stream}
+item{resetSubStream}{function to move back to start of sub-stream}
+item{nextSubStream}{function to move to next sub-stream}
+item{nextStream}{function to move to next stream}
 }
 
 the value from the expression

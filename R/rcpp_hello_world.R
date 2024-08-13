@@ -6,19 +6,18 @@
 #'
 #' Discrete event simulations in both R and C++ with Tools for Cost-Effectiveness Analysis.
 #'
-#' @docType package
 #' @name microsimulation-package
 #' @aliases microsimulation
 #' @author Mark Clements \email{mark.clements@ki.se}
 #' @references \url{https://github.com/mclements/microsimulation}
-#' @seealso \code{\link{Rcpp}}
+#' @seealso \code{\link[Rcpp]{sourceCpp}}
 #' @useDynLib microsimulation, .registration=TRUE
 #' @import Rcpp
 #' @import methods
 #' @importFrom graphics lines plot
 #' @importFrom stats predict rnorm sd
 #' @importFrom ascii ascii
-NULL
+"_PACKAGE"
 
 
 #' Cat a string for the library archive for use in loading the package
