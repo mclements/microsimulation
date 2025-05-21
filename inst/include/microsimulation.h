@@ -132,6 +132,12 @@ namespace Rcpp {
   template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
     SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10> > v);
 
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+  SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11> > v);
+
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+  SEXP wrap(const std::vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12> > v);
+
   // maps defined in terms of vectors
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v);
@@ -313,6 +319,8 @@ inline void CancelEvents() {
    cancel(), cancel_kind(), cancel_name() and cancel_events(). The
    previous event time for this process can be found using previous().
 
+   Events are ordered by scheduled time and priority (NB: smaller priority goes earlier).
+   
  */
 class cProcess : public ssim::ProcessWithPId {
 public:
@@ -1383,7 +1391,80 @@ namespace Rcpp {
 			_("Var7")=wrap(v7),_("Var8")=wrap(v8),
 			_("Var9")=wrap(v9),_("Var10")=wrap(v10));
   }
+  
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+  SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    vector<T5> v5(n);
+    vector<T6> v6(n);
+    vector<T7> v7(n);
+    vector<T8> v8(n);
+    vector<T9> v9(n);
+    vector<T10> v10(n);
+    vector<T11> v11(n);
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
+      v7[i] = std::get<6>(*it);
+      v8[i] = std::get<7>(*it);
+      v9[i] = std::get<8>(*it);
+      v10[i] = std::get<9>(*it);
+      v11[i] = std::get<10>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
+			_("Var5")=wrap(v5),_("Var6")=wrap(v6),
+			_("Var7")=wrap(v7),_("Var8")=wrap(v8),
+			_("Var9")=wrap(v9),_("Var10")=wrap(v10),
+			_("Var11")=wrap(v11));
+  }
 
+  template <class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+  SEXP wrap(const vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12> > v) {
+    int i, n=v.size();
+    vector<T1> v1(n);
+    vector<T2> v2(n);
+    vector<T3> v3(n);
+    vector<T4> v4(n);
+    vector<T5> v5(n);
+    vector<T6> v6(n);
+    vector<T7> v7(n);
+    vector<T8> v8(n);
+    vector<T9> v9(n);
+    vector<T10> v10(n);
+    vector<T11> v11(n);
+    vector<T12> v12(n);
+    typename vector<std::tuple<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12> >::const_iterator it;
+    for (it=v.begin(), i=0; it<v.end(); ++it, ++i) {
+      v1[i] = std::get<0>(*it);
+      v2[i] = std::get<1>(*it);
+      v3[i] = std::get<2>(*it);
+      v4[i] = std::get<3>(*it);
+      v5[i] = std::get<4>(*it);
+      v6[i] = std::get<5>(*it);
+      v7[i] = std::get<6>(*it);
+      v8[i] = std::get<7>(*it);
+      v9[i] = std::get<8>(*it);
+      v10[i] = std::get<9>(*it);
+      v11[i] = std::get<10>(*it);
+      v12[i] = std::get<11>(*it);
+    }
+    return List::create(_("Var1")=wrap(v1),_("Var2")=wrap(v2),
+			_("Var3")=wrap(v3),_("Var4")=wrap(v4),
+			_("Var5")=wrap(v5),_("Var6")=wrap(v6),
+			_("Var7")=wrap(v7),_("Var8")=wrap(v8),
+			_("Var9")=wrap(v9),_("Var10")=wrap(v10),
+			_("Var11")=wrap(v11),_("Var12")=wrap(v12));
+  }
 
   template <class T1, class T2>
     SEXP wrap_map(const std::map<T1,T2> v) {
