@@ -79,7 +79,7 @@ namespace ssim {
        Pop an active event from the priority queue.
     */
     List pop() {
-      pqueueElement element = std::move(popElement());
+      pqueueElement element = popElement();
       return List::create(_["priority"]=element.priority, _["event"]=element.event);
     }
     /**
