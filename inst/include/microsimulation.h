@@ -517,6 +517,8 @@ public:
 	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1];
       }
     }
+    hi = h;
+    Hi = H;
   }
   Rpexp(SEXP hin_, SEXP tin_) {
     Rcpp::NumericVector hin = Rcpp::as<Rcpp::NumericVector>(hin_);
@@ -534,15 +536,14 @@ public:
 	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1];
       }
     }
+    hi = h;
+    Hi = H;
   }
   void set_Z(double Z) {
     this->Z = Z;
-    h[0] = Z*h[0];
-    if (n>1) {
-      for(int i=1;i<n;i++) {
-	h[i] = Z*h[i];
-	H[i] = Z*H[i];
-      }
+    for(int i=0;i<n;i++) {
+	hi[i] = Z*h[i];
+	Hi[i] = Z*H[i];
     }
   }
   // this could be improved by taking account of the part year
@@ -550,7 +551,7 @@ public:
     double value = 0.0;
     double survival = 1.0;
     for(int j=floor(s); j<(int)h.size(); j++) {
-      survival *= exp(-h[j]);
+      survival *= exp(-hi[j]);
       value += survival;
     }
     return value;
@@ -560,15 +561,15 @@ public:
     int i = 0, i0 = 0;
     if (from > 0.0) {
       i0 = (from >= t[n-1]) ? (n-1) : int(lower_bound(t.begin(), t.end(), from) - t.begin())-1;
-      H0 = H[i0] + (from - t[i0])*h[i0];
+      H0 = Hi[i0] + (from - t[i0])*hi[i0];
     }
     v = -log(u) + H0;
-    i = (v >= H[n-1]) ? (n-1) : int(lower_bound(H.begin(), H.end(), v) - H.begin())-1;
-    tstar = t[i]+(v-H[i])/h[i];
+    i = (v >= Hi[n-1]) ? (n-1) : int(lower_bound(Hi.begin(), Hi.end(), v) - Hi.begin())-1;
+    tstar = t[i]+(v-Hi[i])/hi[i];
     return tstar;
   }
  private:
-  vector<double> H, h, t;
+  vector<double> H, h, t, Hi, hi;
   int n;
 };
 
