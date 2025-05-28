@@ -503,8 +503,9 @@ private:
  */
 class Rpexp {
 public:
-  Rpexp() {} // blank default constructor
-  Rpexp(double *hin, double *tin, int nin) : n(nin) {
+  double Z;
+  Rpexp() { Z=1.0; } // blank default constructor
+  Rpexp(double *hin, double *tin, int nin) : Z(1.0), n(nin) {
     int i;
     H.resize(n);
     t.resize(n);
@@ -521,6 +522,7 @@ public:
     Rcpp::NumericVector hin = Rcpp::as<Rcpp::NumericVector>(hin_);
     Rcpp::NumericVector tin = Rcpp::as<Rcpp::NumericVector>(tin_);
     int i;
+    Z = 1.0;
     n = hin.size();
     H.resize(n);
     t.resize(n);
@@ -532,6 +534,26 @@ public:
 	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1];
       }
     }
+  }
+  void set_Z(double Z) {
+    this->Z = Z;
+    h[0] = Z*h[0];
+    if (n>1) {
+      for(int i=1;i<n;i++) {
+	h[i] = Z*h[i];
+	H[i] = Z*H[i];
+      }
+    }
+  }
+  // this could be improved by taking account of the part year
+  double life_expectancy(double s) {
+    double value = 0.0;
+    double survival = 1.0;
+    for(int j=floor(s); j<(int)h.size(); j++) {
+      survival *= exp(-h[j]);
+      value += survival;
+    }
+    return value;
   }
   double rand(double u, double from = 0.0) {
     double v = 0.0, H0 = 0.0, tstar = 0.0;
