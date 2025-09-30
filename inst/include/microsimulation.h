@@ -546,15 +546,30 @@ public:
 	Hi[i] = Z*H[i];
     }
   }
-  // this could be improved by taking account of the part year
-  double life_expectancy(double s) {
+  double life_expectancy(double s, double Z_error = 1.0) {
     double value = 0.0;
     double survival = 1.0;
     for(int j=floor(s); j<(int)h.size(); j++) {
-      survival *= exp(-hi[j]);
-      value += survival;
+      double prev_survival = survival;
+      double delta = double(j)+1-std::max(s,double(j));
+      survival *= exp(-hi[j]*delta*Z_error);
+      if (prev_survival==survival) value += survival*delta;
+      else value += (prev_survival-survival)/hi[j];
     }
     return value;
+  }
+  double n_year_risk(double s, double n=5.0, double Z_error = 1.0) {
+    double survival = 1.0;
+    for(int j=floor(s); j<floor(s+n); j++) {
+      double delta = std::min(double(j)+1,s+n)-std::max(s,double(j));
+      survival *= exp(-hi[j]*delta*Z_error);
+    }
+    if (floor(n+s) < n+s) { // add the last bit:)
+      int j = floor(s+n);
+      double delta = s+n-floor(s+n);
+      survival *= exp(-hi[j]*delta*Z_error);
+    }
+    return 1.0-survival;
   }
   double rand(double u, double from = 0.0) {
     double v = 0.0, H0 = 0.0, tstar = 0.0;
