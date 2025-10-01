@@ -554,7 +554,7 @@ public:
       double delta = double(j)+1-std::max(s,double(j));
       survival *= exp(-hi[j]*delta*Z_error);
       if (prev_survival==survival) value += survival*delta;
-      else value += (prev_survival-survival)/hi[j];
+      else value += (prev_survival-survival)/(hi[j]*Z_error);
     }
     return value;
   }
