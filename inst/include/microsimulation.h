@@ -1205,6 +1205,110 @@ inline double discountedInterval(double start, double end, double discountRate) 
  Map _data;
  };
 
+  double R_zeroin2(			/* An estimate of the root */
+					double ax,				/* Left border | of the range	*/
+					double bx,				/* Right border| the root is seeked*/
+					double fa, double fb,		/* f(a), f(b) */
+					double (*f)(double x, void *info),	/* Function under investigation	*/
+					void *info,				/* Add'l info passed on to f	*/
+					double *Tol,			/* Acceptable tolerance		*/
+					int *Maxit);				/* Max # of iterations */
+
+  /** 
+      Adapt a function object (functor) to work with R_zeroin2()
+  **/
+  template<class Functor>
+  double R_zeroin2_adaptor(double x, void * par) {
+    Functor * functor = (Functor *) par;
+    return functor->operator()(x);
+  }
+
+  /** 
+      Use R_zeroin2 with a function object (functor)
+      @return tuple<double,double,int> with (root, Tol, Maxit)
+  **/
+  template<class Functor>
+  std::tuple<double,double,int>
+  R_zeroin2_functor(double a, double b, Functor functor, double eps = 1.0e-8) {
+    double Tol = eps;
+    int Maxit = 100;
+    double root = R_zeroin2(a,b,functor(a),functor(b),&R_zeroin2_adaptor<Functor>,(void *) &functor,
+			    &Tol, &Maxit);
+    return std::make_tuple(root, Tol, Maxit);
+  }
+
+  /** 
+      Use R_zeroin2 with a function object pointer (functor)
+      @return tuple<double,double,int> with (root, Tol, Maxit)
+  **/
+  template<class Functor>
+  std::tuple<double,double,int>
+  R_zeroin2_functor_ptr(double a, double b, Functor *functor, double tol = 1.0e-8, int maxit = 100) {
+    double Tol = tol;
+    int Maxit = maxit;
+    double root = R_zeroin2(a,b,(*functor)(a),(*functor)(b),
+			    &R_zeroin2_adaptor<Functor>,(void *) functor,
+			    &Tol, &Maxit);
+    return std::make_tuple(root, Tol, Maxit);
+  }
+
+  // MVK distribution
+  // Reminder:
+  // nu: initiation rate
+  // alpha: cell division rate
+  // beta: cell death rate
+  // mu: malignant transformation rate
+  // A=(beta+mu-alpha - sqrt((beta+mu-alpha)^2+4*mu*alpha))/2
+  // B=(beta+mu-alpha + sqrt((beta+mu-alpha)^2+4*mu*alpha))/2
+  // g=-(A+B)=alpha-beta-mu is approximately equal to the net proliferation rate
+  // B: upper bound for the malignant transformation rate
+  // delta=nu/alpha
+  // B-A = sqrt((beta+mu-alpha)^2+4*mu*alpha)
+  //
+  // Bounds:
+  // (nu, alpha, beta, mu) >= 0
+  // delta>0, B>=0, A<=0 => B-A>=B>=0
+  inline double dMVK(double t, double A, double B, double delta) {
+    double P = expm1((B-A) * t) * exp(B * delta * t) * pow(B - A, delta);
+    double Q = pow(B * exp((B - A) * t) - A, 1+delta);
+    double val = - delta * A * B * P/Q;
+    if (!R_finite(val)) val = 0.0;
+    return val;
+  }
+  inline double pMVK(double t, double A, double B, double delta, bool lower_tail = true) {
+    double logS = delta*(log(B-A) + B*t - log(B*exp((B-A)*t) - A));
+    return lower_tail ? -expm1(logS) : exp(logS);
+  }
+  inline double qMVK_fast_unstable(double u, double A, double B, double delta,
+		     double x0 = 100.0, int iter = 20) {
+    for (int i=0; i<iter; i++) {
+      x0 = x0 - (pMVK(x0, A, B, delta) - u) / dMVK(x0, A, B, delta);
+    }
+    return x0;
+  }
+  inline double qMVK(double u, double A, double B, double delta,
+		     double upper = 1e4) {
+    int maxiter = 10;
+    double ubound = upper, out = 0.0;
+    auto functor = [&](double x) { return pMVK(x, A, B, delta) - u; };
+    for (int i = 0; i<maxiter; i++) { 
+      std::tuple<double,double,int> values =
+	R_zeroin2_functor(0.0, ubound, functor, 1.0e-8);
+      out = std::get<0>(values);
+      if (out>0 && out<ubound) break;
+      if (i<maxiter-1) ubound *= 10.0;
+      }
+    if (out==0 || out==ubound) out = NA_REAL;
+    return out;
+  }
+  inline double rMVK(double u, double A, double B, double delta,
+		     double upper = 1e4) {
+    return qMVK(u, A, B, delta, upper);
+  }
+  inline double hMVK(double t, double A, double B, double delta) {
+    return dMVK(t,A,B,delta)/pMVK(t,A,B,delta,false);
+  }
+  
 } // namespace ssim
 
 namespace Rcpp {

@@ -882,3 +882,90 @@ NULL
 #' @export
 NULL
 
+#' Probability density function for an MVK distribution
+#'
+#' @param x double for the x value
+#' @param A double for the A parameter
+#' @param B double for the B parameter
+#' @param delta double for the delta parameter
+#' @return double for the pdf
+#' @rdname MVK
+#' @export
+dMVK <- function(x, A, B, delta) {
+    stopifnot(all(B>0), all(A<0), all(delta>0), all(x>=0))
+    P = expm1((B-A) * x) * exp(B * delta * x) * (B - A)^delta
+    Q = (B * exp((B - A) * x) - A)^(1+delta)
+    val = - delta * A * B * P/Q
+    val[!is.finite(val)] = 0
+    val
+}
+
+#' Cumulative distribution function for an MVK distribution
+#'
+#' @param x double for the x value
+#' @param A double for the A parameter
+#' @param B double for the B parameter
+#' @param delta double for the delta parameter
+#' @param lower.tail logical for whether to show the lower tail of the distribution
+#' @return double for the CDF or survival
+#' @rdname MVK
+#' @export
+pMVK <- function(x, A, B, delta, lower.tail=TRUE) {
+    stopifnot(all(B>0), all(A<0), all(delta>0), all(x>=0))
+    logS = delta*(log(B-A) + B*x - log(B*exp((B-A)*x) - A))
+    if (lower.tail) -expm1(logS) else exp(logS)
+}
+
+#' Quantile function for an MVK distribution
+#'
+#' @param p double for the x value
+#' @param A double for the A parameter
+#' @param B double for the B parameter
+#' @param delta double for the delta parameter
+#' @param lower.tail logical for whether to show the lower tail of the distribution
+#' @return double for the CDF or survival
+#' @rdname MVK
+#' @export
+qMVK <- function(p, A, B, delta, lower.tail=TRUE, upper=1e4) {
+    n = length(p)
+    stopifnot(all(B>0), all(A<0), all(delta>0), all(p>=0), all(p<=1))
+    .C("R_qMVK",n=as.integer(n),p=as.double(if (lower.tail) p else 1-p),
+       A=as.double(rep(A,length=n)),
+       B=as.double(rep(B,length=n)),
+       delta=as.double(rep(delta,length=n)),
+       upper=as.double(rep(upper,length=n)),
+       out=rep(0.0,n),PACKAGE="microsimulation")$out
+}
+
+#' Random number draw from an MVK distribution
+#'
+#' @param n integer for the number of random draws
+#' @param A double for the A parameter
+#' @param B double for the B parameter
+#' @param delta double for the delta parameter
+#' @param upper double for the upper range to be searched
+#' @return double as a random draw
+#' @rdname MVK
+#' @export
+rMVK <- function (n,A,B,delta,upper=1e4,maxit=10) {
+    stopifnot(n>0,A<0,B>0,delta>0,upper>0)
+    .C("R_rMVK",n=as.integer(n),A=as.double(A),B=as.double(B),delta=as.double(delta),
+       upper=as.double(upper),out=rep(0.0,n),PACKAGE="microsimulation")$out
+}
+
+#' Random number draw from an MVK distribution (fast but unstable)
+#'
+#' This uses Newton-Raphson type solver, which depends on a reasonable
+#' initial value. Not exported.
+#' @param n integer for the number of random draws
+#' @param A double for the A parameter
+#' @param B double for the B parameter
+#' @param delta double for the delta parameter
+#' @param x0 double initial search point
+#' @return double as a random draw
+#' @rdname MVK
+rMVK2 <- function (n,A,B,delta,x0=100) {
+    stopifnot(n>0,A<0,B>0,delta>0,x0>0)
+    .C("R_rMVK2",n=as.integer(n),A=as.double(A),B=as.double(B),delta=as.double(delta),
+       x0=as.double(x0),out=rep(0.0,n),PACKAGE="microsimulation")$out
+}

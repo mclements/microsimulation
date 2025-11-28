@@ -1,6 +1,35 @@
 ## try(detach("package:microsimulation", unload=TRUE))
 ## library(microsimulation)
 
+## check the MVK functions (TODO: add tests)
+library(microsimulation)
+set.seed(1); (y=rMVK(10,-1,1,1))
+set.seed(1); u=runif(10)
+sapply(u, function(ui) uniroot(function(x) pMVK(x,-1,1,1)-ui, lower=0, upper=1e4, tol=1e-8)$root) - y
+set.seed(1); microsimulation:::rMVK2(10,-1,1,1,x0=1) - y
+set.seed(1); rMVK(10,-1,1,1,1e-9)
+## benchmarking
+library(microbenchmark)
+microbenchmark(rMVK(1,-1,1,1))
+microbenchmark(uniroot(function(x) pMVK(x,-1,1,1)-u[1], lower=0, upper=1e4)$root)
+microbenchmark(rMVK(10,-1,1,1))
+microbenchmark(sapply(runif(10), function(ui) uniroot(function(x) pMVK(x,-1,1,1)-ui, lower=0, upper=1e4)$root))
+##
+integrate(function(x) dMVK(x,-1.5,2,3),0,10)$value - pMVK(10,-1.5,2,3)
+##
+qMVK(pMVK(10,-1,1,1),-1,1,1)
+qMVK(pMVK(10,-1,1,1,lower.tail=FALSE),-1,1,1,lower.tail=FALSE)
+##
+local({
+    x=seq(0,100,length=301)
+    A=-0.1
+    B=0.1
+    delta=0.5
+    plot(x,dMVK(x,A,B,delta)/pMVK(x,A,B,delta,lower.tail=FALSE), type="l",
+         ylab="Hazard")
+})
+
+
 ## How to simulate from an rstpm2 object with X=0 after t0 years?
 library(rstpm2)
 library(microsimulation)
