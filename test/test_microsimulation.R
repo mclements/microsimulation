@@ -20,11 +20,17 @@ integrate(function(x) dMVK(x,-1.5,2,3),0,10)$value - pMVK(10,-1.5,2,3)
 qMVK(pMVK(10,-1,1,1),-1,1,1)
 qMVK(pMVK(10,-1,1,1,lower.tail=FALSE),-1,1,1,lower.tail=FALSE)
 ##
+
 local({
     x=seq(0,100,length=301)
     A=-0.1
-    B=0.1
-    delta=0.5
+    B=0.01
+    delta=0.2
+    par(mfrow=c(2,2))
+    plot(x,dMVK(x,A,B,delta), type="l",
+         ylab="Density")
+    plot(x,pMVK(x,A,B,delta,lower.tail=FALSE), type="l",
+         ylab="CDF")
     plot(x,dMVK(x,A,B,delta)/pMVK(x,A,B,delta,lower.tail=FALSE), type="l",
          ylab="Hazard")
 })
