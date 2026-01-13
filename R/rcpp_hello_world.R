@@ -969,3 +969,49 @@ rMVK2 <- function (n,A,B,delta,x0=100) {
     .C("R_rMVK2",n=as.integer(n),A=as.double(A),B=as.double(B),delta=as.double(delta),
        x0=as.double(x0),out=rep(0.0,n),PACKAGE="microsimulation")$out
 }
+
+#' Calculate the cost-effectiveness acceptability curve (CEAC) assuming
+#' a multivariate normal distribution
+#' @param mu mean vector of the MVN distribution for each strategy
+#' @param Sigma variance-covariance matrix of the MVN distribution
+#' @param scale logical for whether to scale the values
+#' @examples
+#' local({NMB=c(13,14,15)
+#'    varNMB=matrix(c(1,0.5,0.5,
+#'                   0.5,2,0.5,
+#'                   0.5,0.5,3),3)
+#'    print(ceac_mvn(NMB,varNMB))
+#'    print(ceac_mvn(NMB,varNMB,FALSE))
+#'    print(ceac_mvn(NMB*100,varNMB*100^2))
+#'    print(ceac_mvn(NMB*100,varNMB*100^2,FALSE)) # incorrect without scaling
+#' })
+#' @return vector of CEACs for each strategy
+#' @rdname Utilities
+ceac_mvn = function(mu,Sigma,scale=TRUE) {
+    stopifnot(requireNamespace("mvtnorm"))
+    n = length(mu)
+    stopifnot(is.matrix(Sigma),
+              is.numeric(mu),
+              is.numeric(Sigma),
+              is.logical(adjust),
+              nrow(Sigma) == n,
+              ncol(Sigma) == n,
+              all(Sigma == t(Sigma)))
+    cor = cov2cor(Sigma)
+    stopifnot(all(cor>=-1),
+              all(cor<=1))
+    if (scale) {
+        maxvar = max(diag(Sigma))
+        mu = mu/sqrt(maxvar)
+        Sigma = Sigma/maxvar
+    }
+    sapply(1:n, function(j)
+        integrate(Vectorize(function(a) {
+            mubar = mu[-j] + Sigma[-j,j]/Sigma[j,j]*(a-mu[j])
+            Sigmabar = Sigma[-j,-j] -
+                outer(Sigma[-j,j],Sigma[-j,j])/Sigma[j,j]
+            dnorm(a, mu[j], sqrt(Sigma[j,j]))*
+                mvtnorm::pmvnorm(upper=rep(a,n-1), mean=mubar, sigma=Sigmabar)
+        }), lower=-Inf, upper=Inf)$value)
+}
+

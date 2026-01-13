@@ -1308,6 +1308,36 @@ inline double discountedInterval(double start, double end, double discountRate) 
   inline double hMVK(double t, double A, double B, double delta) {
     return dMVK(t,A,B,delta)/pMVK(t,A,B,delta,false);
   }
+
+  /** 
+      Class for a multivariate normal distribution.
+  **/
+  class MVN {
+  public:
+    arma::vec mu;
+    arma::mat Sigma, L;
+    MVN() {}; // null default constructor -- I hope that's okay
+    MVN(arma::vec mu, arma::mat Sigma) : mu(mu), Sigma(Sigma) {
+      L = arma::chol(Sigma, "lower");
+    }
+    arma::vec rand() {
+      arma::vec z(mu.size());
+      for (size_t j=0; j<mu.size(); j++) z[j] = R::rnorm(0.0,1.0);
+      return mu + arma::vec(L * z);
+    }
+    arma::mat randn(size_t n = 1) {
+      arma::mat y(n,mu.size());
+      for (size_t i=0; i<n; i++) {
+	arma::vec u = rand();
+	for (size_t j=0; j<mu.size(); j++) y(i,j) = u[j];
+      }
+      return y;
+    }
+  };
+  // //[[Rcpp::export]]
+  // arma::mat test_MVN2(size_t n, arma::vec mu, arma::mat Sigma) {
+  //   return ssim::MVN(mu,Sigma).randn(n);
+  // }
   
 } // namespace ssim
 
