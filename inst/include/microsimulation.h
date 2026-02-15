@@ -495,99 +495,238 @@ private:
   long double _sum, _sumsq;
 };
 
+  /**
+   * Integer bound for the x being in the vector range such that x<=vec[0] -> 0
+   * and vec[i] <= x < vec[i+1] -> i
+   * @param x A double value to be put into an interval
+   * @param vec An std::vector<double> with the lower bounds of the intervals
+   * @return a 0-based index of the lower interval
+   */
+  inline int find_interval(double x, std::vector<double> vec, int ilo = 1) {
+    int new_ilo, mflag = 0;
+    new_ilo = findInterval(&vec[0], vec.size(), x, FALSE, FALSE, ilo, &mflag);
+    return new_ilo==0 ? 0 : new_ilo-1;
+  }
+
+  /**
+   * Incomplete (upper) gamma function
+   * @param s A double value for the shape
+   * @param x A double for the lower bound of the integral
+   * @return A double for the integral
+   */
+  inline double Igamma(double s, double x) {
+    return exp(lgamma(std::max(1e-100,s)))*R::pgamma(x,std::max(s,1e-100),1.0,0,0);
+  }
+
 /**
    @brief Rpexp is a random number generator class for piecewise constant hazards.
    Given time lower bounds t and piecewise constant hazards h, rand() returns a random time.
    The random number is calculated using the inversion formula.
    Constructors provided for arrays.
  */
-class Rpexp {
-public:
-  double Z;
-  Rpexp() { Z=1.0; } // blank default constructor
-  Rpexp(double *hin, double *tin, int nin) : Z(1.0), n(nin) {
-    int i;
-    H.resize(n);
-    t.resize(n);
-    h.resize(n);
-    H[0]=0.0; h[0]=hin[0]; t[0]=tin[0];
-    if (n>1) {
-      for(i=1;i<n;i++) {
-	h[i]=hin[i]; t[i]=tin[i];
-	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1];
+  class Rpexp {
+  public:
+    std::vector<double> Hi, hi, ti;
+    size_t n;
+    Rpexp() { } // blank default constructor
+    Rpexp(double *hin, double *tin, int nin) : n(nin) {
+      Hi.resize(n);
+      ti.resize(n);
+      hi.resize(n);
+      Hi[0]=0.0; hi[0]=hin[0]; ti[0]=tin[0];
+      if (n>1) {
+	for(size_t i=1;i<n;i++) {
+	  hi[i]=hin[i]; ti[i]=tin[i];
+	}
+	if (!std::is_sorted(ti.begin(), ti.end()) && std::is_sorted(hi.begin(),hi.end())) {
+	  hi.swap(ti);
+	  Rcpp::warning("assumed that rates and times were in the wrong order");
+	}
+	for(size_t i=1;i<n;i++) {
+	  Hi[i] = Hi[i-1]+(ti[i]-ti[i-1])*hi[i-1];
+	}
       }
     }
-    hi = h;
-    Hi = H;
-  }
-  Rpexp(SEXP hin_, SEXP tin_) {
-    Rcpp::NumericVector hin = Rcpp::as<Rcpp::NumericVector>(hin_);
-    Rcpp::NumericVector tin = Rcpp::as<Rcpp::NumericVector>(tin_);
-    int i;
-    Z = 1.0;
-    n = hin.size();
-    H.resize(n);
-    t.resize(n);
-    h.resize(n);
-    H[0]=0.0; h[0]=hin[0]; t[0]=tin[0];
-    if (n>1) {
-      for(i=1;i<n;i++) {
-	h[i]=hin[i]; t[i]=tin[i];
-	H[i] = H[i-1]+(t[i]-t[i-1])*h[i-1];
+    Rpexp(SEXP hin, SEXP tin) {
+      hi = Rcpp::as<std::vector<double>>(hin);
+      ti = Rcpp::as<std::vector<double>>(tin);
+      if (!std::is_sorted(ti.begin(), ti.end()) && std::is_sorted(hi.begin(),hi.end())) {
+	hi.swap(ti);
+	Rcpp::warning("assumed that rates and times were in the wrong order");
+      }
+      n = hi.size();
+      Hi.resize(n);
+      Hi[0]=0.0;
+      if (n>1) {
+	for(size_t i=1;i<n;i++) {
+	  Hi[i] = Hi[i-1]+(ti[i]-ti[i-1])*hi[i-1];
+	}
       }
     }
-    hi = h;
-    Hi = H;
-  }
-  void set_Z(double Z) {
-    this->Z = Z;
-    for(int i=0;i<n;i++) {
-	hi[i] = Z*h[i];
-	Hi[i] = Z*H[i];
+    double H(double s) {
+      if (s==0.0) return 0.0;
+      int i = find_interval(s, ti);
+      return Hi[i] + (s-ti[i])*hi[i];
     }
-  }
-  double life_expectancy(double s, double Z_error = 1.0) {
-    double value = 0.0;
-    double survival = 1.0;
-    for(int j=floor(s); j<(int)h.size(); j++) {
-      double prev_survival = survival;
-      double delta = double(j)+1-std::max(s,double(j));
-      survival *= exp(-hi[j]*delta*Z_error);
-      if (prev_survival==survival) value += survival*delta;
-      else value += (prev_survival-survival)/(hi[j]*Z_error);
+    double h(double s) {
+      int i = find_interval(s, ti);
+      return hi[i];
     }
-    return value;
-  }
-  double n_year_risk(double s, double n=5.0, double Z_error = 1.0) {
-    double survival = 1.0;
-    for(int j=floor(s); j<floor(s+n); j++) {
-      double delta = std::min(double(j)+1,s+n)-std::max(s,double(j));
-      survival *= exp(-hi[j]*delta*Z_error);
+    double S(double s) { return exp(-H(s)); }
+    double p(double s, bool lower_tail = true) {
+      return lower_tail ? 1.0-exp(-H(s)) : exp(-H(s));
     }
-    if (floor(n+s) < n+s) { // add the last bit:)
-      int j = floor(s+n);
-      double delta = s+n-floor(s+n);
-      survival *= exp(-hi[j]*delta*Z_error);
+    double d(double s) { return h(s)*S(s); }
+    double life_expectancy(double s = 0.0, double Z_error = 1.0) {
+      double value = 0.0, survival = 1.0;
+      for(int j=floor(s); j<(int)hi.size(); j++) {
+	double prev_survival = survival;
+	double delta = double(j)+1-std::max(s,double(j));
+	survival *= exp(-hi[j]*Z_error*delta);
+	if (prev_survival==survival)
+	  value += survival*delta;
+	else value += (prev_survival-survival)/(hi[j]*Z_error);
+      }
+      return value;
     }
-    return 1.0-survival;
-  }
-  double rand(double u, double from = 0.0) {
-    double v = 0.0, H0 = 0.0, tstar = 0.0;
-    int i = 0, i0 = 0;
-    if (from > 0.0) {
-      i0 = (from >= t[n-1]) ? (n-1) : int(lower_bound(t.begin(), t.end(), from) - t.begin())-1;
-      H0 = Hi[i0] + (from - t[i0])*hi[i0];
+    double n_year_risk(double s, double n=5.0, double Z_error = 1.0) {
+      return std::pow(S(s), Z_error) - std::pow(S(s+n), Z_error);
     }
-    v = -log(u) + H0;
-    i = (v >= Hi[n-1]) ? (n-1) : int(lower_bound(Hi.begin(), Hi.end(), v) - Hi.begin())-1;
-    tstar = t[i]+(v-Hi[i])/hi[i];
-    return tstar;
-  }
- private:
-  vector<double> H, h, t, Hi, hi;
-  int n;
-};
-
+    double rand(double u, double from = 0.0) {
+      double v = -log(u) + H(from);
+      int i = find_interval(v, Hi);
+      double tstar = ti[i];
+      bool success = false;
+      for (size_t j=i; j<n && !success; j++) {
+	if (hi[j] > 0.0) {
+	  tstar += (v-Hi[i])/hi[j];
+	  success = true;
+	}
+      }
+      if (!success) Rcpp::stop("Rpexp.rand() failed due to zero hazards");
+      return tstar;
+    }
+    std::vector<double> rand(size_t n, double from = 0.0) {
+      std::vector<double> y(n);
+      for (size_t i=0; i<n; i++) {
+	double u = R::runif(0.0,1.0);
+	y[i] = this->rand(u,from);
+      }
+      return y;
+    }
+  };
+  
+/**
+     @brief Rpexp_gamma is a random number generator class for piecewise
+     constant hazards with a gamma frailty.  Given time lower bounds t
+     and piecewise constant hazards h, rand() returns a random time.
+     The random number is calculated using the inversion formula.
+     Constructors provided for arrays.
+  */
+  class Rpexp_gamma {
+  public:
+    std::vector<double> H0i, mui, ti;
+    double theta;
+    size_t n;
+    Rpexp_gamma() : theta(1.0) { } // blank default constructor
+    Rpexp_gamma(double theta, double *muin, double *tin, size_t n) : theta(theta), n(n) {
+      H0i.resize(n);
+      ti.resize(n);
+      mui.resize(n);
+      H0i[0]=0.0; mui[0]=muin[0]; ti[0]=tin[0];
+      if (n>1) {
+	for(size_t i=1;i<n;i++) {
+	  mui[i] = muin[i];
+	  ti[i] = tin[i];
+	}
+	if (!std::is_sorted(ti.begin(), ti.end()) && std::is_sorted(mui.begin(),mui.end())) {
+	  mui.swap(ti);
+	  Rcpp::warning("assumed that rates and times were in the wrong order");
+	}
+	double Mu = 0.0;
+	for(size_t i=1;i<n;i++) {
+	  Mu += mui[i-1]*(ti[i]-ti[i-1]);
+	  H0i[i] = (exp(theta*Mu)-1.0)/theta;
+	}
+      }
+    }
+    Rpexp_gamma(SEXP muin, SEXP tin, SEXP thetain) {
+      theta = Rcpp::as<double>(thetain);
+      mui = Rcpp::as<std::vector<double>>(muin);
+      ti = Rcpp::as<std::vector<double>>(tin);
+      if (!std::is_sorted(ti.begin(), ti.end()) && std::is_sorted(mui.begin(),mui.end())) {
+	mui.swap(ti);
+	Rcpp::warning("assumed that rates and times were in the wrong order");
+      }
+      n = mui.size();
+      H0i.resize(n);
+      H0i[0]=0.0;
+      if (n>1) {
+	double Mu = 0.0;
+	for(size_t i=1;i<n;i++) {
+	  Mu += mui[i-1]*(ti[i]-ti[i-1]);
+	  H0i[i] = (exp(theta*Mu)-1.0)/theta;
+	}
+      }
+    }
+    double H(double a, double Z) {
+      size_t index = find_interval(a, ti);
+      return Z*((1+theta*H0i[index])*exp(theta*mui[index]*(a-ti[index])) -1.0)/theta;
+    }
+    double p(double a, double Z, bool lower_tail = true) {
+      return lower_tail ? -expm1(-H(a,Z)) : exp(-H(a,Z));
+    }
+    double d(double a, double Z, bool log = false) {
+      size_t index = find_interval(a, ti);
+      double H = Z*((1+theta*H0i[index])*exp(theta*mui[index]*(a-ti[index]))-1.0)/theta;
+      double h = Z*(1+theta*H0i[index])*exp(theta*mui[index]*(a-ti[index]))*mui[index];
+      return log ? -H+std::log(h) : std::exp(-H)*h;
+    }
+    double h(double a, double Z) {
+      size_t index = find_interval(a, ti);
+      return Z*(1+theta*H0i[index])*exp(theta*mui[index]*(a-ti[index]))*mui[index];
+    }
+    double rand(double u, double Z, double from = 0.0) {
+      double v = -log(u)/Z + H(from,1.0);
+      size_t index = find_interval(v, H0i);
+      return ti[index] + 1.0/mui[index]/theta*log((1+theta*v)/(1+theta*H0i[index]));
+    }
+    std::vector<double> rand(size_t n, double from = 0.0) {
+      std::vector<double> y(n);
+      size_t i = 0;
+      while (i<n) {
+	double Z = R::rgamma(1.0/theta, theta); // different from R call!
+	double u = R::runif(0.0,1.0);
+	double guess = rand(u,Z); // from = 0.0
+	if (guess > from) { // rejection sampling
+	  y[i] = guess;
+	  i++;
+	}
+      }
+      return y;
+    }
+    double life_expectancy(double s = 0.0, double Z = 1.0) {
+      double value = 0.0;
+      int i = find_interval(s, ti);
+      double S0 = p(s,Z,false);
+      if (i+1 < int(n)) {
+	for(int j=i; j<int(n)-1; j++) {
+	  double tj = std::max(s,ti[j]);
+	  double Y = exp(Z/theta)/S0;
+	  double b = -Z/theta*(1+theta*H0i[j])*exp(-theta*mui[j]*ti[j]);
+	  double c = theta*mui[j];
+	  value += Y*(Igamma(0,-b*exp(c*tj))-Igamma(0,-b*exp(c*ti[j+1])))/c;
+	}
+      }
+      value += p(ti[n-1],Z,false)/S0/h(ti[n-1],Z); // but the hazard is time-varying:(
+      return value;
+    }
+    double n_year_risk(double s, double n=5.0, double Z = 1.0) {
+      double S_enter = p(s,Z,false);
+      double S_exit = p(s+n,Z,false);
+      return 1-S_exit/S_enter;
+    }
+  };
 
 /**
     @brief Random Weibull distribution for a given shape, scale and hazard ratio
