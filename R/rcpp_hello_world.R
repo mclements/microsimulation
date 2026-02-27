@@ -947,7 +947,7 @@ qMVK <- function(p, A, B, delta, lower.tail=TRUE, upper=1e4) {
 #' @return double as a random draw
 #' @rdname MVK
 #' @export
-rMVK <- function (n,A,B,delta,upper=1e4,maxit=10) {
+rMVK <- function (n,A,B,delta,upper=1e4) {
     stopifnot(n>0,A<0,B>0,delta>0,upper>0)
     .C("R_rMVK",n=as.integer(n),A=as.double(A),B=as.double(B),delta=as.double(delta),
        upper=as.double(upper),out=rep(0.0,n),PACKAGE="microsimulation")$out
@@ -986,14 +986,16 @@ rMVK2 <- function (n,A,B,delta,x0=100) {
 #'    print(ceac_mvn(NMB*100,varNMB*100^2,FALSE)) # incorrect without scaling
 #' })
 #' @return vector of CEACs for each strategy
+#' @importFrom stats cov2cor dnorm integrate
 #' @rdname Utilities
+#' @export
 ceac_mvn = function(mu,Sigma,scale=TRUE) {
     stopifnot(requireNamespace("mvtnorm"))
     n = length(mu)
     stopifnot(is.matrix(Sigma),
               is.numeric(mu),
               is.numeric(Sigma),
-              is.logical(adjust),
+              is.logical(scale),
               nrow(Sigma) == n,
               ncol(Sigma) == n,
               all(Sigma == t(Sigma)))

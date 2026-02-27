@@ -14,7 +14,7 @@ pMVK(x, A, B, delta, lower.tail = TRUE)
 
 qMVK(p, A, B, delta, lower.tail = TRUE, upper = 10000)
 
-rMVK(n, A, B, delta, upper = 10000, maxit = 10)
+rMVK(n, A, B, delta, upper = 10000)
 
 rMVK2(n, A, B, delta, x0 = 100)
 }

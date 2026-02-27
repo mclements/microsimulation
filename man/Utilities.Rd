@@ -20,6 +20,7 @@
 \alias{lines_frontier}
 \alias{discountedPoint}
 \alias{ICER}
+\alias{ceac_mvn}
 \alias{.onLoad}
 \alias{.onUnload}
 \title{Internal function}
@@ -61,6 +62,8 @@ lines_frontier(x, y, pch = 19, type = "b", ...)
 discountedPoint(y, time, dr)
 
 ICER(object1, object2, ...)
+
+ceac_mvn(mu, Sigma, scale = TRUE)
 
 .onLoad(lib, pkg)
 
@@ -109,6 +112,12 @@ ICER(object1, object2, ...)
 
 \item{object2}{second object}
 
+\item{mu}{mean vector of the MVN distribution for each strategy}
+
+\item{Sigma}{variance-covariance matrix of the MVN distribution}
+
+\item{scale}{logical for whether to scale the values}
+
 \item{lib}{library string}
 
 \item{pkg}{package string}
@@ -147,9 +156,22 @@ a list with components x and y for the frontier
 No return value, called for side effects
 
 numeric vector
+
+vector of CEACs for each strategy
 }
 \description{
 Is this function needed? We could define the current stream in open code.
 
 Again, is this needed?
+}
+\examples{
+local({NMB=c(13,14,15)
+   varNMB=matrix(c(1,0.5,0.5,
+                  0.5,2,0.5,
+                  0.5,0.5,3),3)
+   print(ceac_mvn(NMB,varNMB))
+   print(ceac_mvn(NMB,varNMB,FALSE))
+   print(ceac_mvn(NMB*100,varNMB*100^2))
+   print(ceac_mvn(NMB*100,varNMB*100^2,FALSE)) # incorrect without scaling
+})
 }
